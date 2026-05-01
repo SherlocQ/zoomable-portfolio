@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { T, SPRING, SPRING_SLOW } from '../transitions';
+import { asset } from '../utils/asset';
 
 export function GridItem({ item, onItemClick }) {
   const [col, row] = item.span || [1, 1];
@@ -13,7 +14,7 @@ export function GridItem({ item, onItemClick }) {
         '--cs': col,
         '--rs': row,
         ...(hasImage ? {
-          backgroundImage: `url(${item.image})`,
+          backgroundImage: `url(${asset(item.image)})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         } : {}),
@@ -36,7 +37,7 @@ export function GridItem({ item, onItemClick }) {
 
       {item.illustration && !hasImage && (
         <div className="grid-item-illus" aria-hidden="true">
-          <img src={`/images/illustrations/${item.illustration}.svg`} className="grid-item-illus-img" alt="" />
+          <img src={asset(`/images/illustrations/${item.illustration}.svg`)} className="grid-item-illus-img" alt="" />
         </div>
       )}
 

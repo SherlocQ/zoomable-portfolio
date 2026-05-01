@@ -43,6 +43,7 @@ export default function App() {
   }, [path]);
 
   const navigateToDepth = useCallback((i) => {
+    setLightbox(null);
     const next = path.slice(0, i);
     setPath(next);
     window.history.pushState({ path: next }, '', pathToUrl(next));

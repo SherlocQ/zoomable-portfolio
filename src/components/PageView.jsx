@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { T, fadeUp, SPRING_SLOW } from '../transitions';
+import { asset } from '../utils/asset';
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -86,8 +87,8 @@ function ComparisonSlider({ before, after }) {
 
   return (
     <div className="cs-wrap" ref={wrapRef} role="application" aria-label={`Before/after comparison: ${before.label} vs ${after.label}`}>
-      <img src={after.src}  alt={after.label}  className="cs-img" />
-      <img src={before.src} alt={before.label} className="cs-img cs-img--over"
+      <img src={asset(after.src)}  alt={after.label}  className="cs-img" />
+      <img src={asset(before.src)} alt={before.label} className="cs-img cs-img--over"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
       <div className="cs-handle" style={{ left: `${pos}%` }}>
         <div className="cs-line" />
@@ -119,7 +120,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
         <AnimatePresence initial={false}>
           <motion.img
             key={img.src}
-            src={img.src}
+            src={asset(img.src)}
             alt={img.caption || ''}
             className="img-carousel-img"
             loading="lazy"
@@ -381,7 +382,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
               <AnimatePresence mode="wait" initial={false}>
                 <motion.img
                   key={activeSrc}
-                  src={activeSrc}
+                  src={asset(activeSrc)}
                   alt={activeCaption || ''}
                   className="img-page-img"
                   initial={{ opacity: 0 }}
@@ -436,7 +437,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
         <div className="page-body">
           {hasHero && (
             <div className="project-hero-section">
-              <img src={content.heroImage} alt={node.label} className="project-hero-img" />
+              <img src={asset(content.heroImage)} alt={node.label} className="project-hero-img" />
               <div className="project-hero-meta">
                 <motion.h1 className="project-hero-title" custom={0} variants={fadeUp} initial="hidden" animate="show">
                   {node.label}
@@ -533,7 +534,7 @@ function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
         <Heading />
         {s.body && <BodyText text={s.body} />}
         <ImgWrap id={s.id} src={s.src} caption={s.caption}>
-          <img src={s.src} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
+          <img src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
         </ImgWrap>
         {s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
@@ -553,7 +554,7 @@ function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
           <div className={`section-gallery section-gallery--${count <= 2 ? '2up' : count === 3 ? '3up' : '4up'}`}>
             {s.images.map((img) => (
               <ImgWrap key={img.id} id={img.id} src={img.src} caption={img.caption}>
-                <img src={img.src} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
+                <img src={asset(img.src)} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
               </ImgWrap>
             ))}
           </div>
@@ -918,7 +919,7 @@ function CraftContent({ node, content }) {
   return (
     <div className="craft-content">
       <motion.div className="craft-image-wrap" custom={0} variants={fadeUp} initial="hidden" animate="show">
-        <img src={content.image} alt={content.title} className="craft-image" />
+        <img src={asset(content.image)} alt={content.title} className="craft-image" />
       </motion.div>
       <motion.div custom={1} variants={fadeUp} initial="hidden" animate="show">
         <span className="craft-subtitle">{content.subtitle}</span>
