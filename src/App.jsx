@@ -8,9 +8,16 @@ import BackgroundGrid from './components/BackgroundGrid';
 import { portfolioData, getNodeByPath, getBreadcrumbs } from './data/portfolio';
 import './App.css';
 
-const pathToUrl = (p) => p.length > 0 ? '/' + p.join('/') : '/';
+const BASE = import.meta.env.BASE_URL; // '/zoomable-portfolio/' in prod, '/' in dev
+const BASE_STRIPPED = BASE.endsWith('/') ? BASE.slice(0, -1) : BASE; // '/zoomable-portfolio'
+
+const pathToUrl = (p) => BASE + (p.length > 0 ? p.join('/') : '');
 const urlToPath = () =>
-  window.location.pathname.replace(/^\//, '').split('/').filter(Boolean);
+  window.location.pathname
+    .slice(BASE_STRIPPED.length)
+    .replace(/^\//, '')
+    .split('/')
+    .filter(Boolean);
 
 export default function App() {
   const [path, setPath]           = useState(() => urlToPath());
