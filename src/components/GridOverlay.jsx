@@ -39,7 +39,7 @@ function computeRows(items, cols = 4) {
   return maxRow || 1;
 }
 
-export default function GridOverlay({ node, onItemClick, zIndex }) {
+export default function GridOverlay({ node, onItemClick, zIndex, isActive = true }) {
   const isGallery = node.gallery === true;
   const rows = isGallery ? computeRows(node.items) : null;
 
@@ -56,8 +56,9 @@ export default function GridOverlay({ node, onItemClick, zIndex }) {
       className={`overlay-shell grid-full-overlay${isGallery ? ' gallery-scroll' : ''}`}
       style={{ zIndex }}
       layoutId={`item-${node.id}`}
+      animate={{ opacity: isActive ? 1 : 0 }}
       exit={{ opacity: 0, scale: 0.97, transition: T }}
-      transition={T}
+      transition={{ ...T, opacity: { duration: 0.2 } }}
     >
       <motion.div
         className={`grid-overlay-inner${isGallery ? ' gallery-inner' : ''}${isGallery && !fits ? ' gallery-inner--scroll' : ''}`}

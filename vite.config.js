@@ -4,5 +4,6 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/zoomable-portfolio/',
+  // Use base path only in production (GitHub Pages); dev server runs at /
+  base: process.env.NODE_ENV === 'production' ? '/zoomable-portfolio/' : '/',
 })

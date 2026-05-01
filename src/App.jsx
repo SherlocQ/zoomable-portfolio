@@ -116,12 +116,13 @@ export default function App() {
       />
 
       <LayoutGroup>
-        <GridView node={portfolioData} onItemClick={navigateTo} />
+        <GridView node={portfolioData} onItemClick={navigateTo} isHidden={overlayStack.length > 0} />
 
         <AnimatePresence>
-          {overlayStack.map(({ node, zIndex }) =>
-            node.type === 'grid' ? (
-              <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} />
+          {overlayStack.map(({ node, zIndex }, idx) => {
+            const isTop = idx === overlayStack.length - 1;
+            return node.type === 'grid' ? (
+              <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} isActive={isTop} />
             ) : (
               <PageView
                 key={node.id}
@@ -131,8 +132,8 @@ export default function App() {
                 onComparisonClick={openComparisonLightbox}
                 zIndex={zIndex}
               />
-            )
-          )}
+            );
+          })}
 
           {lightboxNode && (
             <PageView
