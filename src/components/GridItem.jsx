@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { T, SPRING, SPRING_SLOW } from '../transitions';
+import { T, SPRING_SLOW } from '../transitions';
 import { asset } from '../utils/asset';
+
 
 export function GridItem({ item, onItemClick }) {
   const [col, row] = item.span || [1, 1];
-  const hasImage = Boolean(item.image);
+  const hasImage    = Boolean(item.image);
   const isImageTile = item.content?.type === 'image';
 
   return (
@@ -30,20 +31,9 @@ export function GridItem({ item, onItemClick }) {
         hidden: { opacity: 0, y: 18, scale: 0.97 },
         show:   { opacity: 1, y: 0,  scale: 1,    transition: SPRING_SLOW },
       }}
-      whileHover={{ scale: 1.02, transition: SPRING }}
       transition={{ layout: T }}
     >
       {hasImage && <div className="grid-item-img-gradient" aria-hidden="true" />}
-
-      {item.illustration && !hasImage && (
-        <div className="grid-item-illus" aria-hidden="true">
-          <img src={asset(`/images/illustrations/${item.illustration}.svg`)} className="grid-item-illus-img" alt="" />
-        </div>
-      )}
-
-      <div className="grid-corners" aria-hidden="true">
-        <span /><span /><span /><span />
-      </div>
 
       <div className="grid-item-inner">
         {isImageTile ? (
@@ -59,7 +49,7 @@ export function GridItem({ item, onItemClick }) {
             {item.type === 'page' && item.content?.tagline && (
               <div className="grid-item-sub">{item.content.tagline}</div>
             )}
-            {item.type === 'page' && item.content?.type === 'hero' && (
+            {item.type === 'page' && (item.content?.type === 'hero' || item.content?.type === 'about') && item.content?.role && (
               <div className="grid-item-sub">{item.content.role}</div>
             )}
           </>

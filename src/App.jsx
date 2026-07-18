@@ -1,10 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import GridView       from './components/GridView';
 import GridOverlay    from './components/GridOverlay';
 import PageView       from './components/PageView';
 import AppHeader      from './components/AppHeader';
-import BackgroundGrid from './components/BackgroundGrid';
 import { portfolioData, getNodeByPath, getBreadcrumbs } from './data/portfolio';
 import './App.css';
 
@@ -23,6 +22,7 @@ export default function App() {
   const [path, setPath]           = useState(() => urlToPath());
   const [theme, setTheme]         = useState('dark');
   const [lightboxNode, setLightbox] = useState(null);
+  const isReplaceNav = useRef(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -44,7 +44,16 @@ export default function App() {
   }, []);
 
   const navigateTo = useCallback((item) => {
+    isReplaceNav.current = false;
     const next = [...path, item.id];
+    setPath(next);
+    window.history.pushState({ path: next }, '', pathToUrl(next));
+  }, [path]);
+
+  // Replace the last path segment (used for project-to-project navigation)
+  const navigateReplace = useCallback((item) => {
+    isReplaceNav.current = true;
+    const next = [...path.slice(0, -1), item.id];
     setPath(next);
     window.history.pushState({ path: next }, '', pathToUrl(next));
   }, [path]);
@@ -104,8 +113,6 @@ export default function App() {
 
   return (
     <div className="app">
-      <BackgroundGrid theme={theme} />
-
       <AppHeader
         breadcrumbs={getBreadcrumbs(portfolioData, path)}
         onNavigate={navigateToDepth}
@@ -121,16 +128,24 @@ export default function App() {
         <AnimatePresence>
           {overlayStack.map(({ node, zIndex }, idx) => {
             const isTop = idx === overlayStack.length - 1;
-            return node.type === 'grid' ? (
-              <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} isActive={isTop} />
-            ) : (
+            if (node.type === 'grid') {
+              return <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} isActive={isTop} />;
+            }
+            const parentNode = idx > 0 ? overlayStack[idx - 1]?.node : null;
+            const siblings = parentNode?.type === 'grid'
+              ? (parentNode.items?.filter(i => i.type === 'page' && i.content?.type === 'project') ?? null)
+              : null;
+            return (
               <PageView
                 key={node.id}
                 node={node}
                 onBack={navigateBack}
                 onImageClick={openLightbox}
                 onComparisonClick={openComparisonLightbox}
+                onNavigate={navigateReplace}
+                siblings={siblings}
                 zIndex={zIndex}
+                skipLayoutTransition={isTop && isReplaceNav.current}
               />
             );
           })}

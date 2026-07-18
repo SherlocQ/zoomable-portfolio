@@ -1,6 +1,9 @@
 // Single source of truth for all animation curves in this project.
 export const EASE = [0.32, 0.72, 0, 1];
 
+// Cinematic ease-out for hero entrances — fast start, long graceful tail
+export const EASE_HERO = [0.16, 1, 0.3, 1];
+
 export const T      = { duration: 0.38, ease: EASE };
 export const T_FAST = { duration: 0.20, ease: EASE };
 

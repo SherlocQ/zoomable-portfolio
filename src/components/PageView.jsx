@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { T, fadeUp, SPRING_SLOW } from '../transitions';
+import { T, fadeUp, SPRING_SLOW, EASE_HERO } from '../transitions';
 import { asset } from '../utils/asset';
 
 const slugify = (str) =>
@@ -187,22 +187,22 @@ function useOtpState(h2s) {
     if (!h2s.length) return;
     const container = document.querySelector('.page-body');
     if (!container) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        // Ignore intermediate sections while a click-triggered scroll is in flight
-        if (isProgrammaticScroll.current) return;
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible.length) setActive(visible[0].target.id);
-      },
-      { root: container, rootMargin: '-8% 0px -55% 0px', threshold: 0 },
-    );
-    h2s.forEach((s) => {
-      const el = document.getElementById(slugify(s.heading));
-      if (el) obs.observe(el);
-    });
-    return () => obs.disconnect();
+
+    const update = () => {
+      if (isProgrammaticScroll.current) return;
+      const containerRect = container.getBoundingClientRect();
+      const trigger = containerRect.top + containerRect.height * 0.25;
+      let found = h2s[0].heading;
+      for (const s of h2s) {
+        const el = document.getElementById(slugify(s.heading));
+        if (el && el.getBoundingClientRect().top <= trigger) found = s.heading;
+      }
+      setActive(slugify(found));
+    };
+
+    container.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => container.removeEventListener('scroll', update);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -247,7 +247,6 @@ function OnThisPage({ h2s }) {
   if (h2s.length < 2) return null;
   return (
     <nav className="on-this-page" aria-label="On this page">
-      <span className="otp-heading">On this page</span>
       <ul>
         {h2s.map((s) => (
           <li key={s.heading}>
@@ -294,7 +293,6 @@ function OnThisPageMobile({ h2s }) {
           ))}
         </div>
         <button className="otp-mobile-toggle" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="listbox">
-          <span className="otp-mobile-prefix">On this page</span>
           <span className="otp-mobile-label">{activeLabel}</span>
           <svg
             className={`otp-mobile-chevron${open ? ' otp-mobile-chevron--up' : ''}`}
@@ -310,13 +308,13 @@ function OnThisPageMobile({ h2s }) {
 }
 
 /* ─── PageView ────────────────────────────────────────────────────────────── */
-export default function PageView({ node, onBack, onImageClick, onComparisonClick, isLightbox, zIndex }) {
+export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, zIndex, skipLayoutTransition }) {
   const { content } = node;
   const tone            = node.tone || 'base';
   const isImagePage     = content.type === 'image';
   const isComparisonPage = content.type === 'comparison';
   const isProject       = content.type === 'project';
-  const hasHero     = isProject && Boolean(content.heroImage);
+  const hasHero     = isProject && ('heroImage' in content);
 
   // Lightbox carousel state — only meaningful when node.lbImages is set
   const lbImages = node.lbImages || null;
@@ -331,7 +329,9 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
 
   const motionShell = isLightbox
     ? { initial: { opacity: 0, scale: 0.96 }, animate: { opacity: 1, scale: 1 } }
-    : { layoutId: `item-${node.id}` };
+    : skipLayoutTransition
+      ? { initial: { opacity: 0 }, animate: { opacity: 1 } }
+      : { layoutId: `item-${node.id}` };
 
   const overlayTone = content.type === 'contact' ? 'base' : (isImagePage || isComparisonPage) ? 'image' : tone;
   const shellClass = [
@@ -436,23 +436,50 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       ) : (
         <div className="page-body">
           {hasHero && (
-            <div className="project-hero-section">
-              <img src={asset(content.heroImage)} alt={node.label} className="project-hero-img" />
+            <div className={`project-hero-section${content.heroImage ? '' : ' project-hero-section--empty'}`}>
+              {content.heroImage && (
+                <motion.img
+                  src={asset(content.heroImage)}
+                  alt={node.label}
+                  className="project-hero-img"
+                  initial={{ opacity: 0, filter: 'blur(12px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  transition={{ duration: 1.1, ease: EASE_HERO }}
+                />
+              )}
               <div className="project-hero-meta">
-                <motion.h1 className="project-hero-title" custom={0} variants={fadeUp} initial="hidden" animate="show">
+                <motion.h1
+                  className="project-hero-title"
+                  initial={{ opacity: 0, y: 14, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, y: 0,  filter: 'blur(0px)' }}
+                  transition={{ duration: 0.9, delay: 0.18, ease: EASE_HERO }}
+                >
                   {node.label}
                 </motion.h1>
-                <motion.p className="project-hero-tagline" custom={1} variants={fadeUp} initial="hidden" animate="show">
+                <motion.p
+                  className="project-hero-tagline"
+                  initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, y: 0,  filter: 'blur(0px)' }}
+                  transition={{ duration: 0.9, delay: 0.30, ease: EASE_HERO }}
+                >
                   {content.tagline}
                 </motion.p>
               </div>
-              <div className="project-hero-scroll-hint" aria-hidden="true"><span /></div>
+              <motion.div
+                className="project-hero-scroll-hint"
+                aria-hidden="true"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.55, ease: EASE_HERO }}
+              >
+                <span />
+              </motion.div>
             </div>
           )}
 
           <div className={`page-content${isProject ? ' page-content--project' : ''}${content.type === 'contact' ? ' page-content--contact' : ''}`}>
             {content.type === 'hero'    && <HeroContent    node={node} content={content} />}
-            {isProject                  && <ProjectContent node={node} content={content} hasHero={hasHero} onImageClick={onImageClick} onComparisonClick={onComparisonClick} />}
+            {isProject                  && <ProjectContent node={node} content={content} hasHero={hasHero} onImageClick={onImageClick} onComparisonClick={onComparisonClick} siblings={siblings} onNavigate={onNavigate} />}
             {content.type === 'about'   && <AboutContent   node={node} content={content} />}
             {content.type === 'process' && <ProcessContent node={node} content={content} />}
             {content.type === 'contact' && <ContactContent node={node} content={content} />}
@@ -624,8 +651,72 @@ function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
   );
 }
 
+/* ─── Prev/next project navigation ───────────────────────────────────────── */
+function ProjectNavCard({ project, direction, onNavigate }) {
+  const [hovered, setHovered] = useState(false);
+  const previewImg = project.content?.heroImage || project.image;
+
+  return (
+    <div
+      className={`pnav-card pnav-card--${direction}`}
+      onClick={() => onNavigate(project)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate(project); } }}
+      aria-label={`${direction === 'prev' ? 'Previous' : 'Next'} project: ${project.label}`}
+    >
+      {previewImg && (
+        <div className={`pnav-preview${hovered ? ' pnav-preview--visible' : ''}`} aria-hidden="true">
+          <img src={asset(previewImg)} alt="" className="pnav-preview-img" />
+        </div>
+      )}
+      <span className="pnav-direction">
+        {direction === 'prev' && (
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M7 2L3 6l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        <span>{direction === 'prev' ? 'Previous' : 'Next'}</span>
+        {direction === 'next' && (
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M5 2l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </span>
+      <span className="pnav-label">{project.label}</span>
+    </div>
+  );
+}
+
+function ProjectNav({ node, siblings, onNavigate }) {
+  if (!siblings || !onNavigate) return null;
+  const idx  = siblings.findIndex(s => s.id === node.id);
+  const prev = idx > 0 ? siblings[idx - 1] : null;
+  const next = idx < siblings.length - 1 ? siblings[idx + 1] : null;
+  if (!prev && !next) return null;
+
+  return (
+    <motion.div
+      className="project-nav"
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+    >
+      {prev
+        ? <ProjectNavCard project={prev} direction="prev" onNavigate={onNavigate} />
+        : <div className="pnav-empty" />}
+      {next
+        ? <ProjectNavCard project={next} direction="next" onNavigate={onNavigate} />
+        : <div className="pnav-empty" />}
+    </motion.div>
+  );
+}
+
 /* ─── Project page ────────────────────────────────────────────────────────── */
-function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClick }) {
+function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClick, siblings, onNavigate }) {
   const metaFields = [
     ['Role',     content.role],
     ['Timeline', content.timeline],
@@ -639,7 +730,7 @@ function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClic
   const hasOtp = h2Sections.length >= 2;
 
   return (
-    <div className={`project-content${hasOtp ? '' : ' project-content--no-otp'}`}>
+    <div className="project-content">
       {!hasHero && (
         <motion.div className="project-header" custom={0} variants={fadeUp} initial="hidden" animate="show">
           <span className="project-year">{content.year}</span>
@@ -675,6 +766,8 @@ function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClic
 
       {/* Mobile: sticky bottom selector pill */}
       <OnThisPageMobile h2s={h2Sections} />
+
+      <ProjectNav node={node} siblings={siblings} onNavigate={onNavigate} />
     </div>
   );
 }

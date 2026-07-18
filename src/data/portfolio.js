@@ -14,14 +14,76 @@ export const portfolioData = {
       type: 'page',
       label: 'Chengchang Qian',
       span: [2, 1],
-      tone: 'elevated',
-      illustration: 'vectorly-UNI-compass',
+      tone: 'base',
       content: {
-        type: 'hero',
-        role: 'Product Designer',
+        type: 'about',
+        name: 'Chengchang Qian',
+        role: 'Staff Product Designer',
         location: 'San Francisco Bay Area',
-        bio: 'I design digital products that help people work smarter. Currently at LinkedIn, where I build AI-powered tools for sales professionals.',
-        tags: ['Product Design', 'UX Research', 'AI/ML Products', 'Design Systems'],
+        resumeUrl: '/resume.pdf',
+        bio: "I'm a Staff Product Designer focused on driving experience vision for AI-native products and complex platform ecosystems.\n\nWith over 10 years of experience across enterprise and consumer platforms, I specialize in systematic thinking, transforming fragmented systems into cohesive, scalable experiences that help people accomplish meaningful work.\n\nAt ServiceNow, I lead the design and vision for AI-native customer and partner experiences, establishing foundational UX architecture and scalable interaction patterns that enable AI-assisted workflows across the ecosystem.\n\nMy work focuses on defining product vision, UX frameworks, and system-level design patterns that help organizations translate emerging technologies into cohesive, real-world product experiences.",
+        experience: [
+          {
+            id: 'exp-servicenow',
+            company: 'ServiceNow',
+            role: 'Staff Product Designer',
+            period: 'May 2024 – Present',
+            location: 'Santa Clara, CA · Hybrid',
+            description: 'Led the design and vision for AI-native customer and partner experiences, establishing foundational UX architecture and scalable interaction patterns. Drove 0→1 design of MyNow — ServiceNow\'s personalized customer portal — and led Unified AI Search across the ServiceNow ecosystem.',
+          },
+          {
+            id: 'exp-linkedin-senior',
+            company: 'LinkedIn',
+            role: 'Senior Product Designer',
+            period: 'Sep 2021 – Apr 2024',
+            location: 'Sunnyvale, CA',
+            description: 'Led design and product vision for monetization (eCommerce, checkouts, global payments & billing), customer success, and admin experiences. Launched Account IQ — a GenAI B2B selling tool that drove $22.6M in new customer acquisition in 2 months with 86% CSAT, ramped to all Sales Navigator users.',
+          },
+          {
+            id: 'exp-linkedin',
+            company: 'LinkedIn',
+            role: 'Product Designer',
+            period: 'Jun 2020 – Oct 2021',
+            location: 'Sunnyvale, CA',
+            description: 'Led design of monetization, customer success, and administrative experiences across self-serve and field-assisted channels.',
+          },
+          {
+            id: 'exp-neustar',
+            company: 'Neustar',
+            role: 'Senior UX Designer',
+            period: 'Dec 2016 – Jun 2020',
+            location: 'Greater Los Angeles Area',
+            description: 'Led design of marketing measurement, attribution, and optimization solutions for Fortune 500 clients. Built and maintained the design system; shipped high-impact features including Scenario Listing and Custom Report Export.',
+          },
+          {
+            id: 'exp-marketshare',
+            company: 'Neustar MarketShare',
+            role: 'UX Designer',
+            period: 'Jun 2014 – Dec 2016',
+            location: 'Los Angeles, CA',
+            description: 'Led design of core products — Multi-Touch Attribution, Marketing Mix Modeling, and Dynamic Pricing. Contributed to client growth across MasterCard, Intel, USAA, CarMax, and Twitter, helping position MarketShare as a Forrester Wave leader.',
+          },
+          {
+            id: 'exp-deepfield',
+            company: 'Deepfield (Nokia)',
+            role: 'UX Engineer',
+            period: 'May 2013 – Aug 2013',
+            location: 'Ann Arbor, MI',
+            description: 'Designed, developed, and evaluated data visualizations for real-time network performance and security monitoring, deployed across 90% of U.S. cable infrastructure.',
+          },
+        ],
+        education: [
+          {
+            school: 'University of Michigan',
+            degree: 'MS, Human-Computer Interaction',
+            period: '2012 – 2014',
+          },
+          {
+            school: 'University of Science and Technology Beijing',
+            degree: 'BS, Computer Science',
+            period: '2008 – 2012',
+          },
+        ],
       },
     },
 
@@ -32,8 +94,6 @@ export const portfolioData = {
       label: 'Projects',
       span: [2, 1],
       tone: 'base',
-      badgeLabel: 'case studies',
-      illustration: 'vectorly-UNI-chart-magnifier',
       items: [
 
         // ── AI-Native Vision ─────────────────────────────────────────────────
@@ -42,9 +102,10 @@ export const portfolioData = {
           type: 'page',
           label: 'AI-Native Vision',
           span: [2, 1],
-          tone: 'accent',
+          tone: 'base',
           content: {
             type: 'project',
+            heroImage: null,
             tagline: 'Rethinking the interface for AI-native workflows',
             year: '2024',
             role: 'Lead Designer',
@@ -115,7 +176,7 @@ export const portfolioData = {
           type: 'page',
           label: 'LinkedIn Design Challenge',
           span: [1, 1],
-          tone: 'muted',
+          tone: 'base',
           image: '/images/projects/linkedin-ask.jpg',
           content: {
             type: 'project',
@@ -318,7 +379,7 @@ export const portfolioData = {
           type: 'page',
           label: 'Scenario Listing',
           span: [1, 1],
-          tone: 'elevated',
+          tone: 'base',
           image: '/images/projects/scenario.jpg',
           content: {
             type: 'project',
@@ -760,7 +821,7 @@ export const portfolioData = {
           type: 'page',
           label: 'Neustar Academy',
           span: [1, 1],
-          tone: 'muted',
+          tone: 'base',
           image: '/images/projects/neustar-academy.jpg',
           content: {
             type: 'project',
@@ -852,90 +913,11 @@ export const portfolioData = {
 
     // ── Row 2 ──────────────────────────────────────────────────────────────────
     {
-      id: 'about',
-      type: 'page',
-      label: 'About',
-      span: [1, 1],
-      tone: 'base',
-      illustration: 'vectorly-UNI-paper-pen',
-      content: {
-        type: 'about',
-        name: 'Chengchang Qian',
-        role: 'Staff Product Designer',
-        location: 'San Francisco Bay Area',
-        resumeUrl: '/resume.pdf',
-        bio: "I'm a Staff Product Designer focused on driving experience vision for AI-native products and complex platform ecosystems.\n\nWith over 10 years of experience across enterprise and consumer platforms, I specialize in systematic thinking, transforming fragmented systems into cohesive, scalable experiences that help people accomplish meaningful work.\n\nAt ServiceNow, I lead the design and vision for AI-native customer and partner experiences, establishing foundational UX architecture and scalable interaction patterns that enable AI-assisted workflows across the ecosystem.\n\nMy work focuses on defining product vision, UX frameworks, and system-level design patterns that help organizations translate emerging technologies into cohesive, real-world product experiences.",
-        experience: [
-          {
-            id: 'exp-servicenow',
-            company: 'ServiceNow',
-            role: 'Staff Product Designer',
-            period: 'May 2024 – Present',
-            location: 'Santa Clara, CA · Hybrid',
-            description: 'Led the design and vision for AI-native customer and partner experiences, establishing foundational UX architecture and scalable interaction patterns. Drove 0→1 design of MyNow — ServiceNow\'s personalized customer portal — and led Unified AI Search across the ServiceNow ecosystem.',
-          },
-          {
-            id: 'exp-linkedin-senior',
-            company: 'LinkedIn',
-            role: 'Senior Product Designer',
-            period: 'Sep 2021 – Apr 2024',
-            location: 'Sunnyvale, CA',
-            description: 'Led design and product vision for monetization (eCommerce, checkouts, global payments & billing), customer success, and admin experiences. Launched Account IQ — a GenAI B2B selling tool that drove $22.6M in new customer acquisition in 2 months with 86% CSAT, ramped to all Sales Navigator users.',
-          },
-          {
-            id: 'exp-linkedin',
-            company: 'LinkedIn',
-            role: 'Product Designer',
-            period: 'Jun 2020 – Oct 2021',
-            location: 'Sunnyvale, CA',
-            description: 'Led design of monetization, customer success, and administrative experiences across self-serve and field-assisted channels.',
-          },
-          {
-            id: 'exp-neustar',
-            company: 'Neustar',
-            role: 'Senior UX Designer',
-            period: 'Dec 2016 – Jun 2020',
-            location: 'Greater Los Angeles Area',
-            description: 'Led design of marketing measurement, attribution, and optimization solutions for Fortune 500 clients. Built and maintained the design system; shipped high-impact features including Scenario Listing and Custom Report Export.',
-          },
-          {
-            id: 'exp-marketshare',
-            company: 'Neustar MarketShare',
-            role: 'UX Designer',
-            period: 'Jun 2014 – Dec 2016',
-            location: 'Los Angeles, CA',
-            description: 'Led design of core products — Multi-Touch Attribution, Marketing Mix Modeling, and Dynamic Pricing. Contributed to client growth across MasterCard, Intel, USAA, CarMax, and Twitter, helping position MarketShare as a Forrester Wave leader.',
-          },
-          {
-            id: 'exp-deepfield',
-            company: 'Deepfield (Nokia)',
-            role: 'UX Engineer',
-            period: 'May 2013 – Aug 2013',
-            location: 'Ann Arbor, MI',
-            description: 'Designed, developed, and evaluated data visualizations for real-time network performance and security monitoring, deployed across 90% of U.S. cable infrastructure.',
-          },
-        ],
-        education: [
-          {
-            school: 'University of Michigan',
-            degree: 'MS, Human-Computer Interaction',
-            period: '2012 – 2014',
-          },
-          {
-            school: 'University of Science and Technology Beijing',
-            degree: 'BS, Computer Science',
-            period: '2008 – 2012',
-          },
-        ],
-      },
-    },
-    {
       id: 'process',
       type: 'page',
       label: 'Process',
       span: [1, 1],
       tone: 'base',
-      illustration: 'vectorly-UNI-note-todo-checklist',
       content: {
         type: 'process',
         steps: [
@@ -947,12 +929,19 @@ export const portfolioData = {
       },
     },
     {
+      id: 'build',
+      type: 'grid',
+      label: 'Build',
+      span: [1, 1],
+      tone: 'base',
+      items: [],
+    },
+    {
       id: 'craft',
       type: 'grid',
       label: 'Craft',
       span: [1, 1],
       tone: 'base',
-      illustration: 'vectorly-UNI-palette-art-drawing',
       items: [
         {
           id: 'craft-motion',
@@ -1078,7 +1067,6 @@ export const portfolioData = {
       label: 'Contact',
       span: [1, 1],
       tone: 'base',
-      illustration: 'vectorly-UNI-handshake',
       content: {
         type: 'contact',
         email: 'chengchangqian@gmail.com',

@@ -47,24 +47,28 @@ export default function AppHeader({ breadcrumbs, onNavigate, onBack, theme, onTo
 
       <Breadcrumb segments={breadcrumbs} onNavigate={onNavigate} />
 
-      <button
-        className="theme-toggle"
-        onClick={onToggleTheme}
-        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span
-            key={theme}
-            className="theme-icon"
-            initial={{ opacity: 0, rotate: -40, scale: 0.5 }}
-            animate={{ opacity: 1, rotate: 0,   scale: 1   }}
-            exit={{    opacity: 0, rotate:  40, scale: 0.5 }}
-            transition={T_FAST}
+      <div className="theme-pill" role="group" aria-label="Color theme">
+        {['light', 'dark'].map((t) => (
+          <button
+            key={t}
+            className="theme-pill-option"
+            onClick={() => t !== theme && onToggleTheme()}
+            aria-pressed={theme === t}
+            aria-label={t === 'light' ? 'Light mode' : 'Dark mode'}
           >
-            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-          </motion.span>
-        </AnimatePresence>
-      </button>
+            {theme === t && (
+              <motion.span
+                className="theme-pill-thumb"
+                layoutId="theme-pill-thumb"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="theme-pill-icon">
+              {t === 'light' ? <SunIcon /> : <MoonIcon />}
+            </span>
+          </button>
+        ))}
+      </div>
     </header>
   );
 }
