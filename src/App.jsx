@@ -4,6 +4,7 @@ import GridView       from './components/GridView';
 import GridOverlay    from './components/GridOverlay';
 import PageView       from './components/PageView';
 import AppHeader      from './components/AppHeader';
+import NotFoundPage   from './components/NotFoundPage';
 import { portfolioData, getNodeByPath, getBreadcrumbs } from './data/portfolio';
 import './App.css';
 
@@ -110,6 +111,8 @@ export default function App() {
     .filter(({ node }) => node != null); // guard against invalid URLs
 
   const topZ = 10 + overlayStack.length * 5 + 5;
+  const isNotFound = path.length > 0 && overlayStack.length < path.length;
+  const skipTransition = isReplaceNav.current;
 
   return (
     <div className="app">
@@ -122,11 +125,13 @@ export default function App() {
         canGoBack={path.length > 0 || Boolean(lightboxNode)}
       />
 
+      {isNotFound && <NotFoundPage onGoHome={() => navigateToDepth(0)} />}
+
       <LayoutGroup>
-        <GridView node={portfolioData} onItemClick={navigateTo} isHidden={overlayStack.length > 0} />
+        <GridView node={portfolioData} onItemClick={navigateTo} isHidden={overlayStack.length > 0 || isNotFound} />
 
         <AnimatePresence>
-          {overlayStack.map(({ node, zIndex }, idx) => {
+          {!isNotFound && overlayStack.map(({ node, zIndex }, idx) => {
             const isTop = idx === overlayStack.length - 1;
             if (node.type === 'grid') {
               return <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} isActive={isTop} />;
@@ -145,7 +150,7 @@ export default function App() {
                 onNavigate={navigateReplace}
                 siblings={siblings}
                 zIndex={zIndex}
-                skipLayoutTransition={isTop && isReplaceNav.current}
+                skipLayoutTransition={isTop && skipTransition}
               />
             );
           })}

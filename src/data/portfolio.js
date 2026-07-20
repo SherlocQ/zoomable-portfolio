@@ -2,6 +2,11 @@
 // span: [colSpan, rowSpan]
 // level: 'h2' → large serif chapter heading; default → small-caps sub-label
 // type: 'video' → Vimeo responsive embed
+// content.type: 'embed' → full-bleed iframe (live site), opens like the image lightbox — see 'build' below
+//   fields: src (iframe url), title (footnote heading, falls back to label), description (footnote body, optional)
+// bg: backdrop color behind an 'image' tone tile/lightbox (matches the original site's per-image mat color)
+// bgImage: optional textured backdrop image, layered behind bg — see 'print-switch'
+// fit: 'contain' → tile/lightbox shows the whole image letterboxed on `bg` instead of cropping to cover
 // body: separate paragraphs with \n\n
 
 export const portfolioData = {
@@ -92,6 +97,7 @@ export const portfolioData = {
       id: 'projects',
       type: 'grid',
       label: 'Projects',
+      illustration: 'projects',
       span: [2, 1],
       tone: 'base',
       items: [
@@ -147,7 +153,7 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: 'My Role',
-                body: 'As the lead designer on the team, I collaborated with my product partner to create a clear product roadmap and negotiated feature priorities for launch in various stages.\n\nI partnered with user research and PMM to run user testing and surveys to uncover insights and quickly gather feedback to help design iterations. I presented my designs to gain approval from senior stakeholders in both design and product, and prepared materials for presentation to the LinkedIn CEO and CPO.\n\nI designed user flows, wireframes, hi-fi prototypes and collaborated with engineers and PM to ensure a smooth handoff.',
+                body: 'As the lead designer on the team:\n\n• I collaborated with my product partner to create a clear product roadmap and negotiated feature priorities for launch in various stages.\n• I partnered with user research and PMM to run user testing and surveys to uncover insights and quickly gather feedback to help design iterations.\n• I presented my designs to gain approval from senior stakeholders in both design and product, and prepared materials for presentation to the LinkedIn CEO and CPO.\n• I designed user flows, wireframes, hi-fi prototypes and collaborated with engineers and PM partners to ensure a smooth handoff. I also created the vision and strategy for future design explorations.',
               },
               {
                 level: 'h2',
@@ -159,7 +165,7 @@ export const portfolioData = {
                   { value: '86%',    label: 'Thumbs-up engagement rate' },
                   { value: '50+',    label: 'Media articles at launch' },
                 ],
-                body: 'Account IQ is the biggest revenue-driving GenAI investment across all of LinkedIn. Sellers started booking more meetings, prospects were impressed by their depth of knowledge, and sellers were considering replacing other sales tools.',
+                body: 'Account IQ is the biggest revenue-driving GenAI investment across all of LinkedIn. Sellers started booking more meetings, prospects were impressed by their depth of knowledge, and sellers were considering replacing other sales tools.\n\nAccount IQ received press coverage from LinkedIn, TechEdt, Social Sales Link, and Demand Gen Report.',
               },
               {
                 level: 'h2',
@@ -214,6 +220,7 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: 'Design Process',
+                body: 'My design process consisted of:\n\n• Empathise — gain an empathic understanding of the problem I am trying to solve.\n• Define — synthesize information from the Empathise phase to define the core problems in human-centric ways.\n• Ideate — start generating design ideas.\n• Prototype — scope down the design ideas and explore the best possible solution for the problem.\n• Test — evaluate the solution from the Prototype phase. Results are used to redefine the problem, inform understanding of users, and refine the solution.',
                 type: 'image',
                 id: 'li-design-process',
                 src: '/images/projects/linkedin-ask-design-process.jpg',
@@ -231,6 +238,30 @@ export const portfolioData = {
               {
                 heading: 'User Survey',
                 body: 'Based on my initial questions and thoughts on why users consume or contribute on LinkedIn, I designed a 13-question user survey and received 22 valid responses sent to a wide variety of LinkedIn users.\n\nOnly 22.7% of users rarely consume LinkedIn Feeds, and everyone has consumed them before. On the other hand, 81.8% of users rarely or never post LinkedIn Feeds. So these users fit perfectly as my target users — novice contributors who consume content but are not contributing.\n\nThe survey is aimed at giving a general understanding of my target users and learning their barriers to sharing on LinkedIn.',
+              },
+              {
+                heading: 'Survey Findings',
+                body: "77.3% of users consume content but only 18.2% post content — novice contributors take up a huge portion of LinkedIn users. Among those who consume or post LinkedIn feeds, more users use LinkedIn on mobile.",
+              },
+              {
+                heading: 'Top reasons users want to consume feeds',
+                body: '• Learning interesting industry articles or news.\n• Learning my connections\' latest updates.',
+              },
+              {
+                heading: 'Top pain points users don\'t want to consume feeds',
+                body: '• Feeds are not relevant to me.\n• Too many advertisements.\n• I am not interested in consuming feeds.',
+              },
+              {
+                heading: 'Top content users post on LinkedIn',
+                body: '• Personal professional updates.\n• Interesting articles or news.',
+              },
+              {
+                heading: 'Top reasons users want to post feeds',
+                body: '• Helping my career development.\n• Building up my professional reputation.',
+              },
+              {
+                heading: 'Top pain points users don\'t want to post feeds',
+                body: "• I am afraid people will judge me.\n• The posts tie to my professional identities.\n• I don't know what to post.",
               },
               {
                 type: 'gallery',
@@ -271,7 +302,7 @@ export const portfolioData = {
               { level: 'h2', heading: 'Define' },
               {
                 heading: 'Affinity Diagram',
-                body: 'I created an affinity diagram based on all my survey and interview data to organize and visualize my key insights.\n\nThe core reasons that users don\'t post on LinkedIn can be broken into 4 different pressures: pressure from limited information, pressure to express myself, pressure from professional identity, and pressure from social networking. The first two pressures come from internal sources and the latter two from external sources.\n\nThere are three primary reasons users want to become contributors: gain knowledge, build connection, and career development.',
+                body: 'I created an affinity diagram based on all my survey and interview data to organize and visualize my key insights.\n\nThe core reasons that users don\'t post on LinkedIn can be broken into 4 different pressures:\n\n• Pressure from limited information.\n• Pressure to express myself.\n• Pressure of professional identity.\n• Pressure from social networking.\n\nThe first two pressures come from internal sources and the latter two from external sources.\n\nThere are three primary reasons users want to become contributors:\n\n• Gain knowledge.\n• Build connection.\n• Career development.\n\nPressure from limited information and pressure to express myself are connected with gaining knowledge, pressure of professional identity is related to career development, and pressure from social networking is linked with building connection.',
                 type: 'image',
                 id: 'li-affinity',
                 src: '/images/projects/linkedin-ask-affinity.jpg',
@@ -296,7 +327,7 @@ export const portfolioData = {
               { level: 'h2', heading: 'Ideate' },
               {
                 heading: 'Hook Model',
-                body: 'Before I start to brainstorm and ideate solutions, this typical "user generate content" problem in a social platform reminded me of a book I had read before — Hooked: How to Build Habit-Forming Products by Nir Eyal.\n\nIn the book, Nir introduced the hook model, which describes how businesses can fundamentally change behavior within their users and create day-to-day habits around their products. The hook model contains 4 parts: Trigger → Action → Variable Reward → Investment.\n\nI think the hook model could be very helpful when brainstorming ideas, because I am trying to establish a routine behavior (contributing content) for novice contributors.',
+                body: 'Before I start to brainstorm and ideate solutions, this typical "user generate content" problem in a social platform reminded me of a book I had read before — Hooked: How to Build Habit-Forming Products by Nir Eyal.\n\nIn the book, Nir introduced the hook model, which describes how businesses can fundamentally change behavior within their users and create day-to-day habits around their products. The hook model contains 4 parts:\n\n• Trigger — either external (something that cues an action) or internal (a subconscious urge that happens while the user is browsing the product).\n• Action — something that happens when the user expects a reward.\n• Variable Reward — the reward changes based on context, giving the user a reason to keep coming back.\n• Investment — by combining the three previous elements, the user feeds back into the network, making it part of their routine.\n\nI think the hook model could be very helpful when brainstorming ideas, because I am trying to establish a routine behavior (contributing content) for novice contributors. So, to put this model in our design problem\'s context:\n\n• There are appropriate entry points for users to log into LinkedIn and become the consumer of existing content.\n• Users feel interested and have the intention to create content.\n• Users try to post content on LinkedIn and receive all kinds of positive rewards and feedback.\n• Users have great fulfillment and keep creating content to contribute to the platform.',
                 type: 'image',
                 id: 'li-hook',
                 src: '/images/projects/linkedin-ask-hook.jpg',
@@ -318,7 +349,7 @@ export const portfolioData = {
               },
               {
                 heading: 'Low Fidelity Sketches & Wireframes',
-                body: 'I started sketching out key screens that cover the above features. The screens can be further broken into 6 categories: onboarding, topic discovery, topic page, question page, ask question, and connect.',
+                body: 'I started sketching out key screens that cover the above features. The screens can be further broken into 6 categories:\n\n• Onboarding.\n• In-app guides.\n• Topics.\n• Questions.\n• Ask a question.\n• Connecting with people in LinkedIn Ask.',
               },
               {
                 type: 'gallery',
@@ -352,12 +383,12 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: 'Future Work',
-                body: 'Because of the time limitation, I didn\'t have time to conduct proper user testing sessions. User testing could help me keep refining my design, and there are still many areas that need me to think through and work on in the future.',
+                body: 'Because of the time limitation, I didn\'t have time to conduct proper user testing sessions. User testing could help me keep refining my design, and there are still many areas that need me to think through and work on in the future:\n\n• How to control the quality of the questions and answers?\n• How to deal with scalability as questions and answers reach a huge number?\n• How to calculate users\' reputation within this system — do we need a formula, a gamification system? Is the reward valuable enough to keep users hooked into the platform?\n\nI didn\'t solve the problems of the original feeds — I\'m planning to let users get used to this new positive feedback loop of contributing content before applying this pattern back to LinkedIn\'s original feed.',
               },
               {
                 level: 'h2',
                 heading: "What I've Learned",
-                body: 'This was an exciting, exhausting but fully valuable experience. It is always fun to enjoy the entire end-to-end design journey and see how I gradually reach my design goal.\n\nA great product should not only solve the pain points of target users but also nudge them toward a desired behavior. LinkedIn Ask uses the Hook Model to gradually shift users from consuming to contributing — removing friction at each step and making the transition feel natural and rewarding.',
+                body: "This was an exciting, exhausting but fully valuable experience. It is always fun to enjoy the entire end-to-end design journey and see how I gradually reach my design goal. A few things I learned throughout the process:\n\n• Failing to plan is planning to fail — I couldn't have finished this project without proper planning at the start (see my timeline below).\n• I'd like to add a link to an online scheduling tool to the last question of my survey in the future — it could save the time I spent recruiting for user interviews.\n• Encouraging users to constantly generate high-quality content is an eternally hard problem to solve. The key is empathy — learning novice contributors' pain points and truly understanding what brings them value.",
                 type: 'image',
                 id: 'li-timeline',
                 src: '/images/projects/linkedin-ask-timeline.jpg',
@@ -395,7 +426,7 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: 'What is MMM?',
-                body: 'MMM (Marketing Mix Modeling) is an important technique in Marketing Analytics. It helps know which marketing channels contribute to your business outcomes — refine campaigns on the fly and use predictive models to test future scenarios.\n\nNeustar MMM is a collaborative analytics application built on this technique. It uses interactive and forward-looking custom models to predict outcomes based on marketing and non-marketing business drivers. Users can review business performance, create quarterly and annual marketing plans, and answer ad hoc questions.',
+                body: 'MMM (Marketing Mix Modeling) is an important technique in Marketing Analytics. It helps know which marketing channels contribute to your business outcomes — refine campaigns on the fly and use predictive models to test future scenarios.\n\nNeustar MMM is a collaborative analytics application built on this technique. It uses interactive and forward-looking custom models to predict outcomes based on marketing and non-marketing business drivers. Users can use this application to:\n\n• Review business performance.\n• Create quarterly and annual marketing plans.\n• Answer ad hoc questions.',
               },
               {
                 level: 'h2',
@@ -571,6 +602,7 @@ export const portfolioData = {
                 heading: 'Outcome and Impact',
                 type: 'metrics',
                 items: [
+                  { value: '420',    label: 'Total visitors (2019)' },
                   { value: '180',    label: 'Active accounts' },
                   { value: '31,385', label: 'Annual page views (2019)' },
                   { value: '11 min', label: 'Avg. daily session per user' },
@@ -580,7 +612,7 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: "What I've Learned",
-                body: "It's important to find the primary users you're designing for, especially for B2B products. The users you sell to may not be the users who use the product daily.\n\nI minimized cognitive load throughout: only exposing the information users need to make decisions, limiting available options on the page, and considering visual and content simplicity at every step.",
+                body: "It's important to find the primary users you're designing for, especially for B2B products. The users you sell to may not be the users who use the product daily.\n\nI designed a new way to help our users organize and digest information from Scenarios. I minimized the extraneous cognitive load of our users in the following ways:\n\n• Only exposing the information they need to retrieve for making a decision.\n• Limiting the available options on this page.\n• Taking into consideration visual and content simplicity the whole time.\n\nI kept iterating my design by conducting user testing and running design critique sessions. These sessions helped me make design decisions with confidence, and kept me on track of my design goals throughout the entire design journey.",
               },
             ],
           },
@@ -660,13 +692,31 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: 'Main Focuses',
-                body: 'Before jumping to design, I decided to focus on three main points to ensure the design scope achieves a viable and consistent result. This new flow empowers clients to easily track their uploading progress, submit better data, and understand what is happening with their data when it is in the system.\n\n• Be Transparent — Let clients know which data they can upload or download, and whether data collection is in progress for each period.\n• Be Effective — Allow multiple file submissions at the same time with a clear structure to manage files and a fully streamlined flow.\n• Be Delightful — Keep the copy easy to understand and the visual style playful, making the cumbersome data collection process feel fun and approachable.',
-                type: 'gallery',
-                images: [
-                  { id: 'lh-transparent', src: '/images/projects/lighthouse-transparent.png', caption: 'Be Transparent' },
-                  { id: 'lh-effective',   src: '/images/projects/lighthouse-effective.png',   caption: 'Be Effective' },
-                  { id: 'lh-delightful',  src: '/images/projects/lighthouse-delightful.png',  caption: 'Be Delightful' },
-                ],
+                body: "Before jumping to design, I decided to focus on three main points — this will ensure the design scope achieves a viable and consistent design.\n\nMy goal for the design was to provide our clients an interactive way of uploading and validating data. This new flow empowers them to easily track their uploading progress, submit better data, and understand what is happening with their data while it's in the system.",
+              },
+              {
+                heading: 'Be Transparent',
+                body: "It is very important to let our users know where they are in the data collection process, how good their data is, and if there are issues, how they can solve them.",
+                type: 'image',
+                id: 'lh-transparent',
+                src: '/images/projects/lighthouse-transparent.png',
+                caption: 'Be Transparent',
+              },
+              {
+                heading: 'Be Effective',
+                body: 'Because the data collection process is time sensitive, this tool should allow users to submit all of their data in an effective way.',
+                type: 'image',
+                id: 'lh-effective',
+                src: '/images/projects/lighthouse-effective.png',
+                caption: 'Be Effective',
+              },
+              {
+                heading: 'Be Delightful',
+                body: "The data collection process could be cumbersome. If we invite our clients to participate in this process, it's important to make the whole experience fun and easy to follow.",
+                type: 'image',
+                id: 'lh-delightful',
+                src: '/images/projects/lighthouse-delightful.png',
+                caption: 'Be Delightful',
               },
               {
                 level: 'h2',
@@ -692,7 +742,7 @@ export const portfolioData = {
                 after:  { id: 'lh-dash-new', src: '/images/projects/lighthouse-dash-new.jpg', label: 'After' },
               },
               {
-                body: "In the current design, it is very hard to keep track of the progress of the data collection. Users don't know which files they haven't uploaded in which folders, and there is only one progress bar at the top.\n\nKey changes: added a progress card reporting the current collection status; removed redundant date columns and added a status column; added a notification panel for recent changes and issues.",
+                body: "In the current design, it is very hard to keep track of the progress of the data collection. Users don't know which files they haven't uploaded in which folders, and there is only one progress bar at the top.\n\nKey Changes:\n\n• Added a card on top of the page reporting the current data collection progress, including the number of days until the end of data collection, folders in progress collecting data, and folders that have completed data collection.\n• Removed the requested and received date columns — instead, added a new column showing the collection status of the folders.\n• Not only shows how many files are within the folders, but also shows files that have issues.\n• Added a search function, so it's easy to find folders when there are too many of them.\n• Added a notification panel to notify users about recent changes, issues that need to be solved, and data collection progress.",
               },
               {
                 level: 'h2',
@@ -706,7 +756,7 @@ export const portfolioData = {
                 after:  { id: 'lh-upload-new', src: '/images/projects/lighthouse-upload-new.jpg', label: 'After' },
               },
               {
-                body: 'The current uploading process is like FTP — users can only download previously uploaded files or upload new ones. The new design is a completely revamped guided flow involving metadata assignment. Users can upload multiple files; if a spreadsheet contains multiple sheets, they can choose which ones to include.\n\nKey changes: multi-file upload support; metadata assignment per file; real-time upload progress; ability to handle spreadsheet sheets individually.',
+                body: "The current uploading process is like FTP — users can only use the tool to download previously uploaded files and upload new files. The new design is a completely revamped flow involving assigning metadata.\n\nKey Changes:\n\n• The new flow is a guided flow that welcomes users to upload files and assign metadata.\n• Users can upload multiple files — if the spreadsheet contains multiple sheets, users can choose which ones they want to upload.",
               },
               {
                 level: 'h2',
@@ -720,12 +770,12 @@ export const portfolioData = {
                 after:  { id: 'lh-folder-new', src: '/images/projects/lighthouse-folder-new.jpg', label: 'After' },
               },
               {
-                body: "Currently, there is no folder view — there is only one modal per folder that allows you to upload and download files. The new design includes a complete page for managing files, tracking upload status, and closing completed folders.\n\nKey changes: full folder page with file list; status indicators per file; ability to close completed folders; clear visual structure for multi-layer navigation.",
+                body: "Currently, there is no folder view — there is only one modal per folder that allows you to upload and download files. The new design includes a completely new page for folders, where users can manage their files and track the uploading status of files within that folder.\n\nKey Changes:\n\n• A new page for managing files within folders — users can click the file name to take a closer look at the files, review the results, or fix data issues.\n• Added a column to show the status of uploading files — for example, data accepted, irregular values, etc.\n• Users can close the folder if they think the collection process for it is completed. This is reflected in the dashboard.",
               },
               {
                 level: 'h2',
                 heading: 'Data Validation',
-                body: 'The second phase of the uploading process is data validation.\n\nAfter users successfully upload all their data, they want to: validate it, explore it at any aggregation level to discover issues, quickly fix common issues by reuploading, track issue resolution progress, and reach out to data specialists when issues cannot be solved on their end.\n\nThe user flow below illustrates the general interactions between our data specialists and clients, and how the new flow streamlines communications and solves data issues faster.',
+                body: 'The second phase of the uploading process is data validation.\n\nAfter users successfully upload all their data, they want to:\n\n• Validate their data to see how good their data is.\n• Explore data at any aggregation level to help discover data issues.\n• Quickly fix common data issues by reuploading the file.\n• Know the progress of solving data issues.\n• Reach out to our data specialists if the issues cannot be solved on their end.\n• Have good communication with the data specialist throughout the process.\n\nThe user flow below illustrates the general interactions between our data specialists and clients, and how the new flow streamlines communications and solves data issues faster.',
                 type: 'image',
                 id: 'lh-flow-validation',
                 src: '/images/projects/lighthouse-flow-validation.jpg',
@@ -759,7 +809,7 @@ export const portfolioData = {
                 after:  { id: 'lh-val-new', src: '/images/projects/lighthouse-validation-new.jpg', label: 'After' },
               },
               {
-                body: "Validation reports are generated after data collection to help users explore data from any perspective, so as to find discrepancies and outliers. Users can start conversations with our data specialists about specific issues.\n\nCurrently, the reports dashboard does not help users track the status of resolving issues. Users need to click into each report to view up-to-date conversations.\n\nKey changes: added a scorecard showing pending conversations and reports needing review; added a status column per report; shows all conversations when clicking a report, with resolved ones hidden by default.",
+                body: "Validation reports are generated after data collection to help users explore data from any perspective, so as to find discrepancies and outliers in the data. Users can start a conversation with our data specialist on any report.\n\nCurrently, the reports dashboard does not help users track the status of resolving issues in validation reports. Users also need to click into each report to view the up-to-date conversations, so they have no context for the data issues and can't easily access them.\n\nKey Changes:\n\n• Added a scorecard on the right side, including pending conversations, reports that need review, and reports that have signed off — consistent with the data collection dashboard, these metrics help keep users on track of their data validation progress.\n• Added a new column showing the status of the reports, so it's easy to tell which reports still need review.\n• Shows all conversations when users click on one report — resolved conversations are hidden by default so users only need to work on pending ones, and they can access the conversation with one click.",
               },
               {
                 level: 'h2',
@@ -773,7 +823,7 @@ export const portfolioData = {
                 after:  { id: 'lh-conv-new', src: '/images/projects/lighthouse-conv-new.jpg', label: 'After' },
               },
               {
-                body: "Currently, the comments dropdown overlaps the report — users can't review the report and write comments at the same time. The metrics panel on the left side also takes up too much horizontal space, preventing users from focusing on the report.\n\nKey changes: combined metrics panel and comments into one collapsible side panel; moved report left and panel right; easy to snapshot the report and share with data specialists.",
+                body: "Currently, the comments dropdown overlaps the report, so users cannot review the report and write down comments at the same time. Also, the metrics panel on the left side takes up too much horizontal space — users cannot immediately get to the report when they come to this page.\n\nKey Changes:\n\n• Combine the metrics panel with comments into one, since users will only either tweak metrics or write comments.\n• Move the report to the left and put panels on the right side, so users can focus on the report when they come to this page.\n• Make it easy to add a snapshot of the current report and share it with others — this helps users provide context for the data issues in the conversation and get an answer faster.",
                 type: 'image',
                 id: 'lh-flow-conversation',
                 src: '/images/projects/lighthouse-flow-conversation.jpg',
@@ -804,16 +854,123 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: 'Outcome',
-                body: "Unfortunately, with some key members leaving the team and shifting priorities in 2019, this project was put on hold — but the good news is it was rebooted by the end of 2019. The design system and interaction patterns established in this project carried forward into the rebuilt platform.",
+                body: "Unfortunately, with some key members leaving the team and shifting priorities in 2019, this project was put on hold — but the good news is it was rebooted by the end of 2019, and I've been working with all the talented people on the team to move this project forward.",
               },
               {
                 level: 'h2',
                 heading: "What I've Learned",
-                body: "It's important to set up design goals before diving into design and prototyping — this keeps design on track and helps make confident decisions during iterations.\n\nBeing transparent with users about their data, making processes effective, and finding moments of delight even in cumbersome enterprise workflows leads to a product people actually want to engage with.",
+                body: "It's important to set up design goals before diving into design and prototyping — this keeps design on track and helps make confident decisions during iterations.\n\nBefore starting a redesign, it's important to ask why. A redesign can run the gamut from a visual refresh to a complete UX overhaul — if it requires a complete overhaul, I'm responsible for understanding every piece of information that must go into it and how it all fits together.\n\nFor a redesign, it's important to improve upon the prior design while avoiding radical changes that might confuse existing users.",
               },
             ],
           },
         },
+
+        // ── Dream Hatcher ─────────────────────────────────────────────────────
+        // Hidden — not deleted. Remove this /* */ wrapper to bring it back.
+        /*
+        {
+          id: 'project-dreamhatcher',
+          type: 'page',
+          label: 'Dream Hatcher',
+          span: [1, 1],
+          tone: 'base',
+          image: '/images/projects/dreamhatcher.jpg',
+          content: {
+            type: 'project',
+            heroImage: null,
+            tagline: "Sharing hard-to-realize dreams and getting suggestions in a collaborative Q&A community",
+            year: '2013',
+            role: 'Team lead, UX designer, UX researcher and prototyper',
+            timeline: 'Sep 2013 – Jan 2014',
+            team: 'Kan Yu, Xiaoyu Ji, Hengjuan Qian, Jun Zhang, and me',
+            tools: 'Adobe Photoshop, Adobe Illustrator, Balsamiq Wireframes, Axure',
+            tags: ['Student Project', 'UX Research', 'Community'],
+            sections: [
+              {
+                level: 'h2',
+                heading: 'What is Dream Hatcher?',
+                body: "DreamHatcher is a collaborative Q&A e-community where people can share dreams they can't realize on their own and receive professional suggestions on specific questions.\n\nThe platform helps solve the problem that people are too shy to share their hard-to-realize dreams, and facilitates communication between people who share similar dreams.\n\nThe crowdsourcing approach makes DreamHatcher a better knowledge management system, so people can access solutions quickly and achieve dreams collaboratively. This was a project for the CHI 2013 Student Design Competition.",
+              },
+              {
+                level: 'h2',
+                heading: 'Initial Survey',
+                body: "In our initial survey, we raised 15 questions classified by three key points: general questions about dreams, questions about dream sharing, and questions about contributing to others' dreams. The survey had 199 successful respondents, and we gathered a few valuable findings:\n\n• People tend to choose the option that takes less effort in helping others fulfill their dreams — encouragement and knowledge sharing rather than sharing workload or donating money.\n• More than half of people want to share their dreams with others.\n• Over 90% of people want to help others achieve their dreams — more people want to help than to share their own.\n• Compared to people who want to frequently update their dreams, more people prefer to browse others' dreams.\n• More people value the process of helping others than the final achievement.\n• Sometimes, people don't know where to start with their own dreams.",
+                type: 'image',
+                id: 'dh-design-process',
+                src: '/images/projects/dreamhatcher-design-process.jpg',
+                caption: 'Initial survey findings',
+              },
+              {
+                level: 'h2',
+                heading: 'Contextual Inquiry',
+                body: '"I\'d like to share my dreams with others because I want to seek good solutions."\n\n"I\'d like to give suggestions to people who want to be a tennis player."\n\n"I wish I could seek useful professional knowledge on this platform and adopt advice from others."\n\n"I feel happy when I offer help to others."\n\n"I think my dream might inspire other users."',
+              },
+              {
+                level: 'h2',
+                heading: 'Affinity Wall',
+                body: "Based on 288 affinity notes collected from six interviews, we created an affinity wall. Findings led to many design ideas for our platform, and also informed our personas.\n\nFinding 1 — Dream sharing: Some people are open to sharing different types of dreams with tags. Sharing dreams can inspire other people, seek suggestions, mitigate loneliness, and find matches. Dreams are subjective and mostly long-term; the excitement of fulfilling a dream can motivate the dreamer.\n\nFinding 2 — Checking & Notifications: Some people prefer to receive notifications for their dreams and suggestions, but won't update dreams except in certain circumstances — such as when other users have demands or dreams need refining.\n\nFinding 3 — Suggestions: Common interests and knowledge, friendship, inner happiness, and the desire to help others are primary motivations for providing suggestions. Some people prefer selecting practical suggestions themselves, giving positive feedback but refusing offensive suggestions.\n\nFinding 4 — Platform Features: The system should be entertaining but also professional, and should let users search for interesting ideas. Some people don't care whether the person they help knows their identity, as long as the system doesn't expose it. Some prefer face-to-face elements for intimacy and instant feedback, but don't trust a Wikipedia-style format for searching.",
+                type: 'image',
+                id: 'dh-affinity',
+                src: '/images/projects/dreamhatcher-affinity-wall.jpg',
+                caption: 'Affinity wall — 288 notes from six interviews',
+              },
+              {
+                level: 'h2',
+                heading: 'Behavioral Map',
+                body: 'We created a behavioral map to better understand patterns among our interviewees. We identified ten high-level behavioral variables that guided our final design. Based on results from our contextual inquiry, we placed each interviewee along a spectrum for each variable — two major clusters of behavior directly led to our two personas.',
+                type: 'image',
+                id: 'dh-behavioral-map',
+                src: '/images/projects/dreamhatcher-behavioral-map.jpg',
+                caption: 'Behavioral map — ten variables across interviewees',
+              },
+              {
+                heading: 'Personas',
+                type: 'image',
+                id: 'dh-persona',
+                src: '/images/projects/dreamhatcher-persona.jpg',
+                caption: 'Personas derived from the behavioral map',
+              },
+              {
+                level: 'h2',
+                heading: 'Design Journey',
+                body: 'We drew design inspiration from several goal-sharing and troubleshooting websites, such as Quora, WikiHow, and Kickstarter — we wanted a platform where users could post their dreams and adopt suggestions from others, sharing professional knowledge and skills.\n\nWe started with 12 sketches for brainstorming, then narrowed down to 5 ideas for further exploration, which led to low-fi, mid-fi, and high-fi prototypes.',
+              },
+              {
+                type: 'gallery',
+                images: [
+                  { id: 'dh-screen1', src: '/images/projects/dreamhatcher-screen1.png', caption: 'Prototype screens — set 1' },
+                  { id: 'dh-screen2', src: '/images/projects/dreamhatcher-screen2.png', caption: 'Prototype screens — set 2' },
+                  { id: 'dh-screen3', src: '/images/projects/dreamhatcher-screen3.png', caption: 'Prototype screens — set 3' },
+                  { id: 'dh-screen4', src: '/images/projects/dreamhatcher-screen4.png', caption: 'Prototype screens — set 4' },
+                ],
+              },
+              {
+                level: 'h2',
+                heading: 'Prototype',
+                body: 'A walkthrough video for the mid-fi prototype.',
+                type: 'video',
+                src: 'https://player.vimeo.com/video/382821353?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+              },
+              {
+                type: 'image',
+                id: 'dh-prototype',
+                src: '/images/projects/dreamhatcher-prototype.jpg',
+                caption: 'Prototype walkthrough',
+              },
+              {
+                level: 'h2',
+                heading: 'Usability Testing',
+                body: 'In order to revise our prototypes iteratively, we conducted usability testing to evaluate the platform\'s feasibility, functionality, and interface design. We took participants\' reflections into consideration and applied several adjustments:\n\n"I want to know more details about other users, like education background and life experience, so I can communicate with them easily."\n\n"The platform is functional basically but it could be more straightforward."\n\n"It is hard to distinguish comments from suggestions."\n\n"The background color of the platform should be lighter, to better match the theme of dream sharing."\n\n"The questions edited by users clarify the barriers of realizing a specific dream."',
+              },
+              {
+                level: 'h2',
+                heading: 'Future Work',
+                body: "We plan to expand our target users by integrating online and offline activities. Further studies on people's motivation for sharing their wisdom could help encourage more high-quality suggestions. Improving our discovery feature to recommend good dreams to a particular user is also worth exploring.\n\nOverall, we believe DreamHatcher can not only help people clarify the process of achieving their dreams, but also satisfy the need for self-actualization.",
+              },
+            ],
+          },
+        },
+        */
 
         // ── Neustar Academy ───────────────────────────────────────────────────
         {
@@ -846,7 +1003,12 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: 'Design Goals',
-                body: 'Produce high-quality courses with a unified visual language. Provide smooth learning experiences for both internal teams and external clients. Gather continuous feedback to improve course content over time.',
+                body: 'As the UX designer and motion designer for this project, I was asked to produce high-quality courses with a unified visual language, provide a smooth learning experience for both internal teams and external clients, and gather feedback so we could keep improving and producing more courses.',
+              },
+              {
+                level: 'h2',
+                heading: 'Who Am I Designing For?',
+                body: "All internal users on the marketing solutions team who want to be trained and better understand our marketing analytics solutions and products.\n\nAll clients who want to learn more and get more hands-on with our products.",
               },
               {
                 level: 'h2',
@@ -862,23 +1024,79 @@ export const portfolioData = {
               },
               {
                 level: 'h2',
-                heading: 'Unified Motion Graphics',
-                body: 'Initial mockups were created in Sketch, motion graphics elements developed in Adobe After Effects, and final assembly handled in ScreenFlow as a reusable video template. A dynamic, vibrant color scheme with fast transitions kept lessons energetic.',
+                heading: 'Unified Motion Graphics Templates',
+                body: 'I first designed mockups in Sketch, then created all motion graphics elements in Adobe After Effects. Finally, I assembled all elements in ScreenFlow as a reusable video template.',
+                type: 'video',
+                src: 'https://player.vimeo.com/video/382823615?quality=1080p&autoplay=1&loop=1&autopause=0&muted=1',
+              },
+              {
+                heading: 'Color Palette',
+                body: 'I wanted to bring a dynamic, vibrant feeling to the courses, so I used different shades of the same color with fast transitions to achieve that result.',
                 type: 'image',
                 id: 'na-motion',
                 src: '/images/projects/na-motion-template.png',
-                caption: 'Motion graphics template system',
+                caption: 'Color palette system',
+              },
+              {
+                heading: 'Explanatory Custom Animation',
+                body: 'I created explanatory animations to convey complicated marketing analytics concepts. Based on the script, I first drew storyboards, then recreated the animations in After Effects and Principle to bring them to life.',
+                type: 'video',
+                src: 'https://player.vimeo.com/video/382822855?quality=1080p&autoplay=1&loop=1&autopause=0&muted=1',
+              },
+              {
+                heading: 'Cover Images',
+                body: 'I also created a template in Sketch to generate cover images for the different courses.',
+                type: 'image',
+                id: 'na-ss1',
+                src: '/images/projects/na-screenshots-1.png',
+                caption: 'Cover image template',
+              },
+              {
+                heading: 'PowerPoint Slides Template',
+                body: 'I designed a deck of slides teachers could use to build their content with a unified style — titles, numbered lists, bulleted lists, definitions, and more.',
+                type: 'image',
+                id: 'na-ss2',
+                src: '/images/projects/na-screenshots-2.png',
+                caption: 'PowerPoint slides template',
               },
               {
                 level: 'h2',
-                heading: 'Course Platform',
-                body: 'Courses were assembled in TalentLMS, a cloud-hosted learning management system, organized into sections containing video tutorials and quizzes.',
-                type: 'gallery',
-                images: [
-                  { id: 'na-ss1', src: '/images/projects/na-screenshots-1.png', caption: 'TalentLMS course view' },
-                  { id: 'na-ss2', src: '/images/projects/na-screenshots-2.png', caption: 'Course navigation' },
-                  { id: 'na-courses', src: '/images/projects/na-courses.png', caption: 'Course catalog' },
-                ],
+                heading: 'Putting Everything Together',
+                body: 'With the help of the unified style guide and templates I created, we assembled all the content and crafted the courses in TalentLMS, a cloud-hosted learning management system. Courses are divided into sections, each containing video tutorials and quizzes.',
+                type: 'image',
+                id: 'na-courses',
+                src: '/images/projects/na-courses.png',
+                caption: 'Course catalog in TalentLMS',
+              },
+              {
+                level: 'h2',
+                heading: 'Keep Learners in the Loop',
+                body: 'We created surveys at the end of our courses so we could constantly gather feedback from learners and keep improving. For the MTA Essentials course, we received 276 valid responses; for the MMM Essentials course, 122 valid responses.',
+              },
+              {
+                heading: 'How helpful was the course in getting you the information you need?',
+                type: 'image',
+                id: 'na-chart1',
+                src: '/images/projects/na-chart-1.jpg',
+                caption: 'Survey results — overall helpfulness',
+              },
+              {
+                heading: 'On a scale of 1 to 5, how much did you like the on-camera shots of the narrators?',
+                type: 'image',
+                id: 'na-chart2',
+                src: '/images/projects/na-chart-2.jpg',
+                caption: 'Survey results — on-camera narrators',
+              },
+              {
+                heading: 'On a scale of 1 to 5 (1 too short, 5 too long), how would you rate the length of these tutorial videos?',
+                type: 'image',
+                id: 'na-chart3',
+                src: '/images/projects/na-chart-3.jpg',
+                caption: 'Survey results — video length',
+              },
+              {
+                heading: 'What was your favorite part of the course?',
+                body: '"Short, concise quizzes. Variety of videos and narrators."\n\n"Using a \'real\' example helped me understand how I could apply it to my own data."\n\n"Bite sized information. Easy to follow. Good mix of lesson, demo and quiz. Nice engagement for on-demand training."\n\n"Going through each report. Understanding the functionality and how it would be beneficial to the client marketing team."',
               },
               {
                 level: 'h2',
@@ -889,20 +1107,9 @@ export const portfolioData = {
                   { value: '1413',  label: 'Active users' },
                   { value: '8751',  label: 'Course assignments' },
                   { value: '1106',  label: 'Completed courses' },
+                  { value: '9 mo',  label: 'Total training time (9 months, 4 days)' },
                 ],
-                body: 'Post-course surveys (276 MTA responses, 122 MMM responses) consistently highlighted the bite-sized format, real-world examples, and clear demonstrations as the most valuable elements.',
-              },
-              {
-                level: 'h2',
-                heading: 'Learner Feedback',
-                type: 'gallery',
-                carousel: true,
-                aspectRatio: '4/3',
-                images: [
-                  { id: 'na-chart1', src: '/images/projects/na-chart-1.jpg', caption: 'Survey results — overall satisfaction' },
-                  { id: 'na-chart2', src: '/images/projects/na-chart-2.jpg', caption: 'Survey results — content quality' },
-                  { id: 'na-chart3', src: '/images/projects/na-chart-3.jpg', caption: 'Survey results — learning outcomes' },
-                ],
+                body: 'We launched the first Neustar Academy course, Multi-Touch Attribution Essentials, on July 26, 2018. These numbers have been increasing since the first day of release.',
               },
             ],
           },
@@ -916,6 +1123,7 @@ export const portfolioData = {
       id: 'process',
       type: 'page',
       label: 'Process',
+      illustration: 'process',
       span: [1, 1],
       tone: 'base',
       content: {
@@ -932,14 +1140,31 @@ export const portfolioData = {
       id: 'build',
       type: 'grid',
       label: 'Build',
+      illustration: 'build',
       span: [1, 1],
       tone: 'base',
-      items: [],
+      items: [
+        // Placeholders — each opens a full-bleed iframe pointing at its own folder
+        // under public/vibe/. Drop a real site's built files (index.html + its own
+        // relative assets) into that project's folder and it replaces the
+        // placeholder — no code changes needed. Add an `image` (real screenshot)
+        // once one exists to switch the tile to the Print & Visual-style
+        // image-with-caption treatment; until then tone: 'base' keeps them
+        // theme-responsive like every other plain tile.
+        { id: 'vibe-1', type: 'page', label: 'Vibe Coding 1', span: [2, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-1/index.html', caption: 'Vibe Coding Project 1' } },
+        { id: 'vibe-2', type: 'page', label: 'Brand 2.0 Arc & Seismic analysis', span: [1, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-2/index.html', title: 'Brand 2.0 Arc & Seismic analysis', description: 'A typography and color analysis tool for Brand 2.0. Compare Seismic and Arc design tokens, explore CSS and Figma variable mappings across breakpoints, and match color swatches by Delta E accuracy.' } },
+        { id: 'vibe-3', type: 'page', label: 'Product layout inspector', span: [1, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-3/index.html', title: 'Product layout inspector', description: 'A resizable canvas for testing layouts across breakpoints. Drag the edges or use presets to change width, select product layout to inspect spacing.' } },
+        { id: 'vibe-4', type: 'page', label: 'Vibe Coding 4', span: [1, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-4/index.html', caption: 'Vibe Coding Project 4' } },
+        { id: 'vibe-5', type: 'page', label: 'Vibe Coding 5', span: [2, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-5/index.html', caption: 'Vibe Coding Project 5' } },
+        { id: 'vibe-6', type: 'page', label: 'Vibe Coding 6', span: [1, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-6/index.html', caption: 'Vibe Coding Project 6' } },
+      ],
+      gallery: true,
     },
     {
       id: 'craft',
       type: 'grid',
       label: 'Craft',
+      illustration: 'craft',
       span: [1, 1],
       tone: 'base',
       items: [
@@ -952,21 +1177,21 @@ export const portfolioData = {
           image: '/images/craft/motion-cover.gif',
           gallery: true,
           items: [
-            { id: 'motion-planet',    type: 'page', label: 'Planet Animation',      span: [2,1], tone: 'image', image: '/images/craft/motion-4.gif',     content: { type: 'image', src: '/images/craft/motion-4.gif',     caption: 'Planet animation' } },
-            { id: 'motion-alignment', type: 'page', label: 'Alignment Interaction', span: [1,1], tone: 'image', image: '/images/craft/motion-1.gif',     content: { type: 'image', src: '/images/craft/motion-1.gif',     caption: 'Alignment interaction' } },
-            { id: 'motion-swiping',   type: 'page', label: 'Cards Swiping',         span: [1,1], tone: 'image', image: '/images/craft/motion-2.gif',     content: { type: 'image', src: '/images/craft/motion-2.gif',     caption: 'Cards swiping gesture' } },
-            { id: 'motion-icons',     type: 'page', label: 'Icons Animation',       span: [1,1], tone: 'image', image: '/images/craft/motion-3.gif',     content: { type: 'image', src: '/images/craft/motion-3.gif',     caption: 'Icons animation' } },
-            { id: 'motion-smoke',     type: 'page', label: 'Smoke Trail',           span: [1,1], tone: 'image', image: '/images/craft/motion-5.gif',     content: { type: 'image', src: '/images/craft/motion-5.gif',     caption: 'Smoke trail effect' } },
-            { id: 'motion-city',      type: 'page', label: 'City Cards',            span: [2,1], tone: 'image', image: '/images/craft/motion-7.gif',     content: { type: 'image', src: '/images/craft/motion-7.gif',     caption: 'City cards animation' } },
-            { id: 'motion-text',      type: 'page', label: 'Text Alignment',        span: [1,1], tone: 'image', image: '/images/craft/motion-6.gif',     content: { type: 'image', src: '/images/craft/motion-6.gif',     caption: 'Text alignment animation' } },
-            { id: 'motion-3d',        type: 'page', label: '3D Text',               span: [1,1], tone: 'image', image: '/images/craft/motion-8.gif',     content: { type: 'image', src: '/images/craft/motion-8.gif',     caption: '3D text animation' } },
-            { id: 'motion-clock',    type: 'page', label: 'Clock',            span: [1,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79d33f3dbbe4fa4e87f6_clock.gif',                          content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79d33f3dbbe4fa4e87f6_clock.gif',                          caption: 'Clock animation' } },
-            { id: 'motion-loader',   type: 'page', label: 'Loader',           span: [1,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5dd205349bb635a6ab58a9_loader.gif',                         content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5dd205349bb635a6ab58a9_loader.gif',                         caption: 'Loader animation' } },
-            { id: 'motion-bubble',   type: 'page', label: 'Bubble',           span: [1,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef2e2ffcccb5c8f94937e_Bubble.gif',                         content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef2e2ffcccb5c8f94937e_Bubble.gif',                         caption: 'Bubble animation' } },
-            { id: 'motion-stepped',  type: 'page', label: 'Stepped Animation',span: [2,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c7bc4ccedcfbd49e88f03_Stepped%20Animation.gif',            content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c7bc4ccedcfbd49e88f03_Stepped%20Animation.gif',            caption: 'Stepped animation' } },
-            { id: 'motion-beaker',   type: 'page', label: 'Beaker',           span: [1,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c794fe0e87152a799380b_Beaker.gif',                         content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c794fe0e87152a799380b_Beaker.gif',                         caption: 'Beaker animation' } },
-            { id: 'motion-splash',   type: 'page', label: 'Splash Animation', span: [2,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79b0ccedcf39ece88903_splash%20animation.gif',             content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79b0ccedcf39ece88903_splash%20animation.gif',             caption: 'Splash animation' } },
-            { id: 'motion-break',    type: 'page', label: 'Break Text',       span: [2,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef99887f780bba77068a7_Break%20Text.gif',                   content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef99887f780bba77068a7_Break%20Text.gif',                   caption: 'Break text animation' } },
+            { id: 'motion-planet',    type: 'page', label: 'Planet Animation',      span: [2,1], tone: 'image', bg: '#ffffff', image: '/images/craft/motion-4.gif',     content: { type: 'image', src: '/images/craft/motion-4.gif',     caption: 'Planet animation' } },
+            { id: 'motion-alignment', type: 'page', label: 'Alignment Interaction', span: [1,1], tone: 'image', bg: '#ffffff', image: '/images/craft/motion-1.gif',     content: { type: 'image', src: '/images/craft/motion-1.gif',     caption: 'Alignment interaction' } },
+            { id: 'motion-swiping',   type: 'page', label: 'Cards Swiping',         span: [1,1], tone: 'image', bg: '#f6fbfb', image: '/images/craft/motion-2.gif',     content: { type: 'image', src: '/images/craft/motion-2.gif',     caption: 'Cards swiping gesture' } },
+            { id: 'motion-icons',     type: 'page', label: 'Icons Animation',       span: [1,1], tone: 'image', bg: '#ffffff', image: '/images/craft/motion-3.gif',     content: { type: 'image', src: '/images/craft/motion-3.gif',     caption: 'Icons animation' } },
+            { id: 'motion-smoke',     type: 'page', label: 'Smoke Trail',           span: [1,1], tone: 'image', bg: '#2f2b41', image: '/images/craft/motion-5.gif',     content: { type: 'image', src: '/images/craft/motion-5.gif',     caption: 'Smoke trail effect' } },
+            { id: 'motion-city',      type: 'page', label: 'City Cards',            span: [2,1], tone: 'image', bg: '#f6fbfb', image: '/images/craft/motion-7.gif',     content: { type: 'image', src: '/images/craft/motion-7.gif',     caption: 'City cards animation' } },
+            { id: 'motion-text',      type: 'page', label: 'Text Alignment',        span: [1,1], tone: 'image', bg: '#2f2b41', image: '/images/craft/motion-6.gif',     content: { type: 'image', src: '/images/craft/motion-6.gif',     caption: 'Text alignment animation' } },
+            { id: 'motion-3d',        type: 'page', label: '3D Text',               span: [1,1], tone: 'image', bg: '#f6fbfb', image: '/images/craft/motion-8.gif',     content: { type: 'image', src: '/images/craft/motion-8.gif',     caption: '3D text animation' } },
+            { id: 'motion-clock',    type: 'page', label: 'Clock',            span: [1,1], tone: 'image', bg: '#f6fbfb', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79d33f3dbbe4fa4e87f6_clock.gif',                          content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79d33f3dbbe4fa4e87f6_clock.gif',                          caption: 'Clock animation' } },
+            { id: 'motion-loader',   type: 'page', label: 'Loader',           span: [1,1], tone: 'image', bg: '#f6fbfb', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5dd205349bb635a6ab58a9_loader.gif',                         content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5dd205349bb635a6ab58a9_loader.gif',                         caption: 'Loader animation' } },
+            { id: 'motion-bubble',   type: 'page', label: 'Bubble',           span: [1,1], tone: 'image', bg: '#f1e4e5', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef2e2ffcccb5c8f94937e_Bubble.gif',                         content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef2e2ffcccb5c8f94937e_Bubble.gif',                         caption: 'Bubble animation' } },
+            { id: 'motion-stepped',  type: 'page', label: 'Stepped Animation',span: [2,1], tone: 'image', bg: '#f1e4e5', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c7bc4ccedcfbd49e88f03_Stepped%20Animation.gif',            content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c7bc4ccedcfbd49e88f03_Stepped%20Animation.gif',            caption: 'Stepped animation' } },
+            { id: 'motion-beaker',   type: 'page', label: 'Beaker',           span: [1,1], tone: 'image', bg: '#000000', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c794fe0e87152a799380b_Beaker.gif',                         content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c794fe0e87152a799380b_Beaker.gif',                         caption: 'Beaker animation' } },
+            { id: 'motion-splash',   type: 'page', label: 'Splash Animation', span: [2,1], tone: 'image', bg: '#000000', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79b0ccedcf39ece88903_splash%20animation.gif',             content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5c79b0ccedcf39ece88903_splash%20animation.gif',             caption: 'Splash animation' } },
+            { id: 'motion-break',    type: 'page', label: 'Break Text',       span: [2,1], tone: 'image', bg: '#000000', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef99887f780bba77068a7_Break%20Text.gif',                   content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5d5ef99887f780bba77068a7_Break%20Text.gif',                   caption: 'Break text animation' } },
           ],
         },
         {
@@ -978,15 +1203,15 @@ export const portfolioData = {
           image: '/images/craft/print-poster.jpg',
           gallery: true,
           items: [
-            { id: 'print-poster',   type: 'page', label: 'Poster',              span: [2,1], tone: 'image', image: '/images/craft/print-poster.jpg',   content: { type: 'image', src: '/images/craft/print-poster.jpg',   caption: 'Poster' } },
-            { id: 'print-bifold',   type: 'page', label: 'Bifold Design',       span: [1,1], tone: 'image', image: '/images/craft/print-bifold.jpg',   content: { type: 'image', src: '/images/craft/print-bifold.jpg',   caption: 'Bifold design' } },
-            { id: 'print-brochure', type: 'page', label: 'Brochure',            span: [1,1], tone: 'image', image: '/images/craft/print-brochure.jpg', content: { type: 'image', src: '/images/craft/print-brochure.jpg', caption: 'Brochure' } },
-            { id: 'print-signing',  type: 'page', label: 'Signing Wall',        span: [2,1], tone: 'image', image: '/images/craft/print-signing.jpg',  content: { type: 'image', src: '/images/craft/print-signing.jpg',  caption: 'Signing wall' } },
-            { id: 'print-pantone',  type: 'page', label: 'Pantone Color Study', span: [1,1], tone: 'image', image: '/images/craft/print-pantone.jpg',  content: { type: 'image', src: '/images/craft/print-pantone.jpg',  caption: 'Pantone color project' } },
-            { id: 'print-books',    type: 'page', label: 'House in the Book',   span: [1,1], tone: 'image', image: '/images/craft/print-books.jpg',    content: { type: 'image', src: '/images/craft/print-books.jpg',    caption: 'House in the Book' } },
-            { id: 'illus-sunset',   type: 'page', label: 'Sunset Illustration', span: [2,1], tone: 'image', image: '/images/craft/illus-sunset.png',   content: { type: 'image', src: '/images/craft/illus-sunset.png',   caption: 'Sunset illustration' } },
-            { id: 'illus-planet',   type: 'page', label: 'Planet Illustration', span: [1,1], tone: 'image', image: '/images/craft/illus-planet.png',   content: { type: 'image', src: '/images/craft/illus-planet.png',   caption: 'Planet illustration' } },
-            { id: 'print-switch',   type: 'page', label: 'Switch',             span: [1,1], tone: 'image', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5de6c5fddd14420218d97ab6_switch.png', content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5de6c5fddd14420218d97ab6_switch.png', caption: 'Switch design' } },
+            { id: 'print-poster',   type: 'page', label: 'Poster',              span: [2,1], tone: 'image', bg: '#dadada', image: '/images/craft/print-poster.jpg',   content: { type: 'image', src: '/images/craft/print-poster.jpg',   caption: 'Poster' } },
+            { id: 'print-bifold',   type: 'page', label: 'Bifold Design',       span: [1,1], tone: 'image', bg: '#f6fbfb', image: '/images/craft/print-bifold.jpg',   content: { type: 'image', src: '/images/craft/print-bifold.jpg',   caption: 'Bifold design' } },
+            { id: 'print-brochure', type: 'page', label: 'Brochure',            span: [1,1], tone: 'image', bg: '#e3e3e3', image: '/images/craft/print-brochure.jpg', content: { type: 'image', src: '/images/craft/print-brochure.jpg', caption: 'Brochure' } },
+            { id: 'print-signing',  type: 'page', label: 'Signing Wall',        span: [2,1], tone: 'image', bg: '#f6fbfb', image: '/images/craft/print-signing.jpg',  content: { type: 'image', src: '/images/craft/print-signing.jpg',  caption: 'Signing wall' } },
+            { id: 'print-pantone',  type: 'page', label: 'Pantone Color Study', span: [1,1], tone: 'image', bg: '#000000', fit: 'contain', image: '/images/craft/print-pantone.jpg',  content: { type: 'image', src: '/images/craft/print-pantone.jpg',  caption: 'Pantone color project' } },
+            { id: 'print-books',    type: 'page', label: 'House in the Book',   span: [1,1], tone: 'image', bg: '#000000', fit: 'contain', image: '/images/craft/print-books.jpg',    content: { type: 'image', src: '/images/craft/print-books.jpg',    caption: 'House in the Book' } },
+            { id: 'illus-sunset',   type: 'page', label: 'Sunset Illustration', span: [2,1], tone: 'image', bg: '#f6fbfb', fit: 'contain', image: '/images/craft/illus-sunset.png',   content: { type: 'image', src: '/images/craft/illus-sunset.png',   caption: 'Sunset illustration' } },
+            { id: 'illus-planet',   type: 'page', label: 'Planet Illustration', span: [1,1], tone: 'image', bg: '#fcdd56', fit: 'contain', image: '/images/craft/illus-planet.png',   content: { type: 'image', src: '/images/craft/illus-planet.png',   caption: 'Planet illustration' } },
+            { id: 'print-switch',   type: 'page', label: 'Switch',             span: [1,1], tone: 'image', fit: 'contain', bgImage: '/images/craft/print-switch-bg.png', image: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5de6c5fddd14420218d97ab6_switch.png', content: { type: 'image', src: 'https://cdn.prod.website-files.com/5bb4f72aa4b9230c9185a00f/5de6c5fddd14420218d97ab6_switch.png', caption: 'Switch design' } },
           ],
         },
         {
@@ -1018,7 +1243,7 @@ export const portfolioData = {
               {
                 level: 'h2',
                 heading: "Oscar's Best Picture Nominees Analysis",
-                body: "This project learns the characteristics and trends of Oscar Best-Picture movies.\n\nWe can find valuable insights from several tasks below:\n• Find how Oscar Best-Picture movies distribute in different genres.\n• Find which movie/genre is most profitable and popular.\n• Find the correlation among budget, gross, and rating.\n• Find the trend of movie rating, votes, gross, budget, and profit.",
+                body: "This project learns the characteristics and trends of Oscar Best-Picture movies.\n\nWe can find valuable insights from several tasks below:\n\n• Find how Oscar Best-Picture movies distribute in different genres.\n• Find which movie/genre is most profitable and popular.\n• Find the correlation among budget, gross, and rating.\n• Find the trend of movie rating, votes, gross, budget, and profit.",
                 link: { url: 'http://sherlocq.github.io/oscar/', label: 'View Live Site' },
               },
               {
@@ -1065,6 +1290,7 @@ export const portfolioData = {
       id: 'contact',
       type: 'page',
       label: 'Contact',
+      illustration: 'contact',
       span: [1, 1],
       tone: 'base',
       content: {

@@ -2,7 +2,7 @@
 
 ## What this is
 Chengchang Qian's personal design portfolio. React + Vite, Framer Motion, GitHub Pages.
-URL: https://chengchangqian.github.io/zoomable-portfolio/
+URL: https://sherlocq.github.io/zoomable-portfolio/
 
 ## Commands
 ```

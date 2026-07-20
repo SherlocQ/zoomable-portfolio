@@ -313,6 +313,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const tone            = node.tone || 'base';
   const isImagePage     = content.type === 'image';
   const isComparisonPage = content.type === 'comparison';
+  const isEmbedPage     = content.type === 'embed';
   const isProject       = content.type === 'project';
   const hasHero     = isProject && ('heroImage' in content);
 
@@ -333,32 +334,26 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       ? { initial: { opacity: 0 }, animate: { opacity: 1 } }
       : { layoutId: `item-${node.id}` };
 
-  const overlayTone = content.type === 'contact' ? 'base' : (isImagePage || isComparisonPage) ? 'image' : tone;
+  const overlayTone = content.type === 'contact' ? 'base' : (isImagePage || isComparisonPage || isEmbedPage) ? 'image' : tone;
   const shellClass = [
     'overlay-shell page-overlay',
     `card-${overlayTone}`,
     hasHero                         ? 'page-overlay--hero'     : '',
     isLightbox                      ? 'page-overlay--lightbox' : '',
     (isImagePage || isComparisonPage) ? 'page-overlay--img'    : '',
+    isEmbedPage                     ? 'page-overlay--embed'    : '',
   ].filter(Boolean).join(' ');
 
   return (
     <motion.div
       className={shellClass}
-      style={{ zIndex }}
+      style={{ zIndex, ...(isImagePage && node.bg ? { background: node.bg } : {}) }}
       {...motionShell}
       exit={{ opacity: 0, scale: 0.97, transition: T }}
       transition={isLightbox ? SPRING_SLOW : T}
     >
-      {/* Drag handle — only on non-hero, non-lightbox, non-image pages */}
-      {!hasHero && !isLightbox && !isImagePage && (
-        <button className="page-handle" onClick={onBack} aria-label="Close">
-          <span />
-        </button>
-      )}
-
-      {/* Dismiss button — on lightbox and all image pages */}
-      {(isLightbox || isImagePage) && (
+      {/* Dismiss button — on lightbox, image, and embed pages */}
+      {(isLightbox || isImagePage || isEmbedPage) && (
         <button className="lightbox-dismiss" onClick={onBack} aria-label="Close">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
@@ -367,7 +362,25 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
         </button>
       )}
 
-      {isComparisonPage ? (
+      {isEmbedPage ? (
+        <div className="embed-page-body">
+          <iframe
+            key={content.src}
+            src={asset(content.src)}
+            title={node.label}
+            className="embed-page-frame"
+            loading="lazy"
+          />
+          {(content.title || content.caption || content.description) && (
+            <div className="img-page-caption-bar img-page-caption-bar--stacked">
+              <span className="img-page-caption-title">{content.title || content.caption || node.label}</span>
+              {content.description && (
+                <span className="img-page-caption-text">{content.description}</span>
+              )}
+            </div>
+          )}
+        </div>
+      ) : isComparisonPage ? (
         <div className="img-page-body">
           <div className="img-page-scroll">
             <div className="cs-lb-wrap">
@@ -384,7 +397,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                   key={activeSrc}
                   src={asset(activeSrc)}
                   alt={activeCaption || ''}
-                  className="img-page-img"
+                  className={`img-page-img${node.fit === 'contain' ? ' img-page-img--contain' : ''}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -465,15 +478,6 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                   {content.tagline}
                 </motion.p>
               </div>
-              <motion.div
-                className="project-hero-scroll-hint"
-                aria-hidden="true"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.55, ease: EASE_HERO }}
-              >
-                <span />
-              </motion.div>
             </div>
           )}
 
