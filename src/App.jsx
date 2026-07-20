@@ -19,14 +19,22 @@ const urlToPath = () =>
     .split('/')
     .filter(Boolean);
 
+const THEME_KEY = 'theme';
+const getInitialTheme = () => {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'dark' || stored === 'light') return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
 export default function App() {
   const [path, setPath]           = useState(() => urlToPath());
-  const [theme, setTheme]         = useState('dark');
+  const [theme, setTheme]         = useState(getInitialTheme);
   const [lightboxNode, setLightbox] = useState(null);
   const isReplaceNav = useRef(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
   // Seed the initial history entry so popstate always has state
