@@ -38,6 +38,7 @@ export default function Breadcrumb({ segments, onNavigate }) {
                 onClick={() => !isLast && onNavigate(i)}
                 disabled={isLast}
                 aria-label={isRoot ? 'Home' : seg.label}
+                title={isRoot ? 'Home' : undefined}
               >
                 {isRoot ? <HomeIcon /> : seg.label}
               </button>

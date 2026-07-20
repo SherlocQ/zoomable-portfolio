@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { GridItem } from './GridItem';
 import { T } from '../transitions';
@@ -51,14 +52,24 @@ export default function GridOverlay({ node, onItemClick, zIndex, isActive = true
     ? { gridTemplateRows: `repeat(${rows}, 1fr)`, height: '100%' }
     : undefined;
 
+  // Move keyboard focus into this overlay when it becomes the active (topmost) layer
+  const shellRef = useRef(null);
+  useEffect(() => {
+    if (isActive) shellRef.current?.focus();
+  }, [isActive]);
+
   return (
     <motion.div
+      ref={shellRef}
       className={`overlay-shell grid-full-overlay${isGallery ? ' gallery-scroll' : ''}`}
-      style={{ zIndex }}
+      style={{ zIndex, pointerEvents: isActive ? undefined : 'none' }}
+      tabIndex={-1}
       layoutId={`item-${node.id}`}
       animate={{ opacity: isActive ? 1 : 0 }}
       exit={{ opacity: 0, scale: 0.97, transition: T }}
       transition={{ ...T, opacity: { duration: 0.2 } }}
+      aria-hidden={!isActive || undefined}
+      inert={!isActive || undefined}
     >
       <motion.div
         className={`grid-overlay-inner${isGallery ? ' gallery-inner' : ''}${isGallery && !fits ? ' gallery-inner--scroll' : ''}`}

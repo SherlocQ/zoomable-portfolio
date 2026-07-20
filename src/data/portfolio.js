@@ -20,6 +20,7 @@ export const portfolioData = {
       label: 'Chengchang Qian',
       span: [2, 1],
       tone: 'base',
+      portrait: '/images/illustrations/Chengchang.svg',
       content: {
         type: 'about',
         name: 'Chengchang Qian',
@@ -556,24 +557,28 @@ export const portfolioData = {
                 body: 'The new listing page gives you the flexibility to organize Scenarios in your own way — you can create folders and assign scenarios to those folders.',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382706253?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 heading: 'Clean Visual Hierarchy',
                 body: 'The new layout for scenarios is very easy to consume. Information is placed in a good hierarchy that makes it easy to scan at a glance.',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382717355?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 heading: 'Less is More',
                 body: 'Secondary information like actions and calculation status are hidden by default. You can reveal them when hovering over the scenario card.',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382717716?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 heading: 'No More Scroll, Just Search',
                 body: 'The new smart search function covers all metadata for your scenarios. You can search keywords like scenario name, folder name, scenario type, or creator name to instantly find what you want.',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382718226?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 level: 'h2',
@@ -695,28 +700,30 @@ export const portfolioData = {
                 body: "Before jumping to design, I decided to focus on three main points — this will ensure the design scope achieves a viable and consistent design.\n\nMy goal for the design was to provide our clients an interactive way of uploading and validating data. This new flow empowers them to easily track their uploading progress, submit better data, and understand what is happening with their data while it's in the system.",
               },
               {
-                heading: 'Be Transparent',
-                body: "It is very important to let our users know where they are in the data collection process, how good their data is, and if there are issues, how they can solve them.",
-                type: 'image',
-                id: 'lh-transparent',
-                src: '/images/projects/lighthouse-transparent.png',
-                caption: 'Be Transparent',
-              },
-              {
-                heading: 'Be Effective',
-                body: 'Because the data collection process is time sensitive, this tool should allow users to submit all of their data in an effective way.',
-                type: 'image',
-                id: 'lh-effective',
-                src: '/images/projects/lighthouse-effective.png',
-                caption: 'Be Effective',
-              },
-              {
-                heading: 'Be Delightful',
-                body: "The data collection process could be cumbersome. If we invite our clients to participate in this process, it's important to make the whole experience fun and easy to follow.",
-                type: 'image',
-                id: 'lh-delightful',
-                src: '/images/projects/lighthouse-delightful.png',
-                caption: 'Be Delightful',
+                type: 'columns',
+                items: [
+                  {
+                    id: 'lh-transparent',
+                    heading: 'Be Transparent',
+                    body: "It is very important to let our users know where they are in the data collection process, how good their data is, and if there are issues, how they can solve them.",
+                    image: '/images/projects/lighthouse-transparent.png',
+                    caption: 'Be Transparent',
+                  },
+                  {
+                    id: 'lh-effective',
+                    heading: 'Be Effective',
+                    body: 'Because the data collection process is time sensitive, this tool should allow users to submit all of their data in an effective way.',
+                    image: '/images/projects/lighthouse-effective.png',
+                    caption: 'Be Effective',
+                  },
+                  {
+                    id: 'lh-delightful',
+                    heading: 'Be Delightful',
+                    body: "The data collection process could be cumbersome. If we invite our clients to participate in this process, it's important to make the whole experience fun and easy to follow.",
+                    image: '/images/projects/lighthouse-delightful.png',
+                    caption: 'Be Delightful',
+                  },
+                ],
               },
               {
                 level: 'h2',
@@ -735,6 +742,7 @@ export const portfolioData = {
                 heading: 'Dashboard',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382720540?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 type: 'comparison',
@@ -749,6 +757,7 @@ export const portfolioData = {
                 heading: 'Upload Flow',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382820051?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 type: 'comparison',
@@ -763,6 +772,7 @@ export const portfolioData = {
                 heading: 'Folder View',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382819989?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 type: 'comparison',
@@ -789,6 +799,7 @@ export const portfolioData = {
                 heading: 'Data Validation Flow',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382820023?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
                 body: 'In the new design, I introduced a new data validation flow after files have been uploaded. Users can quickly solve common data issues.\n\nUsers can check if the headers for the data spreadsheet are as expected — are there any missing headers or headers that have been assigned incorrectly? Users can also check if the data types are wrong, or if there are formatting errors.\n\nThen users can fix the data file by reuploading or send the file to our data specialist for help.',
               },
               {
@@ -802,6 +813,7 @@ export const portfolioData = {
                 heading: 'Validation Report Dashboard',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/383185433?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 type: 'comparison',
@@ -816,6 +828,7 @@ export const portfolioData = {
                 heading: 'Conversations',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/383194655?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 type: 'comparison',
@@ -842,14 +855,6 @@ export const portfolioData = {
                   { id: 'lh-email3', src: '/images/projects/lighthouse-email3.jpg', caption: 'Reminder for sign-off on pending report' },
                   { id: 'lh-email4', src: '/images/projects/lighthouse-email4.jpg', caption: 'Reply in conversation' },
                 ],
-              },
-              {
-                level: 'h2',
-                heading: 'Customer Journey',
-                type: 'image',
-                id: 'lh-journey',
-                src: '/images/projects/lighthouse-journey.gif',
-                caption: 'Full customer journey through the new Lighthouse experience',
               },
               {
                 level: 'h2',
@@ -1239,6 +1244,7 @@ export const portfolioData = {
               {
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382824779?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 level: 'h2',
@@ -1249,6 +1255,7 @@ export const portfolioData = {
               {
                 type: 'video',
                 src: 'https://player.vimeo.com/video/382824801?quality=2k&autoplay=1&loop=1&autopause=0&muted=1',
+                aspectRatio: '1920/1397',
               },
               {
                 level: 'h2',

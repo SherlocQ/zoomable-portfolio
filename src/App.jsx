@@ -79,6 +79,15 @@ export default function App() {
     [],
   );
 
+  const overlayStack = path
+    .map((_, i) => ({
+      node:   getNodeByPath(portfolioData, path.slice(0, i + 1)),
+      zIndex: 10 + i * 5,
+    }))
+    .filter(({ node }) => node != null); // guard against invalid URLs
+
+  const isNotFound = path.length > 0 && overlayStack.length < path.length;
+
   // Back: close lightbox first (no URL change), otherwise use browser history
   const navigateBack = useCallback(() => {
     if (lightboxNode) { setLightbox(null); }
@@ -111,19 +120,13 @@ export default function App() {
     });
   }, []);
 
-  const overlayStack = path
-    .map((_, i) => ({
-      node:   getNodeByPath(portfolioData, path.slice(0, i + 1)),
-      zIndex: 10 + i * 5,
-    }))
-    .filter(({ node }) => node != null); // guard against invalid URLs
-
   const topZ = 10 + overlayStack.length * 5 + 5;
-  const isNotFound = path.length > 0 && overlayStack.length < path.length;
   const skipTransition = isReplaceNav.current;
 
   return (
     <div className="app">
+      <a className="skip-link" href="#main-content">Skip to content</a>
+
       <AppHeader
         breadcrumbs={getBreadcrumbs(portfolioData, path)}
         onNavigate={navigateToDepth}
@@ -131,49 +134,54 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         canGoBack={path.length > 0 || Boolean(lightboxNode)}
+        isNotFound={isNotFound}
+        onGoHome={() => navigateToDepth(0)}
       />
 
-      {isNotFound && <NotFoundPage onGoHome={() => navigateToDepth(0)} />}
+      <main id="main-content">
+        {isNotFound && <NotFoundPage onGoHome={() => navigateToDepth(0)} />}
 
-      <LayoutGroup>
-        <GridView node={portfolioData} onItemClick={navigateTo} isHidden={overlayStack.length > 0 || isNotFound} />
+        <LayoutGroup>
+          <GridView node={portfolioData} onItemClick={navigateTo} isHidden={overlayStack.length > 0 || isNotFound} />
 
-        <AnimatePresence>
-          {!isNotFound && overlayStack.map(({ node, zIndex }, idx) => {
-            const isTop = idx === overlayStack.length - 1;
-            if (node.type === 'grid') {
-              return <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} isActive={isTop} />;
-            }
-            const parentNode = idx > 0 ? overlayStack[idx - 1]?.node : null;
-            const siblings = parentNode?.type === 'grid'
-              ? (parentNode.items?.filter(i => i.type === 'page' && i.content?.type === 'project') ?? null)
-              : null;
-            return (
+          <AnimatePresence>
+            {!isNotFound && overlayStack.map(({ node, zIndex }, idx) => {
+              const isTop = idx === overlayStack.length - 1;
+              if (node.type === 'grid') {
+                return <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} isActive={isTop} />;
+              }
+              const parentNode = idx > 0 ? overlayStack[idx - 1]?.node : null;
+              const siblings = parentNode?.type === 'grid'
+                ? (parentNode.items?.filter(i => i.type === 'page' && i.content?.type === 'project') ?? null)
+                : null;
+              return (
+                <PageView
+                  key={node.id}
+                  node={node}
+                  onBack={navigateBack}
+                  onImageClick={openLightbox}
+                  onComparisonClick={openComparisonLightbox}
+                  onNavigate={navigateReplace}
+                  siblings={siblings}
+                  zIndex={zIndex}
+                  skipLayoutTransition={isTop && skipTransition}
+                  isActive={isTop && !lightboxNode}
+                />
+              );
+            })}
+
+            {lightboxNode && (
               <PageView
-                key={node.id}
-                node={node}
+                key={lightboxNode.id}
+                node={lightboxNode}
                 onBack={navigateBack}
-                onImageClick={openLightbox}
-                onComparisonClick={openComparisonLightbox}
-                onNavigate={navigateReplace}
-                siblings={siblings}
-                zIndex={zIndex}
-                skipLayoutTransition={isTop && skipTransition}
+                isLightbox
+                zIndex={topZ}
               />
-            );
-          })}
-
-          {lightboxNode && (
-            <PageView
-              key={lightboxNode.id}
-              node={lightboxNode}
-              onBack={navigateBack}
-              isLightbox
-              zIndex={topZ}
-            />
-          )}
-        </AnimatePresence>
-      </LayoutGroup>
+            )}
+          </AnimatePresence>
+        </LayoutGroup>
+      </main>
     </div>
   );
 }

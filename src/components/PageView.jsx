@@ -85,8 +85,27 @@ function ComparisonSlider({ before, after }) {
     };
   }, []);
 
+  const onKeyDown = (e) => {
+    const step = e.shiftKey ? 10 : 4;
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowDown') { setPos((p) => Math.max(2, p - step)); e.preventDefault(); }
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp')   { setPos((p) => Math.min(98, p + step)); e.preventDefault(); }
+    else if (e.key === 'Home') { setPos(2);  e.preventDefault(); }
+    else if (e.key === 'End')  { setPos(98); e.preventDefault(); }
+  };
+
   return (
-    <div className="cs-wrap" ref={wrapRef} role="application" aria-label={`Before/after comparison: ${before.label} vs ${after.label}`}>
+    <div
+      className="cs-wrap"
+      ref={wrapRef}
+      role="slider"
+      tabIndex={0}
+      aria-label={`Before/after comparison: ${before.label} vs ${after.label}`}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(pos)}
+      aria-valuetext={`${Math.round(pos)}% ${after.label}, use arrow keys to adjust`}
+      onKeyDown={onKeyDown}
+    >
       <img src={asset(after.src)}  alt={after.label}  className="cs-img" />
       <img src={asset(before.src)} alt={before.label} className="cs-img cs-img--over"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
@@ -142,8 +161,9 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
               className="img-carousel-arrow img-carousel-arrow--prev"
               onClick={() => go(idx - 1)}
               aria-label="Previous image"
+              title="Previous image"
             >
-              <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+              <svg width="7" height="12" viewBox="0 0 7 12" fill="none" aria-hidden="true">
                 <path d="M6 1L1 6l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
@@ -151,8 +171,9 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
               className="img-carousel-arrow img-carousel-arrow--next"
               onClick={() => go(idx + 1)}
               aria-label="Next image"
+              title="Next image"
             >
-              <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+              <svg width="7" height="12" viewBox="0 0 7 12" fill="none" aria-hidden="true">
                 <path d="M1 1l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
@@ -169,6 +190,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
               className={`carousel-dot${i === idx ? ' carousel-dot--active' : ''}`}
               onClick={() => go(i)}
               aria-label={`Image ${i + 1}`}
+              title={`Image ${i + 1}`}
             />
           ))}
         </div>
@@ -295,7 +317,7 @@ function OnThisPageMobile({ h2s }) {
         <button className="otp-mobile-toggle" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="listbox">
           <span className="otp-mobile-label">{activeLabel}</span>
           <svg
-            className={`otp-mobile-chevron${open ? ' otp-mobile-chevron--up' : ''}`}
+            className={`otp-mobile-chevron${!open ? ' otp-mobile-chevron--up' : ''}`}
             width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
           >
             <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6"
@@ -308,7 +330,7 @@ function OnThisPageMobile({ h2s }) {
 }
 
 /* ─── PageView ────────────────────────────────────────────────────────────── */
-export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, zIndex, skipLayoutTransition }) {
+export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, zIndex, skipLayoutTransition, isActive = true }) {
   const { content } = node;
   const tone            = node.tone || 'base';
   const isImagePage     = content.type === 'image';
@@ -316,6 +338,12 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const isEmbedPage     = content.type === 'embed';
   const isProject       = content.type === 'project';
   const hasHero     = isProject && ('heroImage' in content);
+
+  // Move keyboard focus into this overlay when it becomes the active (topmost) layer
+  const shellRef = useRef(null);
+  useEffect(() => {
+    if (isActive) shellRef.current?.focus();
+  }, [isActive]);
 
   // Lightbox carousel state — only meaningful when node.lbImages is set
   const lbImages = node.lbImages || null;
@@ -346,15 +374,19 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
 
   return (
     <motion.div
+      ref={shellRef}
       className={shellClass}
       style={{ zIndex, ...(isImagePage && node.bg ? { background: node.bg } : {}) }}
+      tabIndex={-1}
+      aria-hidden={!isActive || undefined}
+      inert={!isActive || undefined}
       {...motionShell}
       exit={{ opacity: 0, scale: 0.97, transition: T }}
       transition={isLightbox ? SPRING_SLOW : T}
     >
       {/* Dismiss button — on lightbox, image, and embed pages */}
       {(isLightbox || isImagePage || isEmbedPage) && (
-        <button className="lightbox-dismiss" onClick={onBack} aria-label="Close">
+        <button className="lightbox-dismiss" onClick={onBack} aria-label="Close" title="Close">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             <line x1="11" y1="1" x2="1"  y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
@@ -423,13 +455,13 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           {/* Prev/next navigation for lightbox carousels */}
           {lbCount > 1 && (
             <>
-              <button className="lb-nav lb-nav--prev" onClick={() => lbGo(lbIdx - 1)} aria-label="Previous image">
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+              <button className="lb-nav lb-nav--prev" onClick={() => lbGo(lbIdx - 1)} aria-label="Previous image" title="Previous image">
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
                   <path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-              <button className="lb-nav lb-nav--next" onClick={() => lbGo(lbIdx + 1)} aria-label="Next image">
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+              <button className="lb-nav lb-nav--next" onClick={() => lbGo(lbIdx + 1)} aria-label="Next image" title="Next image">
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
                   <path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
@@ -440,6 +472,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                     className={`carousel-dot${i === lbIdx ? ' carousel-dot--active' : ''}`}
                     onClick={() => lbGo(i)}
                     aria-label={`Image ${i + 1}`}
+                    title={`Image ${i + 1}`}
                   />
                 ))}
               </div>
@@ -594,6 +627,29 @@ function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
     );
   }
 
+  // ── multi-column cards (heading + body + image each) ─────────────────────
+  if (s.type === 'columns') {
+    return (
+      <motion.div className={cls} {...mp}>
+        <Heading />
+        {s.body && <BodyText text={s.body} />}
+        <div className="section-columns">
+          {s.items.map((item, i) => (
+            <div key={item.id || i} className="section-column">
+              {item.heading && <h3 className="section-h3">{item.heading}</h3>}
+              {item.body && <BodyText text={item.body} />}
+              {item.image && (
+                <ImgWrap id={item.id} src={item.image} caption={item.caption}>
+                  <img src={asset(item.image)} alt={item.caption || item.heading || ''} className="section-image" loading="lazy" />
+                </ImgWrap>
+              )}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
+
   // ── before/after slider ───────────────────────────────────────────────────
   if (s.type === 'comparison') {
     return (
@@ -607,6 +663,7 @@ function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
               className="cs-expand-btn"
               onClick={() => onComparisonClick(s.before, s.after)}
               aria-label="Expand comparison"
+              title="Expand comparison"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                 <path d="M9 1h4v4M5 13H1V9M13 9v4H9M1 5V1h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -625,7 +682,7 @@ function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
       <motion.div className={cls} {...mp}>
         <Heading />
         {s.body && <BodyText text={s.body} />}
-        <div className="section-video-wrap">
+        <div className="section-video-wrap" style={{ '--video-ratio': s.aspectRatio || '16/9' }}>
           <iframe
             src={s.src}
             className="section-video"
@@ -648,7 +705,8 @@ function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
       {s.body && <BodyText text={s.body} />}
       {s.link && (
         <a href={s.link.url} target="_blank" rel="noopener noreferrer" className="section-link-btn">
-          {s.link.label || 'View Live Site'} ↗
+          {s.link.label || 'View Live Site'} <span aria-hidden="true">↗</span>
+          <span className="sr-only"> (opens in a new tab)</span>
         </a>
       )}
     </motion.div>
@@ -695,11 +753,10 @@ function ProjectNavCard({ project, direction, onNavigate }) {
 }
 
 function ProjectNav({ node, siblings, onNavigate }) {
-  if (!siblings || !onNavigate) return null;
+  if (!siblings || siblings.length < 2 || !onNavigate) return null;
   const idx  = siblings.findIndex(s => s.id === node.id);
-  const prev = idx > 0 ? siblings[idx - 1] : null;
-  const next = idx < siblings.length - 1 ? siblings[idx + 1] : null;
-  if (!prev && !next) return null;
+  const prev = siblings[(idx - 1 + siblings.length) % siblings.length];
+  const next = siblings[(idx + 1) % siblings.length];
 
   return (
     <motion.div
@@ -709,12 +766,8 @@ function ProjectNav({ node, siblings, onNavigate }) {
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
     >
-      {prev
-        ? <ProjectNavCard project={prev} direction="prev" onNavigate={onNavigate} />
-        : <div className="pnav-empty" />}
-      {next
-        ? <ProjectNavCard project={next} direction="next" onNavigate={onNavigate} />
-        : <div className="pnav-empty" />}
+      <ProjectNavCard project={prev} direction="prev" onNavigate={onNavigate} />
+      <ProjectNavCard project={next} direction="next" onNavigate={onNavigate} />
     </motion.div>
   );
 }
@@ -959,6 +1012,7 @@ function ContactContent({ node, content }) {
               <path d="M7.5 6v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
             LinkedIn
+            <span className="sr-only"> (opens in a new tab)</span>
           </a>
         </div>
       </motion.div>

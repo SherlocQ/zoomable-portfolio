@@ -2,6 +2,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Breadcrumb from './Breadcrumb';
 import { T_FAST } from '../transitions';
 
+function HomeIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true" style={{ display: 'block' }}>
+      <path
+        d="M1 5.8L6.5 1L12 5.8V12H8.5V8.5H4.5V12H1V5.8Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 function SunIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
@@ -26,7 +40,7 @@ function MoonIcon() {
   );
 }
 
-export default function AppHeader({ breadcrumbs, onNavigate, onBack, theme, onToggleTheme, canGoBack }) {
+export default function AppHeader({ breadcrumbs, onNavigate, onBack, theme, onToggleTheme, canGoBack, isNotFound, onGoHome }) {
   return (
     <header className="app-header">
       <AnimatePresence>
@@ -39,13 +53,22 @@ export default function AppHeader({ breadcrumbs, onNavigate, onBack, theme, onTo
             exit={{    opacity: 0, x: -8 }}
             transition={T_FAST}
             aria-label="Go back"
+            title="Go back"
           >
             ←
           </motion.button>
         )}
       </AnimatePresence>
 
-      <Breadcrumb segments={breadcrumbs} onNavigate={onNavigate} />
+      {isNotFound ? (
+        <nav className="breadcrumb-nav" aria-label="Navigation path">
+          <button className="bc-pill bc-pill--home" onClick={onGoHome} aria-label="Home" title="Home">
+            <HomeIcon />
+          </button>
+        </nav>
+      ) : (
+        <Breadcrumb segments={breadcrumbs} onNavigate={onNavigate} />
+      )}
 
       <div className="theme-pill" role="group" aria-label="Color theme">
         {['light', 'dark'].map((t) => (
@@ -55,6 +78,7 @@ export default function AppHeader({ breadcrumbs, onNavigate, onBack, theme, onTo
             onClick={() => t !== theme && onToggleTheme()}
             aria-pressed={theme === t}
             aria-label={t === 'light' ? 'Light mode' : 'Dark mode'}
+            title={t === 'light' ? 'Light mode' : 'Dark mode'}
           >
             {theme === t && (
               <motion.span

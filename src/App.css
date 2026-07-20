@@ -20,7 +20,7 @@
   --ink:             #f7f8f8;
   --ink-muted:       #d0d6e0;
   --ink-subtle:      #8a8f98;
-  --ink-tertiary:    #62666d;
+  --ink-tertiary:    #777c84; /* nudged from #62666d — was 3.3:1 on surface-1, fails AA for the small badge/meta text it's used for; now 4.54:1 */
 
   /* Accent card color */
   --terracotta:      #c96442;
@@ -88,7 +88,7 @@
   --ink:             #282a30;
   --ink-muted:       #3c4149;
   --ink-subtle:      #6f6e77;
-  --ink-tertiary:    #86848d;
+  --ink-tertiary:    #727079; /* nudged from #86848d — was 3.4:1 on surface-1, fails AA for the small badge/meta text it's used for; now 4.50:1 */
 
   /* Light UI chrome */
   --chrome-bg:      var(--canvas);
@@ -139,10 +139,30 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: va
   background: transparent;
 }
 
+/* ─── Screen-reader-only utility — visually hidden, still announced ─────────── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ─── Skip link — hidden until keyboard-focused, jumps past the header ───────── */
+.skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 200;
+  padding: 10px 16px;
+  background: var(--accent); color: #fff;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 500;
+  border-radius: var(--r-md); text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform 0.14s ease;
+}
+.skip-link:focus { transform: translateY(0); }
+
 /* ─── Global focus-visible ring ────────────────────────────────────────────── */
 button:focus-visible,
 a:focus-visible,
-[role="button"]:focus-visible {
+[role="button"]:focus-visible,
+[role="slider"]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
@@ -161,6 +181,7 @@ a:focus-visible,
   border-radius: 100px;
 }
 .grid-item:focus-visible { border-radius: var(--r-lg); }
+.cs-wrap:focus-visible { outline-offset: -2px; border-radius: var(--r-lg); }
 
 /* Back button — top-left, appears when navigated */
 .header-back-btn {
@@ -248,6 +269,10 @@ a:focus-visible,
   border-radius: var(--r-lg);
   overflow: hidden;
 }
+/* Container takes programmatic focus on open (moves keyboard/AT focus off the
+   grid behind it) — no visible ring on the container itself; the real focus
+   indicators live on the interactive elements inside it. */
+.overlay-shell:focus { outline: none; }
 
 /* Page overlays cover edge-to-edge so the grid behind doesn't show through */
 .overlay-shell.page-overlay {
@@ -359,6 +384,25 @@ a:focus-visible,
   .grid-item-illustration { transition: opacity 0.28s ease; }
   .grid-item:hover .grid-item-illustration { transform: none; }
 }
+.grid-item-portrait {
+  position: absolute; bottom: 0; right: 24px;
+  height: 80%; width: auto;
+  pointer-events: none; z-index: 0; opacity: 0.9;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.28s cubic-bezier(0.32,0.72,0,1), transform 0.28s cubic-bezier(0.32,0.72,0,1);
+}
+.grid-item:hover .grid-item-portrait {
+  opacity: 1;
+  transform: translateY(-6px) scale(1.035);
+}
+@media (prefers-reduced-motion: reduce) {
+  .grid-item-portrait { transition: opacity 0.28s ease; }
+  .grid-item:hover .grid-item-portrait { transform: none; }
+}
+@media (max-width: 640px) {
+  .grid-item-portrait { width: clamp(120px, 40%, 220px); right: 24px; }
+}
+
 .grid-item-inner { padding: 15px 18px; width: 100%; position: relative; z-index: 1; }
 .grid-item-caption { font-family: var(--font-sans); font-size: 0.875rem; font-weight: 400; color: var(--ink-subtle); line-height: 1.5; letter-spacing: -0.013em; text-wrap: pretty; }
 .grid-item-label {
@@ -504,6 +548,19 @@ a:focus-visible,
   display: block;
 }
 .section-gallery-img { width:100%; height:100%; object-fit:cover; border-radius:var(--r-md); display:block; }
+
+/* Section: multi-column cards (heading + body + image each) — 3-up on desktop,
+   stacks to 1 column on mobile alongside the rest of the project layout. */
+.section-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 8px; }
+.section-column { display: flex; flex-direction: column; }
+.section-column .section-h3 { margin-top: 0; }
+.section-column .section-img-wrap { margin-top: auto; padding-top: 10px; }
+.section-column .section-image { margin-top: 0; }
+@media (max-width: 768px) {
+  .section-columns { grid-template-columns: 1fr; gap: 32px; }
+  .section-column { height: auto; }
+  .section-column .section-img-wrap { margin-top: 0; padding-top: 10px; }
+}
 
 /* Section: before/after comparison */
 .section-comparison { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -824,7 +881,7 @@ a:focus-visible,
 }
 /* ─── Video embed ─────────────────────────────────────────────────────────────── */
 .section-video-wrap {
-  position: relative; width: 100%; padding-bottom: 56.25%;
+  position: relative; width: 100%; aspect-ratio: var(--video-ratio, 16/9);
   border-radius: var(--r-lg); overflow: hidden; background: var(--canvas);
 }
 .section-video {
@@ -1455,3 +1512,15 @@ a:focus-visible,
   transition: background 0.14s;
 }
 .notfound-btn:hover { background: var(--accent-hover); }
+
+/* ─── Reduced motion — CSS-driven transitions/animations only; Framer Motion's
+   JS-driven transforms (layout, page/lightbox transitions) aren't covered by
+   this and would need per-component handling ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

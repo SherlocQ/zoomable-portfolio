@@ -54,6 +54,7 @@ export function GridItem({ item, onItemClick }) {
     >
       {hasImage && <div className="grid-item-img-gradient" aria-hidden="true" />}
       {Illustration && <Illustration className="grid-item-illustration" aria-hidden="true" />}
+      {item.portrait && <img src={asset(item.portrait)} alt="" aria-hidden="true" className="grid-item-portrait" />}
 
       <div className="grid-item-inner">
         {isImageTile ? (

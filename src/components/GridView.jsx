@@ -9,7 +9,10 @@ export default function GridView({ node, onItemClick, isHidden }) {
       initial="hidden"
       animate="show"
       style={isHidden ? { opacity: 0, pointerEvents: 'none' } : undefined}
+      aria-hidden={isHidden || undefined}
+      inert={isHidden || undefined}
     >
+      <h1 className="sr-only">{node.label}</h1>
       {node.items.map((item) => (
         <GridItem key={item.id} item={item} onItemClick={onItemClick} />
       ))}
