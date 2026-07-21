@@ -399,8 +399,13 @@ a:focus-visible,
   .grid-item-portrait { transition: opacity 0.28s ease; }
   .grid-item:hover .grid-item-portrait { transform: none; }
 }
-@media (max-width: 640px) {
-  .grid-item-portrait { width: clamp(120px, 40%, 220px); right: 24px; }
+@media (max-width: 768px) {
+  /* Hero tile is half-width once the root grid pairs up into 2 columns —
+     the portrait and the "Chengchang Qian" label both anchor to the bottom
+     edge and compete for the same corner, unlike the other tiles'
+     top-anchored icons. The name is the content that matters here, so the
+     decorative portrait steps aside rather than fighting it for legibility. */
+  .grid-item-portrait { display: none; }
 }
 
 .grid-item-inner { padding: 15px 18px; width: 100%; position: relative; z-index: 1; }
@@ -1115,10 +1120,18 @@ a:focus-visible,
 
 /* ── Tablet (641–900 px): 2 columns, scrollable ─────────────────────────── */
 @media (max-width: 900px) {
-  /* Root grid scrolls; rows are proportional to card width, never to vh */
+  /* Root grid: 6 items in 2 cols → always exactly 3 rows. Row height is the
+     larger of (a) the card-proportional minimum, capped at 200px so it
+     doesn't keep growing near the 900px edge of this range and overshoot a
+     perfectly normal ~800px-tall browser window, and (b) an exact equal-fill
+     height computed the same way the desktop breakpoint fills 2 rows —
+     avoids `minmax(x, 1fr)` in a scroll container, which different browsers
+     resolve inconsistently and can leave scrollable empty space below the
+     last row. Falls back to the capped minimum (and real scrolling) only on
+     genuinely short viewports, e.g. a landscape phone. */
   .grid-view {
     grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 28vw;
+    grid-auto-rows: max(min(28vw, 200px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -1143,18 +1156,36 @@ a:focus-visible,
   }
 
   .page-content  { padding: 20px 28px 80px; }
+
+  /* Landing page only: pair the hero + projects tiles into one row instead of
+     each claiming a full row at their native 2-col span (avoids a lopsided,
+     half-empty-feeling stack). Nested overlay grids keep their own spans. */
+  .grid-view > .grid-item { grid-column: span 1; }
+
+  /* Tiles are noticeably smaller here than on desktop — the fixed 20px inset
+     eats a bigger share of a small card, so tighten it proportionally. Same
+     sizing all the way down through the mobile breakpoint (no further
+     change at 640px) so the icon doesn't visibly jump at that boundary. */
+  .grid-item-illustration { padding: 10px; height: 62%; }
 }
 
 /* ── Mobile (≤640 px): 1 column, scrollable ─────────────────────────────── */
 @media (max-width: 640px) {
   :root { --gap: 6px; --header-h: 46px; }
 
+  /* Landing page: 2 tiles per row rather than 1 full-width tile per row —
+     single-column rows left a lot of empty space beside short labels/icons.
+     Same max(capped-minimum, exact-fill) approach as the tablet breakpoint —
+     see the comment there for why `minmax(x, 1fr)` was dropped and why the
+     vw-based floor needs a pixel cap (otherwise it overshoots near the top
+     of this range, e.g. 576–640px, on an ordinary ~800px-tall viewport). */
   .grid-view {
-    grid-template-columns: 1fr;
-    grid-auto-rows: 46vw;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: max(min(40vw, 220px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
     overflow-y: auto;
     overflow-x: hidden;
   }
+  .grid-view > .grid-item { grid-column: span 1; }
 
   .overlay-shell.grid-full-overlay {
     overflow-y: auto;
@@ -1180,6 +1211,10 @@ a:focus-visible,
   }
 
   .grid-item-sub { display: none; }
+  /* Hero tile: keep the role subtext visible even on mobile — other tiles
+     hide theirs for space, but this is the only text identifying who the
+     site belongs to. */
+  .grid-item[data-tile="hero"] .grid-item-sub { display: block; }
 
   /* Page content */
   .page-content { padding: 16px 18px 80px; max-width: 100%; }

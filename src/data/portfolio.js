@@ -24,7 +24,7 @@ export const portfolioData = {
       content: {
         type: 'about',
         name: 'Chengchang Qian',
-        role: 'Staff Product Designer',
+        role: 'AI Native Product Designer',
         location: 'San Francisco Bay Area',
         resumeUrl: '/resume.pdf',
         bio: "I'm a Staff Product Designer focused on driving experience vision for AI-native products and complex platform ecosystems.\n\nWith over 10 years of experience across enterprise and consumer platforms, I specialize in systematic thinking, transforming fragmented systems into cohesive, scalable experiences that help people accomplish meaningful work.\n\nAt ServiceNow, I lead the design and vision for AI-native customer and partner experiences, establishing foundational UX architecture and scalable interaction patterns that enable AI-assisted workflows across the ecosystem.\n\nMy work focuses on defining product vision, UX frameworks, and system-level design patterns that help organizations translate emerging technologies into cohesive, real-world product experiences.",

@@ -24,6 +24,7 @@ export function GridItem({ item, onItemClick }) {
   return (
     <motion.div
       className={`grid-item card-${item.tone || 'base'}${hasImage ? ' item-has-image' : ''}`}
+      data-tile={item.id}
       style={{
         '--cs': col,
         '--rs': row,
