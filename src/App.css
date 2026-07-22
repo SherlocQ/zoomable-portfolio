@@ -1153,6 +1153,12 @@ a:focus-visible,
      to a real viewport unit here, which doesn't have that ambiguity. */
   .grid-view {
     grid-template-columns: repeat(2, 1fr);
+    /* Must clear the desktop rule's `grid-template-rows: repeat(2, 1fr)` —
+       this layout needs 3 uniform rows (auto-generated below), not 2
+       explicit fr rows plus a 3rd implicit one splitting the space unevenly
+       (that mismatch squeezed the top rows hard on short viewports, e.g.
+       landscape iPhones, where little height was left to divide by 2). */
+    grid-template-rows: none;
     grid-auto-rows: max(min(28vw, 200px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
     grid-auto-rows: max(min(28vw, 200px), calc((100svh - var(--header-h) - var(--gap) * 4) / 3));
     overflow-y: auto;
@@ -1205,6 +1211,9 @@ a:focus-visible,
      e.g. 576–640px, on an ordinary ~800px-tall viewport). */
   .grid-view {
     grid-template-columns: repeat(2, 1fr);
+    /* See the tablet breakpoint's comment — must clear the desktop rule's
+       2-row explicit template so all 3 rows here size uniformly. */
+    grid-template-rows: none;
     grid-auto-rows: max(min(40vw, 220px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
     grid-auto-rows: max(min(40vw, 220px), calc((100svh - var(--header-h) - var(--gap) * 4) / 3));
     overflow-y: auto;
