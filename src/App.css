@@ -126,7 +126,12 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: va
 /* Background is now a canvas-based interactive grid (BackgroundGrid.jsx) */
 
 /* ─── App shell ──────────────────────────────────────────────────────────────── */
-.app { width: 100vw; height: 100vh; overflow: hidden; position: relative; background: var(--chrome-bg); transition: background-color 0.3s ease; }
+/* height: 100vh first as a fallback for browsers without svh support, then
+   100svh — the "small viewport height" (viewport with mobile browser chrome,
+   e.g. iOS Safari's address/search bar, fully visible). Plain 100vh instead
+   measures the *largest* possible viewport (chrome hidden), which is taller
+   than what's actually visible on load and clips content behind the chrome. */
+.app { width: 100vw; height: 100vh; height: 100svh; overflow: hidden; position: relative; background: var(--chrome-bg); transition: background-color 0.3s ease; }
 
 /* ─── Header — fully transparent so grid lines show through ─────────────────── */
 .app-header {
@@ -253,6 +258,7 @@ a:focus-visible,
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-auto-rows: calc((100vh - var(--header-h) - var(--gap) * 3) / 2);
+  grid-auto-rows: calc((100svh - var(--header-h) - var(--gap) * 3) / 2);
   grid-auto-flow: dense;
   gap: var(--gap);
   padding: var(--gap);
@@ -316,6 +322,7 @@ a:focus-visible,
   height: auto;
   grid-template-rows: none; /* clear the 2-row explicit template from base class */
   grid-auto-rows: calc((100vh - var(--header-h) - var(--gap) * 3) / 2);
+  grid-auto-rows: calc((100svh - var(--header-h) - var(--gap) * 3) / 2);
   align-content: start;
 }
 
@@ -847,6 +854,7 @@ a:focus-visible,
   position: relative;
   width: 100%;
   height: calc(100vh - var(--header-h));
+  height: calc(100svh - var(--header-h));
   flex-shrink: 0;
   overflow: hidden;
   background: var(--surface-2);
@@ -1027,6 +1035,7 @@ a:focus-visible,
   width: 100%;
   aspect-ratio: var(--carousel-ratio, 16/9);
   max-height: 52vh;           /* cap at 52 % of viewport so it never dominates */
+  max-height: 52svh;
   border-radius: var(--r-lg); overflow: hidden;
   background: var(--surface-2);
 }
@@ -1132,6 +1141,7 @@ a:focus-visible,
   .grid-view {
     grid-template-columns: repeat(2, 1fr);
     grid-auto-rows: max(min(28vw, 200px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
+    grid-auto-rows: max(min(28vw, 200px), calc((100svh - var(--header-h) - var(--gap) * 4) / 3));
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -1182,6 +1192,7 @@ a:focus-visible,
   .grid-view {
     grid-template-columns: repeat(2, 1fr);
     grid-auto-rows: max(min(40vw, 220px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
+    grid-auto-rows: max(min(40vw, 220px), calc((100svh - var(--header-h) - var(--gap) * 4) / 3));
     overflow-y: auto;
     overflow-x: hidden;
   }
