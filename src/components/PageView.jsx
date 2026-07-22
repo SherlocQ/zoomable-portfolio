@@ -106,8 +106,8 @@ function ComparisonSlider({ before, after }) {
       aria-valuetext={`${Math.round(pos)}% ${after.label}, use arrow keys to adjust`}
       onKeyDown={onKeyDown}
     >
-      <img src={asset(after.src)}  alt={after.label}  className="cs-img" />
-      <img src={asset(before.src)} alt={before.label} className="cs-img cs-img--over"
+      <img src={asset(after.src)}  alt={after.label}  className="cs-img" loading="lazy" />
+      <img src={asset(before.src)} alt={before.label} className="cs-img cs-img--over" loading="lazy"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
       <div className="cs-handle" style={{ left: `${pos}%` }}>
         <div className="cs-line" />
@@ -124,6 +124,9 @@ function ComparisonSlider({ before, after }) {
   );
 }
 
+const SWIPE_OFFSET_THRESHOLD   = 50;
+const SWIPE_VELOCITY_THRESHOLD = 400;
+
 /* ─── Image carousel ─────────────────────────────────────────────────────── */
 function ImageCarousel({ images, onImageClick, aspectRatio }) {
   const [idx, setIdx] = useState(0);
@@ -131,6 +134,11 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
   const img   = images[idx];
   const go    = useCallback((n) => setIdx(((n % count) + count) % count), [count]);
   const ratio = aspectRatio || '4/3';
+
+  const handleDragEnd = (_e, info) => {
+    if (info.offset.x < -SWIPE_OFFSET_THRESHOLD || info.velocity.x < -SWIPE_VELOCITY_THRESHOLD) go(idx + 1);
+    else if (info.offset.x > SWIPE_OFFSET_THRESHOLD || info.velocity.x > SWIPE_VELOCITY_THRESHOLD) go(idx - 1);
+  };
 
   return (
     <div className="img-carousel">
@@ -147,11 +155,17 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22, ease: 'easeInOut' }}
-            /* onClick on the img itself prevents misclick via arrow buttons */
-            onClick={onImageClick && img.id
+            drag={count > 1 ? 'x' : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.7}
+            dragMomentum={false}
+            onDragEnd={count > 1 ? handleDragEnd : undefined}
+            /* onTap (not onClick) so framer-motion's own gesture recognizer
+               correctly tells a swipe apart from a tap-to-zoom */
+            onTap={onImageClick && img.id
               ? () => onImageClick(img.id, img.src, img.caption, images, idx)
               : undefined}
-            style={{ cursor: onImageClick && img.id ? 'zoom-in' : 'default' }}
+            style={{ cursor: onImageClick && img.id ? 'zoom-in' : 'default', touchAction: count > 1 ? 'pan-y' : 'auto' }}
           />
         </AnimatePresence>
 
@@ -434,6 +448,17 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.20 }}
+                  drag={lbCount > 1 ? 'x' : false}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.7}
+                  dragMomentum={false}
+                  onDragEnd={lbCount > 1
+                    ? (_e, info) => {
+                        if (info.offset.x < -SWIPE_OFFSET_THRESHOLD || info.velocity.x < -SWIPE_VELOCITY_THRESHOLD) lbGo(lbIdx + 1);
+                        else if (info.offset.x > SWIPE_OFFSET_THRESHOLD || info.velocity.x > SWIPE_VELOCITY_THRESHOLD) lbGo(lbIdx - 1);
+                      }
+                    : undefined}
+                  style={{ touchAction: lbCount > 1 ? 'pan-y' : 'auto' }}
                 />
               </AnimatePresence>
             </div>
@@ -544,8 +569,16 @@ function BodyText({ text }) {
   });
 }
 
-function ProjectSection({ s, index, onImageClick, onComparisonClick }) {
-  const mp   = { custom: 4 + index, variants: fadeUp, initial: 'hidden', animate: 'show' };
+function ProjectSection({ s, onImageClick, onComparisonClick }) {
+  // Scroll-triggered reveal (rather than all-at-once on mount) — plays once,
+  // slightly before the section is fully in view so it feels responsive to scroll.
+  const mp   = {
+    custom: 0,
+    variants: fadeUp,
+    initial: 'hidden',
+    whileInView: 'show',
+    viewport: { once: true, margin: '0px 0px -10% 0px', amount: 0.15 },
+  };
   const isH2 = s.level === 'h2';
   const cls  = `project-section${isH2 ? ' section--h2' : ''}`;
 
@@ -731,7 +764,7 @@ function ProjectNavCard({ project, direction, onNavigate }) {
     >
       {previewImg && (
         <div className={`pnav-preview${hovered ? ' pnav-preview--visible' : ''}`} aria-hidden="true">
-          <img src={asset(previewImg)} alt="" className="pnav-preview-img" />
+          <img src={asset(previewImg)} alt="" className="pnav-preview-img" loading="lazy" />
         </div>
       )}
       <span className="pnav-direction">
@@ -814,7 +847,7 @@ function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClic
       <div className="project-body-layout">
         <div className="project-sections">
           {content.sections.map((s, i) => (
-            <ProjectSection key={i} s={s} index={i} onImageClick={onImageClick} onComparisonClick={onComparisonClick} />
+            <ProjectSection key={i} s={s} onImageClick={onImageClick} onComparisonClick={onComparisonClick} />
           ))}
         </div>
         {/* Desktop: sticky right sidebar in whitespace */}
