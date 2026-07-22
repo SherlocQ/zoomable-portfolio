@@ -126,12 +126,15 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: va
 /* Background is now a canvas-based interactive grid (BackgroundGrid.jsx) */
 
 /* ─── App shell ──────────────────────────────────────────────────────────────── */
-/* height: 100vh first as a fallback for browsers without svh support, then
-   100svh — the "small viewport height" (viewport with mobile browser chrome,
-   e.g. iOS Safari's address/search bar, fully visible). Plain 100vh instead
-   measures the *largest* possible viewport (chrome hidden), which is taller
-   than what's actually visible on load and clips content behind the chrome. */
-.app { width: 100vw; height: 100vh; height: 100svh; overflow: hidden; position: relative; background: var(--chrome-bg); transition: background-color 0.3s ease; }
+/* `position: fixed; inset: 0` instead of width/height: 100vw/100vh — a
+   fixed element's containing block is the actual visual viewport, so its
+   edges track the real visible area as iOS Safari's bottom address/search
+   bar shows, hides, or animates mid-scroll. This sidesteps vh/svh/dvh
+   entirely rather than betting on unit support + a browser's particular
+   interpretation of "small" viewport, and is the long-standing, broadly
+   compatible fix (predates svh/dvh, works the same on iOS Safari, Chrome
+   iOS/Android, and desktop). */
+.app { position: fixed; inset: 0; overflow: hidden; background: var(--chrome-bg); transition: background-color 0.3s ease; }
 
 /* ─── Header — fully transparent so grid lines show through ─────────────────── */
 .app-header {
@@ -257,8 +260,11 @@ a:focus-visible,
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: calc((100vh - var(--header-h) - var(--gap) * 3) / 2);
-  grid-auto-rows: calc((100svh - var(--header-h) - var(--gap) * 3) / 2);
+  /* Always exactly 2 rows of content (hero+projects, then 4 single tiles).
+     .grid-view's own box is already viewport-accurate (absolutely positioned
+     against .app, which is `position: fixed; inset: 0`), so dividing it with
+     `fr` needs no viewport unit at all — sidesteps vh/svh/dvh entirely. */
+  grid-template-rows: repeat(2, 1fr);
   grid-auto-flow: dense;
   gap: var(--gap);
   padding: var(--gap);
@@ -850,11 +856,14 @@ a:focus-visible,
 .item-has-image .grid-item-caption { color: rgba(255,255,255,0.72); text-shadow: 0 1px 6px rgba(0,0,0,0.50); }
 
 /* ─── Project hero — fills the full overlay visible area before scrolling ──────── */
+/* `height: 100%` of .page-body, not a vh calc — .page-body is itself
+   `height: 100%` of .overlay-shell.page-overlay, which is `position: fixed`
+   with `top: var(--header-h)`, so it's already viewport-accurate with the
+   header already excluded. No viewport unit needed at any point here. */
 .project-hero-section {
   position: relative;
   width: 100%;
-  height: calc(100vh - var(--header-h));
-  height: calc(100svh - var(--header-h));
+  height: 100%;
   flex-shrink: 0;
   overflow: hidden;
   background: var(--surface-2);
@@ -1133,11 +1142,15 @@ a:focus-visible,
      larger of (a) the card-proportional minimum, capped at 200px so it
      doesn't keep growing near the 900px edge of this range and overshoot a
      perfectly normal ~800px-tall browser window, and (b) an exact equal-fill
-     height computed the same way the desktop breakpoint fills 2 rows —
-     avoids `minmax(x, 1fr)` in a scroll container, which different browsers
-     resolve inconsistently and can leave scrollable empty space below the
-     last row. Falls back to the capped minimum (and real scrolling) only on
-     genuinely short viewports, e.g. a landscape phone. */
+     svh-based height (vh as a fallback for browsers without svh support).
+     A `100%`-of-self version was tried here instead of svh, since
+     .grid-view's own box is already viewport-accurate (absolutely
+     positioned against .app, which is `position: fixed; inset: 0`) — but
+     percentage grid-track sizing inside an `overflow: auto` container turned
+     out to be exactly the kind of ambiguous case `minmax(x, 1fr)` was
+     dropped for earlier (verified empirically with Playwright: it silently
+     ignored the capped minimum and shrank to content size instead), so back
+     to a real viewport unit here, which doesn't have that ambiguity. */
   .grid-view {
     grid-template-columns: repeat(2, 1fr);
     grid-auto-rows: max(min(28vw, 200px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
@@ -1185,10 +1198,11 @@ a:focus-visible,
 
   /* Landing page: 2 tiles per row rather than 1 full-width tile per row —
      single-column rows left a lot of empty space beside short labels/icons.
-     Same max(capped-minimum, exact-fill) approach as the tablet breakpoint —
-     see the comment there for why `minmax(x, 1fr)` was dropped and why the
-     vw-based floor needs a pixel cap (otherwise it overshoots near the top
-     of this range, e.g. 576–640px, on an ordinary ~800px-tall viewport). */
+     Same max(capped-minimum, svh exact-fill) approach as the tablet
+     breakpoint — see the comment there for why `minmax(x, 1fr)` and a
+     %-of-self fill were both tried and dropped, and why the vw-based floor
+     needs a pixel cap (otherwise it overshoots near the top of this range,
+     e.g. 576–640px, on an ordinary ~800px-tall viewport). */
   .grid-view {
     grid-template-columns: repeat(2, 1fr);
     grid-auto-rows: max(min(40vw, 220px), calc((100vh - var(--header-h) - var(--gap) * 4) / 3));
