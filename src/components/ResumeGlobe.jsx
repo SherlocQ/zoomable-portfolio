@@ -376,6 +376,75 @@ export default function ResumeGlobe({ content }) {
     };
   }, [chapters.length]);
 
+  useEffect(() => {
+    const component = rootRef.current;
+    const stage = component?.querySelector('.resume-globe-stage');
+    const copy = component?.querySelector('.resume-globe-copy');
+    if (!stage || !copy) return undefined;
+
+    let previousTouchY = null;
+    let wheelEndTimer;
+
+    const isStacked = () => window.matchMedia('(max-width: 768px)').matches;
+    const suspendSnap = () => { copy.style.scrollSnapType = 'none'; };
+    const settleToNearestScene = () => {
+      const nearest = stepsRef.current.reduce((best, step, index) => {
+        if (!step) return best;
+        const distance = Math.abs(step.offsetTop - copy.scrollTop);
+        return distance < best.distance ? { index, distance, top: step.offsetTop } : best;
+      }, { index: 0, distance: Number.POSITIVE_INFINITY, top: 0 });
+      copy.style.removeProperty('scroll-snap-type');
+      copy.scrollTo({
+        top: nearest.top,
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      });
+    };
+
+    const onTouchStart = (event) => {
+      if (!isStacked() || event.touches.length !== 1) return;
+      previousTouchY = event.touches[0].clientY;
+      suspendSnap();
+    };
+
+    const onTouchMove = (event) => {
+      if (previousTouchY === null || event.touches.length !== 1) return;
+      event.preventDefault();
+      const nextY = event.touches[0].clientY;
+      copy.scrollTop += previousTouchY - nextY;
+      previousTouchY = nextY;
+    };
+
+    const onTouchEnd = () => {
+      if (previousTouchY === null) return;
+      previousTouchY = null;
+      settleToNearestScene();
+    };
+
+    const onStageWheel = (event) => {
+      if (!isStacked() || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      event.preventDefault();
+      suspendSnap();
+      copy.scrollTop += event.deltaY;
+      window.clearTimeout(wheelEndTimer);
+      wheelEndTimer = window.setTimeout(settleToNearestScene, 120);
+    };
+
+    stage.addEventListener('touchstart', onTouchStart, { passive: true });
+    stage.addEventListener('touchmove', onTouchMove, { passive: false });
+    stage.addEventListener('touchend', onTouchEnd, { passive: true });
+    stage.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    stage.addEventListener('wheel', onStageWheel, { passive: false });
+    return () => {
+      stage.removeEventListener('touchstart', onTouchStart);
+      stage.removeEventListener('touchmove', onTouchMove);
+      stage.removeEventListener('touchend', onTouchEnd);
+      stage.removeEventListener('touchcancel', onTouchEnd);
+      stage.removeEventListener('wheel', onStageWheel);
+      window.clearTimeout(wheelEndTimer);
+      copy.style.removeProperty('scroll-snap-type');
+    };
+  }, [chapters.length]);
+
   return (
     <div className="resume-globe" ref={rootRef}>
       <aside className="resume-globe-stage" aria-label="Career locations on an interactive globe">
@@ -390,7 +459,7 @@ export default function ResumeGlobe({ content }) {
           <motion.h1 custom={0} variants={fadeUp} initial="hidden" animate="show">
             Designing AI-native products and complex platform ecosystems
           </motion.h1>
-          <motion.p custom={1} variants={fadeUp} initial="hidden" animate="show">
+          <motion.p className="resume-description" custom={1} variants={fadeUp} initial="hidden" animate="show">
             With over 10 years of experience across enterprise and consumer platforms, I specialize in systematic thinking—transforming fragmented systems into cohesive, scalable experiences that help people accomplish meaningful work.
           </motion.p>
           <motion.div className="resume-step-actions" custom={2} variants={fadeUp} initial="hidden" animate="show">
@@ -406,12 +475,7 @@ export default function ResumeGlobe({ content }) {
           >
             <span className="resume-eyebrow">{chapter.eyebrow}</span>
             <h2>{chapter.title}</h2>
-            <p>{chapter.body}</p>
-            {chapter.tags?.length > 0 && (
-              <div className="tag-row">
-                {chapter.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}
-              </div>
-            )}
+            <p className="resume-description">{chapter.body}</p>
           </section>
         ))}
       </div>

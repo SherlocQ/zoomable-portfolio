@@ -205,11 +205,14 @@ function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
     const remainingRatio = Math.min(1, Math.abs(destination - currentXRef.current) / width);
     const duration = Math.max(160, Math.round(280 * remainingRatio));
     animateTo(destination, duration).then(() => {
+      // Reset the physical track before swapping its three stable slide sources.
+      // Both mutations happen in the same task, so the newly-current image is
+      // already centered when the browser paints the next frame.
+      setTransform(0);
       flushSync(() => {
         if (direction === 'next') onNext();
         else onPrevious();
       });
-      setTransform(0);
       animatingRef.current = false;
     });
   }, [animateTo, enabled, onNext, onPrevious, setTransform]);
@@ -340,7 +343,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
             return (
               <div
                 className="carousel-swipe-slide"
-                key={`${slide.src}-${offset}`}
+                key={offset}
                 style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
                 aria-hidden={offset !== 0 || undefined}
               >
@@ -348,7 +351,8 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
                   src={asset(slide.src)}
                   alt={offset === 0 ? slide.caption || '' : ''}
                   className="img-carousel-img"
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
                   draggable={false}
                   style={{ cursor: onImageClick && slide.id ? 'zoom-in' : 'default' }}
                 />
@@ -631,19 +635,21 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       ) : isImagePage ? (
         <>
           <div className="img-page-body">
-            <div
-              className="img-page-scroll"
-              data-swipe-enabled={lbCount > 1 || undefined}
-              {...lightboxSwipe.handlers}
-            >
-              <div ref={lightboxTrackRef} className="lightbox-swipe-track">
+            <div className="img-page-scroll">
+              <div
+                ref={lightboxTrackRef}
+                className="lightbox-swipe-track"
+                data-swipe-enabled={lbCount > 1 || undefined}
+                aria-label={lbCount > 1 ? 'Image lightbox. Swipe left or right to browse.' : undefined}
+                {...lightboxSwipe.handlers}
+              >
                 {(lbCount > 1 ? [-1, 0, 1] : [0]).map((offset) => {
                   const sourceImages = lbImages || [{ src: content.src, caption: content.caption }];
                   const slide = sourceImages[((lbIdx + offset) % sourceImages.length + sourceImages.length) % sourceImages.length];
                   return (
                     <div
                       className="lightbox-swipe-slide"
-                      key={`${slide.src}-${offset}`}
+                      key={offset}
                       style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
                       aria-hidden={offset !== 0 || undefined}
                     >
@@ -651,6 +657,8 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                         src={asset(slide.src)}
                         alt={offset === 0 ? slide.caption || '' : ''}
                         className={`img-page-img${node.fit === 'contain' ? ' img-page-img--contain' : ''}`}
+                        loading="eager"
+                        decoding="async"
                         draggable={false}
                       />
                     </div>
@@ -701,7 +709,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           )}
         </>
       ) : (
-        <div className="page-body">
+        <div className={`page-body${content.type === 'about' ? ' page-body--about' : ''}`}>
           {hasHero && (
             <div className={`project-hero-section${content.heroImage ? '' : ' project-hero-section--empty'}`}>
               {content.heroImage && (

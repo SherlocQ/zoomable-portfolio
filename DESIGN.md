@@ -341,6 +341,7 @@ The marketing surface treats Display and Text as one continuous voice; the famil
 - **Single voice from display to body.** Display-xl at 600 → body at 400 — same family, narrower weights.
 - **Eyebrow uses positive tracking** (+0.4px) — contrast against the negative-tracked display marks the eyebrow as taxonomy.
 - **Mono only in code contexts.** Linear Mono lives inside product screenshots — not on marketing chrome.
+- **Project hierarchy is fixed.** Project title uses 32–40px display type, H2 uses 24px, H3 uses 20px, and all project body/list/after-copy variants use `{typography.body}` with `{colors.ink-muted}`. On mobile, project titles scale to 28–32px and lead copy scales to 16px.
 
 ### Note on Font Substitutes
 
@@ -480,6 +481,21 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Journey scenes use geographically accurate markers and great-circle route animation for Beijing, Ann Arbor, Los Angeles, Sunnyvale, and Santa Clara. Repeated Sunnyvale chapters change content without inventing a new location.
 - The globe is rendered at device pixel ratio for crisp output and redraws correctly after route entry, resize, and theme changes.
 - Light and dark modes use the same hierarchy and geometry; only tokenized colors change.
+- Descriptions use `{typography.body}` at 16px; journey tags are intentionally hidden.
+- Scrolling remains native and continuous. `scroll-snap-type: y mandatory` and `scroll-snap-stop: always` align the nearest scene after input ends; JavaScript must not impose a wheel threshold or lock normal page scrolling.
+- At ≤768px, copy and globe each occupy 50% of the viewport. A gesture that begins over the globe continuously forwards movement to the copy scroller and settles to the nearest scene on release.
+
+### Project Image Readability
+
+**`project-preview-media`** — Image-backed cards on the Projects grid.
+- Keep the source image crisp except for a progressive 1px backdrop blur limited to the lower text region.
+- Use a smooth bottom vignette from approximately 90% black at the bottom to transparent near 91% of the card height.
+- Titles are white; supporting text is 86% white. Do not add text shadows.
+
+**`project-hero-media`** — Full-viewport hero image at the top of a project detail page.
+- Use a wider bottom vignette from approximately 92% black at the bottom to transparent near 94% of the image height.
+- Apply a progressive 3px backdrop blur behind the lower text region, masked so it fades to a fully crisp image rather than ending as a rectangular blur band.
+- Titles are white and supporting text is 86% white in both light and dark modes. Do not add text shadows. Empty/no-image heroes use normal theme tokens and no media blur.
 
 ### Image Carousel and Lightbox
 
@@ -487,9 +503,11 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - At rest, only the active image is visible. During interaction, the previous or next image follows the gesture into the viewport.
 - Swipe and arrow navigation share one full-width slide transition. Motion is `transform: translate3d(...)` only; image width, height, opacity, crop, and aspect ratio remain constant.
 - Duration is at most 280ms with `cubic-bezier(0.32, 0.72, 0, 1)`. The track resets in the same rendered frame as the active-index update, so there is no black frame or visible rebound.
+- The three slide DOM nodes use stable offset keys and adjacent images load eagerly with async decoding, preventing white flashes during the atomic track reset/index swap.
 - Inline and Lightbox carousels use the same behavior. Each measures its own track width; never use a padded outer container to calculate travel distance.
 - Touch gestures preserve vertical scrolling with `touch-action: pan-y`. A 50px drag, or a fast gesture of at least 28px / 400px/s, advances the carousel; shorter gestures ease back.
 - Adjacent images may be mounted/preloaded for continuity but must remain clipped while idle. Non-active images use empty alt text and `aria-hidden`.
+- Lightbox gestures bind directly to `.lightbox-swipe-track`, and every Lightbox image fills the same fixed-height stage with `object-fit: contain`.
 - Craft GIF tiles use real `<img>` elements so animation plays on mobile; they are not CSS background images.
 
 ### Footer
