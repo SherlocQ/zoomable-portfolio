@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { flushSync } from 'react-dom';
 import { T, fadeUp, SPRING_SLOW, EASE_HERO } from '../transitions';
 import { asset } from '../utils/asset';
+import ResumeGlobe from './ResumeGlobe';
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -127,53 +129,239 @@ function ComparisonSlider({ before, after }) {
 const SWIPE_OFFSET_THRESHOLD   = 50;
 const SWIPE_VELOCITY_THRESHOLD = 400;
 
+function useAdjacentImagePreload(images, index) {
+  useEffect(() => {
+    if (!images || images.length < 2) return;
+    const count = images.length;
+    const adjacent = [
+      images[(index - 1 + count) % count],
+      images[(index + 1) % count],
+    ];
+    adjacent.forEach((image) => {
+      const preload = new window.Image();
+      preload.src = asset(image.src);
+    });
+  }, [images, index]);
+}
+
+function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
+  const startRef = useRef(null);
+  const animatingRef = useRef(false);
+  const animationRef = useRef(null);
+  const currentXRef = useRef(0);
+  const suppressClickRef = useRef(false);
+
+  const setTransform = useCallback((value) => {
+    currentXRef.current = value;
+    if (trackRef.current) {
+      trackRef.current.style.transform = `translate3d(${value}px, 0, 0)`;
+    }
+  }, [trackRef]);
+
+  const animateTo = useCallback((target, duration) => {
+    const element = trackRef.current;
+    if (!element) return Promise.resolve();
+
+    animationRef.current?.cancel();
+    const animation = element.animate([
+      { transform: `translate3d(${currentXRef.current}px, 0, 0)` },
+      { transform: `translate3d(${target}px, 0, 0)` },
+    ], {
+      duration,
+      easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
+      fill: 'forwards',
+    });
+    animationRef.current = animation;
+
+    return animation.finished.then(() => {
+      currentXRef.current = target;
+      if (trackRef.current === element) {
+        element.style.transform = `translate3d(${target}px, 0, 0)`;
+      }
+      animation.cancel();
+      if (animationRef.current === animation) animationRef.current = null;
+    }).catch(() => {});
+  }, [trackRef]);
+
+  const settleBack = useCallback(() => {
+    animateTo(0, 180);
+  }, [animateTo]);
+
+  const navigate = useCallback((direction, width) => {
+    if (!enabled || animatingRef.current || !width) return;
+
+    const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (shouldReduceMotion) {
+      flushSync(() => {
+        if (direction === 'next') onNext();
+        else onPrevious();
+      });
+      setTransform(0);
+      return;
+    }
+
+    animatingRef.current = true;
+    const destination = direction === 'next' ? -width : width;
+    const remainingRatio = Math.min(1, Math.abs(destination - currentXRef.current) / width);
+    const duration = Math.max(160, Math.round(280 * remainingRatio));
+    animateTo(destination, duration).then(() => {
+      flushSync(() => {
+        if (direction === 'next') onNext();
+        else onPrevious();
+      });
+      setTransform(0);
+      animatingRef.current = false;
+    });
+  }, [animateTo, enabled, onNext, onPrevious, setTransform]);
+
+  const onPointerDown = useCallback((event) => {
+    if (!enabled || animatingRef.current || event.target.closest('button')) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    animationRef.current?.cancel();
+    animationRef.current = null;
+    setTransform(0);
+    startRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      time: performance.now(),
+      width: trackRef.current?.getBoundingClientRect().width
+        || event.currentTarget.getBoundingClientRect().width,
+      intent: null,
+    };
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Synthetic pointers and older touch browsers may not expose capture.
+    }
+  }, [enabled, setTransform, trackRef]);
+
+  const onPointerMove = useCallback((event) => {
+    const start = startRef.current;
+    if (!start || start.pointerId !== event.pointerId) return;
+
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (!start.intent && Math.hypot(dx, dy) >= 7) {
+      start.intent = Math.abs(dx) > Math.abs(dy) * 1.08 ? 'horizontal' : 'vertical';
+    }
+    if (start.intent !== 'horizontal') return;
+
+    setTransform(dx);
+  }, [setTransform]);
+
+  const onPointerUp = useCallback((event) => {
+    const start = startRef.current;
+    if (!start || start.pointerId !== event.pointerId) return;
+    startRef.current = null;
+    try {
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // The pointer may already have been released by the browser.
+    }
+
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    const elapsed = Math.max(1, performance.now() - start.time);
+    const velocity = Math.abs(dx) / elapsed * 1000;
+    const isHorizontal = start.intent === 'horizontal' || Math.abs(dx) > Math.abs(dy) * 1.15;
+    const crossedThreshold = Math.abs(dx) >= SWIPE_OFFSET_THRESHOLD
+      || (Math.abs(dx) >= 28 && velocity >= SWIPE_VELOCITY_THRESHOLD);
+
+    if (!isHorizontal || !crossedThreshold) {
+      settleBack();
+      return;
+    }
+    suppressClickRef.current = true;
+    window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+    navigate(dx < 0 ? 'next' : 'previous', start.width);
+  }, [navigate, settleBack]);
+
+  const onPointerCancel = useCallback(() => {
+    startRef.current = null;
+    settleBack();
+  }, [settleBack]);
+
+  useEffect(() => () => animationRef.current?.cancel(), []);
+
+  const consumeSuppressedClick = useCallback(() => {
+    if (!suppressClickRef.current) return false;
+    suppressClickRef.current = false;
+    return true;
+  }, []);
+
+  return {
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
+    consumeSuppressedClick,
+    navigate,
+  };
+}
+
 /* ─── Image carousel ─────────────────────────────────────────────────────── */
 function ImageCarousel({ images, onImageClick, aspectRatio }) {
   const [idx, setIdx] = useState(0);
+  const trackRef = useRef(null);
   const count = images.length;
   const img   = images[idx];
   const go    = useCallback((n) => setIdx(((n % count) + count) % count), [count]);
   const ratio = aspectRatio || '4/3';
+  useAdjacentImagePreload(images, idx);
 
-  const handleDragEnd = (_e, info) => {
-    if (info.offset.x < -SWIPE_OFFSET_THRESHOLD || info.velocity.x < -SWIPE_VELOCITY_THRESHOLD) go(idx + 1);
-    else if (info.offset.x > SWIPE_OFFSET_THRESHOLD || info.velocity.x > SWIPE_VELOCITY_THRESHOLD) go(idx - 1);
-  };
+  const swipe = useSwipeNavigation({
+    enabled: count > 1,
+    onPrevious: () => go(idx - 1),
+    onNext: () => go(idx + 1),
+    trackRef,
+  });
 
   return (
     <div className="img-carousel">
       {/* Fixed-ratio stage — images positioned absolute to fill it */}
-      <div className="img-carousel-stage" style={{ '--carousel-ratio': ratio }}>
-        <AnimatePresence initial={false}>
-          <motion.img
-            key={img.src}
-            src={asset(img.src)}
-            alt={img.caption || ''}
-            className="img-carousel-img"
-            loading="lazy"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: 'easeInOut' }}
-            drag={count > 1 ? 'x' : false}
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.7}
-            dragMomentum={false}
-            onDragEnd={count > 1 ? handleDragEnd : undefined}
-            /* onTap (not onClick) so framer-motion's own gesture recognizer
-               correctly tells a swipe apart from a tap-to-zoom */
-            onTap={onImageClick && img.id
-              ? () => onImageClick(img.id, img.src, img.caption, images, idx)
-              : undefined}
-            style={{ cursor: onImageClick && img.id ? 'zoom-in' : 'default', touchAction: count > 1 ? 'pan-y' : 'auto' }}
-          />
-        </AnimatePresence>
+      <div
+        className="img-carousel-stage"
+        style={{ '--carousel-ratio': ratio }}
+        data-swipe-enabled={count > 1 || undefined}
+        aria-label={count > 1 ? 'Image carousel. Swipe left or right to browse.' : undefined}
+        onClick={onImageClick && img.id
+          ? (event) => {
+              if (!event.target.closest('button') && !swipe.consumeSuppressedClick()) {
+                onImageClick(img.id, img.src, img.caption, images, idx);
+              }
+            }
+          : undefined}
+        {...swipe.handlers}
+      >
+        <div ref={trackRef} className="carousel-swipe-track">
+          {(count > 1 ? [-1, 0, 1] : [0]).map((offset) => {
+            const slide = images[((idx + offset) % count + count) % count];
+            return (
+              <div
+                className="carousel-swipe-slide"
+                key={`${slide.src}-${offset}`}
+                style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
+                aria-hidden={offset !== 0 || undefined}
+              >
+                <img
+                  src={asset(slide.src)}
+                  alt={offset === 0 ? slide.caption || '' : ''}
+                  className="img-carousel-img"
+                  loading="lazy"
+                  draggable={false}
+                  style={{ cursor: onImageClick && slide.id ? 'zoom-in' : 'default' }}
+                />
+              </div>
+            );
+          })}
+        </div>
 
         {count > 1 && (
           <>
             <button
               className="img-carousel-arrow img-carousel-arrow--prev"
-              onClick={() => go(idx - 1)}
+              onClick={() => swipe.navigate('previous', trackRef.current?.clientWidth)}
               aria-label="Previous image"
               title="Previous image"
             >
@@ -183,7 +371,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
             </button>
             <button
               className="img-carousel-arrow img-carousel-arrow--next"
-              onClick={() => go(idx + 1)}
+              onClick={() => swipe.navigate('next', trackRef.current?.clientWidth)}
               aria-label="Next image"
               title="Next image"
             >
@@ -363,13 +551,19 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const lbImages = node.lbImages || null;
   const lbCount  = lbImages?.length ?? 0;
   const [lbIdx, setLbIdx] = useState(node.lbIdx ?? 0);
+  const lightboxTrackRef = useRef(null);
   const lbGo = useCallback(
     (n) => setLbIdx(((n % lbCount) + lbCount) % lbCount),
     [lbCount],
   );
-  const activeSrc     = lbImages ? lbImages[lbIdx].src     : content.src;
+  const lightboxSwipe = useSwipeNavigation({
+    enabled: isImagePage && lbCount > 1,
+    onPrevious: () => lbGo(lbIdx - 1),
+    onNext: () => lbGo(lbIdx + 1),
+    trackRef: lightboxTrackRef,
+  });
   const activeCaption = lbImages ? lbImages[lbIdx].caption : content.caption;
-
+  useAdjacentImagePreload(lbImages, lbIdx);
   const motionShell = isLightbox
     ? { initial: { opacity: 0, scale: 0.96 }, animate: { opacity: 1, scale: 1 } }
     : skipLayoutTransition
@@ -437,30 +631,32 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       ) : isImagePage ? (
         <>
           <div className="img-page-body">
-            <div className="img-page-scroll">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.img
-                  key={activeSrc}
-                  src={asset(activeSrc)}
-                  alt={activeCaption || ''}
-                  className={`img-page-img${node.fit === 'contain' ? ' img-page-img--contain' : ''}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.20 }}
-                  drag={lbCount > 1 ? 'x' : false}
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.7}
-                  dragMomentum={false}
-                  onDragEnd={lbCount > 1
-                    ? (_e, info) => {
-                        if (info.offset.x < -SWIPE_OFFSET_THRESHOLD || info.velocity.x < -SWIPE_VELOCITY_THRESHOLD) lbGo(lbIdx + 1);
-                        else if (info.offset.x > SWIPE_OFFSET_THRESHOLD || info.velocity.x > SWIPE_VELOCITY_THRESHOLD) lbGo(lbIdx - 1);
-                      }
-                    : undefined}
-                  style={{ touchAction: lbCount > 1 ? 'pan-y' : 'auto' }}
-                />
-              </AnimatePresence>
+            <div
+              className="img-page-scroll"
+              data-swipe-enabled={lbCount > 1 || undefined}
+              {...lightboxSwipe.handlers}
+            >
+              <div ref={lightboxTrackRef} className="lightbox-swipe-track">
+                {(lbCount > 1 ? [-1, 0, 1] : [0]).map((offset) => {
+                  const sourceImages = lbImages || [{ src: content.src, caption: content.caption }];
+                  const slide = sourceImages[((lbIdx + offset) % sourceImages.length + sourceImages.length) % sourceImages.length];
+                  return (
+                    <div
+                      className="lightbox-swipe-slide"
+                      key={`${slide.src}-${offset}`}
+                      style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
+                      aria-hidden={offset !== 0 || undefined}
+                    >
+                      <img
+                        src={asset(slide.src)}
+                        alt={offset === 0 ? slide.caption || '' : ''}
+                        className={`img-page-img${node.fit === 'contain' ? ' img-page-img--contain' : ''}`}
+                        draggable={false}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             {activeCaption && (
               <motion.div
@@ -480,12 +676,12 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           {/* Prev/next navigation for lightbox carousels */}
           {lbCount > 1 && (
             <>
-              <button className="lb-nav lb-nav--prev" onClick={() => lbGo(lbIdx - 1)} aria-label="Previous image" title="Previous image">
+              <button className="lb-nav lb-nav--prev" onClick={() => lightboxSwipe.navigate('previous', lightboxTrackRef.current?.clientWidth)} aria-label="Previous image" title="Previous image">
                 <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
                   <path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-              <button className="lb-nav lb-nav--next" onClick={() => lbGo(lbIdx + 1)} aria-label="Next image" title="Next image">
+              <button className="lb-nav lb-nav--next" onClick={() => lightboxSwipe.navigate('next', lightboxTrackRef.current?.clientWidth)} aria-label="Next image" title="Next image">
                 <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
                   <path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -539,7 +735,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
             </div>
           )}
 
-          <div className={`page-content${isProject ? ' page-content--project' : ''}${content.type === 'contact' ? ' page-content--contact' : ''}`}>
+          <div className={`page-content${isProject ? ' page-content--project' : ''}${content.type === 'contact' ? ' page-content--contact' : ''}${content.type === 'about' ? ' page-content--about' : ''}`}>
             {content.type === 'hero'    && <HeroContent    node={node} content={content} />}
             {isProject                  && <ProjectContent node={node} content={content} hasHero={hasHero} onImageClick={onImageClick} onComparisonClick={onComparisonClick} siblings={siblings} onNavigate={onNavigate} />}
             {content.type === 'about'   && <AboutContent   node={node} content={content} />}
@@ -878,107 +1074,8 @@ function HeroContent({ node, content }) {
   );
 }
 
-function TimelineEntry({ exp, index }) {
-  return (
-    <motion.div
-      className="timeline-entry"
-      initial={{ opacity: 0, x: -12 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ ...SPRING_SLOW, delay: index * 0.06 }}
-    >
-      <div className="timeline-dot" />
-      <div className="timeline-body">
-        <div className="timeline-header">
-          <span className="timeline-company">{exp.company}</span>
-          <span className="timeline-period">{exp.period}</span>
-        </div>
-        <p className="timeline-role">{exp.role} · {exp.location}</p>
-        <p className="timeline-desc">{exp.description}</p>
-      </div>
-    </motion.div>
-  );
-}
-
 function AboutContent({ node, content }) {
-  return (
-    <div className="about-content">
-      {/* Bio */}
-      <motion.div className="about-intro" custom={0} variants={fadeUp} initial="hidden" animate="show">
-        <h1>{content.name}</h1>
-        <p className="about-role-line">{content.role} · {content.location}</p>
-      </motion.div>
-
-      <motion.div className="about-bio" custom={1} variants={fadeUp} initial="hidden" animate="show">
-        {content.bio.split('\n\n').filter(Boolean).map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
-      </motion.div>
-
-      {/* Resume download */}
-      <motion.a
-        href={content.resumeUrl}
-        download
-        className="about-resume-btn"
-        custom={2}
-        variants={fadeUp}
-        initial="hidden"
-        animate="show"
-      >
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-          <path d="M6.5 1v8M3 6.5l3.5 3.5 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M1 11h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-        Download Résumé
-      </motion.a>
-
-      {/* Experience timeline */}
-      <motion.div className="about-section-head" custom={3} variants={fadeUp} initial="hidden" animate="show">
-        <span className="about-section-label">Experience</span>
-      </motion.div>
-
-      <div className="timeline-track">
-        <div className="timeline-line" aria-hidden="true" />
-        {content.experience.map((exp, i) => (
-          <TimelineEntry key={exp.id} exp={exp} index={i} />
-        ))}
-      </div>
-
-      {/* Education */}
-      <motion.div
-        className="about-section-head"
-        initial={{ opacity: 0, x: -12 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={SPRING_SLOW}
-      >
-        <span className="about-section-label">Education</span>
-      </motion.div>
-
-      <div className="timeline-track timeline-track--edu">
-        <div className="timeline-line" aria-hidden="true" />
-        {content.education.map((edu, i) => (
-          <motion.div
-            key={i}
-            className="timeline-entry"
-            initial={{ opacity: 0, x: -12 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ ...SPRING_SLOW, delay: i * 0.07 }}
-          >
-            <div className="timeline-dot" />
-            <div className="timeline-body">
-              <div className="timeline-header">
-                <span className="timeline-company">{edu.school}</span>
-                <span className="timeline-period">{edu.period}</span>
-              </div>
-              <p className="timeline-role">{edu.degree}</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
+  return <ResumeGlobe node={node} content={content} />;
 }
 
 function ProcessContent({ node, content }) {
@@ -1019,7 +1116,7 @@ function ContactContent({ node, content }) {
         <span className="contact-eyebrow">Get in touch</span>
         <h1 className="contact-heading">Let's build<br />something great.</h1>
         <p className="contact-desc">
-          I'm a product designer based in the San Francisco Bay Area, currently at LinkedIn.
+          I'm a product designer based in the San Francisco Bay Area, currently at ServiceNow.
           Whether you have a role, a project, or just want to connect — I'd love to hear from you.
         </p>
 

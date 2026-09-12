@@ -46,11 +46,22 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 - Every `page` node's `content.type` (`hero`, `about`, `project`, `process`, `contact`, `craft`, `image`, `comparison`) selects which sub-component `PageView.jsx` renders (`HeroContent`, `AboutContent`, `ProjectContent`, etc.) — adding a new content shape means adding both the data and a matching branch/component in `PageView.jsx`
 - Lightboxes (single image and before/after comparison) are synthetic `page` nodes built on the fly in `App.jsx` (`openLightbox` / `openComparisonLightbox`), not part of `portfolio.js`
 - Within a project's `content.sections`, section `type: 'video'` accepts an optional `aspectRatio` (e.g. `'330/240'`) for embeds that aren't 16:9 — drives `.section-video-wrap`'s CSS `aspect-ratio`, defaults to `16/9`. `type: 'columns'` renders a 3-col desktop / 1-col mobile grid of heading+body+image cards (see Lighthouse's "Be Transparent/Effective/Delightful").
+- The `/hero` page is an interactive resume globe, rendered by `ResumeGlobe.jsx`. Its copy, dates, locations, coordinates, and tags live in `portfolioData.hero.content.journey`; keep factual edits in the data file rather than the renderer.
+- `ResumeGlobe` uses `d3-geo`, `topojson-client`, and the local `world-atlas` package. It draws a high-DPI canvas, supports light/dark themes, and scrolls through Beijing → Ann Arbor → Los Angeles → Sunnyvale (LBP) → Sunnyvale (LSS) → Santa Clara. The intro has no location marker; the final Santa Clara scene has a single pulsing marker and no outgoing route.
+- On desktop, resume copy stays left and the globe stays sticky on the right. At ≤768px the viewport is split 50/50: scrollable copy above, large globe below, with no content/globe overlap.
+
+## Motion and media behavior
+- Project image carousels and their Lightbox views share `useSwipeNavigation` in `PageView.jsx`.
+- Carousel navigation is a three-panel, full-width track: at rest only the current image is visible; while dragging, the previous/next image follows the pointer into view. Arrow clicks use the exact same transition as swipe completion.
+- Animate the track only with native WAAPI `transform: translate3d(...)` — never animate image width, height, or opacity. A completed transition travels exactly one track width, uses the `cubic-bezier(0.32, 0.72, 0, 1)` curve, and caps at 280ms. After the state update, `flushSync` and an immediate transform reset prevent a visible bounce or black frame.
+- Lightbox distance must be measured from `.lightbox-swipe-track`, not the padded `.img-page-scroll` container. Inline distance likewise comes from `.carousel-swipe-track`.
+- Swipe activation uses either a 50px distance or a fast gesture of at least 28px / 400px/s. Insufficient gestures ease back without bounce. `touch-action: pan-y` preserves vertical page scrolling.
+- Craft GIF thumbnails render as real `<img>` elements, not CSS backgrounds, so they animate reliably on mobile. Adjacent carousel assets are preloaded in memory.
 
 ## Icons & illustrations
 - Root grid tiles get a theme-adaptive SVG via `item.illustration` (key into `ILLUSTRATIONS` map in `GridItem.jsx`) — these are React components with `fill="var(--ink)"`/`var(--surface-1)"` so they recolor automatically per theme.
 - The hero tile additionally has `item.portrait`, a plain static SVG path (not a token-recolored component) rendered as `<img className="grid-item-portrait">`, bottom-right anchored and clipped by the tile's `overflow: hidden`. Used for genuinely multi-tone/shaded artwork where flattening to 2 tokens would destroy the shading — don't reuse this pattern for simple icons, use `illustration` for those.
 
 ## Images
-All project/craft images are in `public/images/`. Referenced via `asset()` helper.
+All project/craft images are in `public/images/`. Referenced via `asset()` helper. Keep production media local; do not introduce Webflow CDN dependencies.
 Hero images live at `public/images/projects/*-hero.{jpg,png}`.

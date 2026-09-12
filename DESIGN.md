@@ -472,6 +472,26 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 **`top-nav`** — Sticky dark bar with the Linear wordmark left, primary nav links centered, and a `button-secondary` ("Sign in") + `button-primary` ("Get started") pair right.
 - Background `{colors.canvas}`, text `{colors.ink}`, type `{typography.body-sm}`, height 56px.
 
+### Resume Globe
+
+**`resume-globe`** — The `/hero` page presents the résumé as a geographic, scroll-driven narrative rather than a linear timeline.
+- Desktop: copy occupies the left column and a sticky, unclipped globe occupies the right column.
+- Intro: no eyebrow or location marker; the globe is larger than in subsequent scenes and `Scroll to explore` appears centered at the viewport bottom only while the page is at the top.
+- Journey scenes use geographically accurate markers and great-circle route animation for Beijing, Ann Arbor, Los Angeles, Sunnyvale, and Santa Clara. Repeated Sunnyvale chapters change content without inventing a new location.
+- The globe is rendered at device pixel ratio for crisp output and redraws correctly after route entry, resize, and theme changes.
+- Light and dark modes use the same hierarchy and geometry; only tokenized colors change.
+
+### Image Carousel and Lightbox
+
+**`image-carousel`** — Product screenshots use a clipped three-panel track.
+- At rest, only the active image is visible. During interaction, the previous or next image follows the gesture into the viewport.
+- Swipe and arrow navigation share one full-width slide transition. Motion is `transform: translate3d(...)` only; image width, height, opacity, crop, and aspect ratio remain constant.
+- Duration is at most 280ms with `cubic-bezier(0.32, 0.72, 0, 1)`. The track resets in the same rendered frame as the active-index update, so there is no black frame or visible rebound.
+- Inline and Lightbox carousels use the same behavior. Each measures its own track width; never use a padded outer container to calculate travel distance.
+- Touch gestures preserve vertical scrolling with `touch-action: pan-y`. A 50px drag, or a fast gesture of at least 28px / 400px/s, advances the carousel; shorter gestures ease back.
+- Adjacent images may be mounted/preloaded for continuity but must remain clipped while idle. Non-active images use empty alt text and `aria-hidden`.
+- Craft GIF tiles use real `<img>` elements so animation plays on mobile; they are not CSS background images.
+
 ### Footer
 
 **`footer`** — Dense link grid on `{colors.canvas}` with the Linear wordmark left.
@@ -491,7 +511,7 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 ### Don't
 
-- Don't ship a light-mode marketing page.
+- Don't introduce theme-specific hardcoded colors without an equivalent light/dark token treatment.
 - Don't use lavender as a section background or card fill.
 - Don't introduce a second chromatic accent (orange, pink, green for marketing).
 - Don't add atmospheric gradients or spotlight cards.
@@ -526,8 +546,10 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 ### Image Behavior
 
-- Product UI screenshots maintain aspect ratio and never crop.
+- Product UI screenshots preserve their source aspect ratio unless a carousel/card explicitly uses `object-fit: cover`; use the existing `contain` option for artwork that must never crop.
 - Customer logos in the marquee may collapse from 6-up to 3-up below 768px.
+- Resume layout becomes a 50/50 viewport split below 768px: scrollable copy above and the globe below.
+- Carousels remain swipeable at touch sizes; navigation targets are at least 40px and do not block vertical scrolling.
 
 ## Iteration Guide
 
@@ -543,6 +565,6 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 - The four-step surface ladder values are extracted directly from Linear's `--color-bg-level-3`, `--color-line-tint`, etc. CSS variables; they are Linear's canonical surface spec.
 - Form-field error and validation styling is not visible on the inspected pages.
-- Light mode is not documented because the marketing site does not ship a light theme.
+- This portfolio extends the source Linear palette with a fully tokenized light mode; geometry, hierarchy, and interaction behavior remain identical across themes.
 - Linear's actual product UI uses a richer color-tag palette (red, orange, yellow, green, blue, purple) for issue priorities and project labels — those colors live in the in-product surfaces shown in mockups.
 - The custom display, text, and mono families are proprietary; an open-source substitute is acceptable.

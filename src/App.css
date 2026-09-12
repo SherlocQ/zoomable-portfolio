@@ -619,6 +619,200 @@ a:focus-visible,
 
 
 /* ─── About page ─────────────────────────────────────────────────────────────── */
+.page-content--about {
+  max-width: none;
+  padding: 0 0 0 48px;
+}
+
+.resume-globe {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  gap: 32px;
+  max-width: none;
+  margin: 0;
+}
+
+.resume-globe-stage {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: calc(100vh - var(--header-h));
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.resume-globe-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.resume-globe-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.resume-globe-vignette {
+  display: none;
+}
+
+.resume-globe-copy {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.resume-step {
+  width: 100%;
+  min-width: 0;
+  min-height: calc(82vh - var(--header-h));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(44px, 8vh, 92px) 0;
+  opacity: 0.3;
+  transform: translateY(14px);
+  transition:
+    opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.resume-step--intro {
+  min-height: calc(100vh - var(--header-h));
+}
+
+.resume-step.is-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.resume-eyebrow {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--ink-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.resume-step h1,
+.resume-step h2 {
+  max-width: 620px;
+  margin: 0 0 24px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: clamp(40px, 4vw, 56px);
+  font-weight: 590;
+  letter-spacing: -1.8px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.resume-step h2 {
+  font-size: clamp(32px, 3vw, 40px);
+  letter-spacing: -1px;
+  line-height: 1.15;
+}
+
+.resume-step > p {
+  max-width: 570px;
+  margin-bottom: 24px;
+  color: var(--ink-muted);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.05px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.resume-step--intro > p {
+  font-size: 18px;
+  letter-spacing: -0.1px;
+}
+
+.resume-step .tag-row {
+  gap: 8px;
+}
+
+.resume-step .tag {
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.resume-step-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.resume-step-actions .about-resume-btn {
+  margin: 0;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-color: var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.resume-scroll-cue {
+  position: absolute;
+  top: calc(100vh - var(--header-h) - 36px);
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--surface-1) 90%, transparent);
+  color: var(--ink-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.24s ease;
+}
+
+.resume-scroll-cue.is-visible {
+  opacity: 1;
+}
+
+.resume-scroll-cue svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: resume-cue-float 2s ease-in-out infinite;
+}
+
+@keyframes resume-cue-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
 .about-content { padding-bottom: 60px; }
 .about-intro { margin-bottom: 20px; }
 .about-content h1 {
@@ -849,6 +1043,14 @@ a:focus-visible,
     transparent 84%
   );
 }
+.grid-item-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  pointer-events: none; user-select: none;
+  -webkit-user-drag: none;
+}
+.grid-item-media--contain { object-fit: contain; }
 /* Image cards: always white text regardless of theme — overrides ink token declarations */
 .item-has-image .grid-item-label   { color: #fff;                    text-shadow: 0 1px 10px rgba(0,0,0,0.60); }
 .item-has-image .grid-item-sub     { color: rgba(255,255,255,0.72);  text-shadow: 0 1px 6px rgba(0,0,0,0.50); }
@@ -944,10 +1146,30 @@ a:focus-visible,
   display: flex; flex-direction: column; min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
+.img-page-scroll[data-swipe-enabled="true"],
+.img-carousel-stage[data-swipe-enabled="true"] {
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+}
+.img-page-scroll[data-swipe-enabled="true"] .lightbox-swipe-track,
+.img-carousel-stage[data-swipe-enabled="true"] .carousel-swipe-track {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.lightbox-swipe-track {
+  position: relative; flex: 1;
+  width: 100%; min-height: 0;
+}
+.lightbox-swipe-slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+}
 .img-page-img {
   width: 100%; height: auto; display: block;
   border-radius: 6px;
   margin: auto 0;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 /* Contain-fit images (e.g. square/mat-backed illustrations) — scale down to fit, never crop or stretch full-width */
 .img-page-img--contain {
@@ -1048,11 +1270,15 @@ a:focus-visible,
   border-radius: var(--r-lg); overflow: hidden;
   background: var(--surface-2);
 }
+.carousel-swipe-track { position: absolute; inset: 0; }
+.carousel-swipe-slide { position: absolute; inset: 0; }
 /* cursor lives on the img, not the stage, to avoid arrow misclicks */
 .img-carousel-img {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; display: block;  /* fills stage, clips edges uniformly */
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 /* Arrows — overlaid on left / right sides of the image */
@@ -1581,6 +1807,161 @@ a:focus-visible,
   transition: background 0.14s;
 }
 .notfound-btn:hover { background: var(--accent-hover); }
+
+@media (max-width: 1024px) {
+  .page-content--about {
+    padding: 0 0 0 32px;
+  }
+
+  .resume-globe {
+    grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr);
+    gap: 24px;
+  }
+
+  .resume-step h1 {
+    font-size: clamp(40px, 5vw, 56px);
+  }
+
+  .resume-step h2 {
+    font-size: clamp(32px, 4vw, 40px);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content--about {
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .resume-globe {
+    display: grid;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .resume-globe-stage {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    top: auto;
+    z-index: 1;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    background: var(--surface-1);
+  }
+
+  .resume-globe-canvas-wrap {
+    height: 100%;
+  }
+
+  .resume-globe-vignette {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    display: block;
+    height: 34%;
+    background: linear-gradient(to bottom, transparent, var(--surface-1));
+    pointer-events: none;
+  }
+
+  .resume-globe-copy {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    z-index: 4;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    margin-top: 0;
+    padding: 0 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scroll-snap-type: y proximity;
+  }
+
+  .resume-scroll-cue {
+    top: calc(50% - 30px);
+  }
+
+  .resume-step h1,
+  .resume-step h2,
+  .resume-step > p {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .resume-step,
+  .resume-step--intro {
+    min-height: 100%;
+    padding: 32px 0;
+    scroll-snap-align: start;
+  }
+
+  .resume-step h1 {
+    font-size: clamp(40px, 8vw, 56px);
+  }
+
+  .resume-step h2 {
+    font-size: clamp(32px, 7vw, 40px);
+  }
+
+  .resume-step > p {
+    font-size: 16px;
+  }
+
+  .resume-step-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content--about {
+    padding: 0;
+  }
+
+  .resume-globe-stage {
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+
+  .resume-globe-copy {
+    padding: 0 16px;
+  }
+
+  .resume-step,
+  .resume-step--intro {
+    min-height: 100%;
+    padding: 24px 0;
+  }
+
+  .resume-step h1 {
+    font-size: 32px;
+    letter-spacing: -1px;
+    line-height: 1.12;
+  }
+
+  .resume-step h2 {
+    font-size: 32px;
+    letter-spacing: -0.8px;
+    line-height: 1.16;
+  }
+
+  .resume-step--intro > p {
+    font-size: 16px;
+    letter-spacing: -0.05px;
+  }
+}
 
 /* ─── Reduced motion — CSS-driven transitions/animations only; Framer Motion's
    JS-driven transforms (layout, page/lightbox transitions) aren't covered by

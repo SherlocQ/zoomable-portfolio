@@ -18,6 +18,7 @@ const ILLUSTRATIONS = {
 export function GridItem({ item, onItemClick }) {
   const [col, row] = item.span || [1, 1];
   const hasImage    = Boolean(item.image);
+  const isAnimatedImage = /\.gif(?:$|\?)/i.test(item.image || '');
   const isImageTile = item.content?.type === 'image';
   const Illustration = ILLUSTRATIONS[item.illustration];
 
@@ -30,9 +31,11 @@ export function GridItem({ item, onItemClick }) {
         '--rs': row,
         ...(hasImage ? {
           ...(item.bg ? { backgroundColor: item.bg } : {}),
-          backgroundImage: item.bgImage
-            ? `url(${asset(item.image)}), url(${asset(item.bgImage)})`
-            : `url(${asset(item.image)})`,
+          ...(!isAnimatedImage ? {
+            backgroundImage: item.bgImage
+              ? `url(${asset(item.image)}), url(${asset(item.bgImage)})`
+              : `url(${asset(item.image)})`,
+          } : {}),
           backgroundSize: item.fit === 'contain'
             ? (item.bgImage ? 'contain, cover' : 'contain')
             : 'cover',
@@ -53,6 +56,16 @@ export function GridItem({ item, onItemClick }) {
       }}
       transition={{ layout: T }}
     >
+      {isAnimatedImage && (
+        <img
+          src={asset(item.image)}
+          alt=""
+          aria-hidden="true"
+          className={`grid-item-media${item.fit === 'contain' ? ' grid-item-media--contain' : ''}`}
+          draggable={false}
+          decoding="async"
+        />
+      )}
       {hasImage && <div className="grid-item-img-gradient" aria-hidden="true" />}
       {Illustration && <Illustration className="grid-item-illustration" aria-hidden="true" />}
       {item.portrait && <img src={asset(item.portrait)} alt="" aria-hidden="true" className="grid-item-portrait" />}
