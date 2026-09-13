@@ -1,13 +1,16 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import lottie from 'lottie-web/build/player/lottie_light.js';
-import { T, fadeUp, SPRING_SLOW, EASE_HERO } from '../transitions';
+import { T, fadeUp, EASE, EASE_HERO } from '../transitions';
 import { asset } from '../utils/asset';
 import ResumeGlobe from './ResumeGlobe';
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+const LIGHTBOX_ZOOM = { duration: 0.56, ease: EASE };
+const LIGHTBOX_FADE = { duration: 0.38, ease: EASE };
 
 const HEADING_TERMS = new Map([
   ['account', 'Account'],
@@ -121,7 +124,6 @@ function ProjectImageWrap({ id, src, caption, onImageClick, children }) {
   return (
     <motion.div
       className={`section-img-wrap${onImageClick ? ' section-img-wrap--clickable' : ''}`}
-      layoutId={id ? `item-img-${id}` : undefined}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       aria-label={interactive ? (caption || 'View image') : undefined}
@@ -454,7 +456,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false 
   return (
     <div className="img-carousel">
       {/* Fixed-ratio stage — images positioned absolute to fill it */}
-      <div
+      <motion.div
         className="img-carousel-stage"
         style={{ '--carousel-ratio': ratio }}
         data-swipe-enabled={count > 1 || undefined}
@@ -478,10 +480,13 @@ function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false 
                 style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
                 aria-hidden={offset !== 0 || undefined}
               >
-                <img
+                <motion.img
                   src={asset(slide.src)}
                   alt={offset === 0 ? slide.caption || '' : ''}
                   className="img-carousel-img"
+                  layoutId={offset === 0 && onImageClick && slide.id ? `carousel-img-${slide.id}` : undefined}
+                  layoutCrossfade={false}
+                  transition={{ layout: LIGHTBOX_ZOOM }}
                   loading="eager"
                   decoding="async"
                   draggable={false}
@@ -516,7 +521,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false 
             </button>
           </>
         )}
-      </div>
+      </motion.div>
 
       {showCaption && img.caption && <p className="section-caption">{img.caption}</p>}
       {count > 1 && (
@@ -600,32 +605,125 @@ function useOtpState(h2s) {
   return { active, scrollTo };
 }
 
-/* Desktop sidebar */
+/* Desktop edge-mounted line menu */
 function OnThisPage({ h2s }) {
   const { active, scrollTo } = useOtpState(h2s);
+  const navRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const lineMenuSpring = { type: 'spring', duration: 0.4, bounce: 0.2 };
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const content = nav?.closest('.project-content');
+    const scrollRoot = nav?.closest('.page-body');
+    if (!content || !scrollRoot) return undefined;
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const viewportTop = scrollRoot.getBoundingClientRect().top;
+      const nextVisible = content.getBoundingClientRect().top <= viewportTop + 1;
+      setIsVisible((current) => current === nextVisible ? current : nextVisible);
+    };
+    const scheduleUpdate = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
+
+    update();
+    scrollRoot.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    return () => {
+      scrollRoot.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   if (h2s.length < 2) return null;
   return (
-    <nav className="on-this-page" aria-label="On this page">
+    <nav
+      ref={navRef}
+      className={`on-this-page${isVisible ? ' on-this-page--visible' : ''}`}
+      aria-label="On this page"
+      aria-hidden={!isVisible}
+      onMouseLeave={() => setHoveredIndex(null)}
+    >
       <ul>
-        {h2s.map((s) => (
-          <li key={s.heading}>
+        {h2s.map((s, index) => (
+          <motion.li
+            key={s.heading}
+            initial={false}
+            animate={{ height: hoveredIndex === null ? 16 : 22 }}
+            transition={lineMenuSpring}
+          >
             <button
               className={`otp-link${active === slugify(s.heading) ? ' otp-link--active' : ''}`}
               onClick={() => scrollTo(s.heading)}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onFocus={() => setHoveredIndex(index)}
+              onBlur={() => setHoveredIndex(null)}
+              aria-current={active === slugify(s.heading) ? 'location' : undefined}
+              aria-label={`Jump to ${sentenceCaseHeading(s.heading)}`}
             >
-              {sentenceCaseHeading(s.heading)}
+              <span className="otp-link-label">{sentenceCaseHeading(s.heading)}</span>
+              <motion.span
+                className="otp-link-tick"
+                aria-hidden="true"
+                initial={false}
+                animate={{
+                  width: hoveredIndex === index
+                    ? 24
+                    : hoveredIndex !== null && Math.abs(hoveredIndex - index) === 1
+                      ? 18
+                      : 12,
+                }}
+                transition={lineMenuSpring}
+              />
             </button>
-          </li>
+          </motion.li>
         ))}
       </ul>
     </nav>
   );
 }
 
-/* Mobile sticky-bottom selector */
+/* Mobile top-sticky selector */
 function OnThisPageMobile({ h2s }) {
   const { active, scrollTo } = useOtpState(h2s);
   const [open, setOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const scrollRoot = sentinel?.closest('.page-body');
+    if (!sentinel || !scrollRoot) return undefined;
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const viewportTop = scrollRoot.getBoundingClientRect().top;
+      const nextVisible = sentinel.getBoundingClientRect().top <= viewportTop + 1;
+      setIsVisible((current) => current === nextVisible ? current : nextVisible);
+      if (!nextVisible) setOpen(false);
+    };
+    const scheduleUpdate = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
+
+    update();
+    scrollRoot.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    return () => {
+      scrollRoot.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   if (h2s.length < 2) return null;
 
   const activeLabel = sentenceCaseHeading(
@@ -638,37 +736,44 @@ function OnThisPageMobile({ h2s }) {
   };
 
   return (
-    <div className="otp-mobile">
-      <div className={`otp-mobile-inner${open ? ' otp-mobile-inner--open' : ''}`}>
-        {/* Dropdown list — rendered first so it expands upward */}
-        <div className={`otp-mobile-list${open ? ' otp-mobile-list--open' : ''}`}>
-          {h2s.map((s) => (
-            <button
-              key={s.heading}
-              className={active === slugify(s.heading) ? 'otp-active' : ''}
-              onClick={() => handleSelect(s.heading)}
+    <>
+      <span ref={sentinelRef} className="otp-mobile-sentinel" aria-hidden="true" />
+      <div
+        className={`otp-mobile${isVisible ? ' otp-mobile--visible' : ''}`}
+        aria-hidden={!isVisible}
+        inert={!isVisible ? true : undefined}
+      >
+        <div className={`otp-mobile-inner${open ? ' otp-mobile-inner--open' : ''}`}>
+          <button className="otp-mobile-toggle" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="listbox">
+            <span className="otp-mobile-label">{activeLabel}</span>
+            <svg
+              className={`otp-mobile-chevron${open ? ' otp-mobile-chevron--up' : ''}`}
+              width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
             >
-              {sentenceCaseHeading(s.heading)}
-            </button>
-          ))}
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6"
+                strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          {/* Top-sticky menu opens downward into the reading flow. */}
+          <div className={`otp-mobile-list${open ? ' otp-mobile-list--open' : ''}`}>
+            {h2s.map((s) => (
+              <button
+                key={s.heading}
+                className={active === slugify(s.heading) ? 'otp-active' : ''}
+                onClick={() => handleSelect(s.heading)}
+              >
+                {sentenceCaseHeading(s.heading)}
+              </button>
+            ))}
+          </div>
         </div>
-        <button className="otp-mobile-toggle" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="listbox">
-          <span className="otp-mobile-label">{activeLabel}</span>
-          <svg
-            className={`otp-mobile-chevron${!open ? ' otp-mobile-chevron--up' : ''}`}
-            width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
-          >
-            <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6"
-              strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
       </div>
-    </div>
+    </>
   );
 }
 
 /* ─── PageView ────────────────────────────────────────────────────────────── */
-export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, zIndex, skipLayoutTransition, isActive = true }) {
+export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, onLightboxScrollDismiss, zIndex, skipLayoutTransition, isActive = true }) {
   const { content } = node;
   const tone            = node.tone || 'base';
   const isImagePage     = content.type === 'image';
@@ -676,6 +781,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const isEmbedPage     = content.type === 'embed';
   const isProject       = content.type === 'project';
   const hasHero     = isProject && ('heroImage' in content);
+  const reduceMotion = useReducedMotion();
 
   // Move keyboard focus into this overlay when it becomes the active (topmost) layer
   const shellRef = useRef(null);
@@ -688,8 +794,17 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const lbCount  = lbImages?.length ?? 0;
   const [lbIdx, setLbIdx] = useState(node.lbIdx ?? 0);
   const lightboxTrackRef = useRef(null);
+  const lightboxScrollRef = useRef(null);
+  const activeLightboxImageRef = useRef(null);
+  const lightboxBoundaryDeltaRef = useRef(0);
+  const lightboxExitStartedRef = useRef(false);
+  const lightboxTouchRef = useRef(null);
+  const [lightboxMediaLayout, setLightboxMediaLayout] = useState({ isLong: false, height: null });
   const lbGo = useCallback(
-    (n) => setLbIdx(((n % lbCount) + lbCount) % lbCount),
+    (n) => {
+      setLightboxMediaLayout({ isLong: false, height: null });
+      setLbIdx(((n % lbCount) + lbCount) % lbCount);
+    },
     [lbCount],
   );
   const lightboxSwipe = useSwipeNavigation({
@@ -700,8 +815,184 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   });
   const activeCaption = lbImages ? lbImages[lbIdx].caption : content.caption;
   useAdjacentImagePreload(lbImages, lbIdx);
+
+  const measureLightboxImage = useCallback(() => {
+    const scroller = lightboxScrollRef.current;
+    const image = activeLightboxImageRef.current;
+    if (!isLightbox || !isImagePage || !scroller || !image?.naturalWidth || !image?.naturalHeight) return;
+
+    const style = window.getComputedStyle(scroller);
+    const availableWidth = Math.max(
+      1,
+      scroller.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+    );
+    const availableHeight = Math.max(
+      1,
+      scroller.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom),
+    );
+    const widthFitHeight = availableWidth * image.naturalHeight / image.naturalWidth;
+    const isLong = widthFitHeight > availableHeight + 1;
+    setLightboxMediaLayout((current) => {
+      const height = isLong ? widthFitHeight : null;
+      if (current.isLong === isLong && Math.abs((current.height || 0) - (height || 0)) < 0.5) return current;
+      return { isLong, height };
+    });
+  }, [isImagePage, isLightbox]);
+
+  useLayoutEffect(() => {
+    if (!isLightbox || !isImagePage) return undefined;
+    const scroller = lightboxScrollRef.current;
+    if (!scroller) return undefined;
+    const observer = new ResizeObserver(measureLightboxImage);
+    observer.observe(scroller);
+    measureLightboxImage();
+    return () => {
+      observer.disconnect();
+    };
+  }, [isImagePage, isLightbox, lbIdx, measureLightboxImage]);
+
+  useLayoutEffect(() => {
+    if (!isLightbox || !isImagePage) return;
+    lightboxBoundaryDeltaRef.current = 0;
+    lightboxScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    measureLightboxImage();
+  }, [isImagePage, isLightbox, lbIdx, measureLightboxImage]);
+
+  useEffect(() => {
+    if (!lightboxMediaLayout.isLong) {
+      lightboxScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [lightboxMediaLayout.isLong]);
+
+  const dismissLightboxFromGesture = useCallback((deltaY) => {
+    if (!isLightbox || !onLightboxScrollDismiss) return;
+    lightboxExitStartedRef.current = true;
+    // Keep forwarding momentum deltas while AnimatePresence retains the
+    // exiting overlay so the underlying project never pauses.
+    onLightboxScrollDismiss(deltaY);
+  }, [isLightbox, onLightboxScrollDismiss]);
+
+  const handleLightboxWheel = useCallback((event) => {
+    if (!isLightbox || Math.abs(event.deltaY) < 1 || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+    const deltaY = event.deltaY * unit;
+
+    if (lightboxExitStartedRef.current) {
+      event.preventDefault();
+      dismissLightboxFromGesture(deltaY);
+      return;
+    }
+
+    if (isImagePage && lightboxMediaLayout.isLong) {
+      const scroller = lightboxScrollRef.current;
+      if (!scroller) return;
+      const atTop = scroller.scrollTop <= 1;
+      const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+      const movingOutward = (deltaY < 0 && atTop) || (deltaY > 0 && atBottom);
+      if (!movingOutward) {
+        lightboxBoundaryDeltaRef.current = 0;
+        return;
+      }
+
+      event.preventDefault();
+      lightboxBoundaryDeltaRef.current += Math.abs(deltaY);
+      if (lightboxBoundaryDeltaRef.current < 28) return;
+    } else {
+      event.preventDefault();
+    }
+
+    dismissLightboxFromGesture(deltaY);
+  }, [dismissLightboxFromGesture, isImagePage, isLightbox, lightboxMediaLayout.isLong]);
+
+  useEffect(() => {
+    if (!isLightbox) return undefined;
+    const shell = shellRef.current;
+    if (!shell) return undefined;
+
+    const onTouchStart = (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      lightboxTouchRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        lastY: touch.clientY,
+        intent: null,
+        boundary: 0,
+      };
+    };
+    const onTouchMove = (event) => {
+      const state = lightboxTouchRef.current;
+      const touch = event.touches[0];
+      if (!state || !touch) return;
+      const dx = touch.clientX - state.x;
+      const dy = touch.clientY - state.y;
+      if (!state.intent && Math.hypot(dx, dy) >= 10) {
+        if (Math.abs(dx) > Math.abs(dy) * 1.25) state.intent = 'horizontal';
+        else if (Math.abs(dy) > Math.abs(dx) * 1.25) state.intent = 'vertical';
+      }
+      if (state.intent !== 'vertical') {
+        state.lastY = touch.clientY;
+        return;
+      }
+
+      const deltaY = state.lastY - touch.clientY;
+      state.lastY = touch.clientY;
+      if (lightboxExitStartedRef.current) {
+        event.preventDefault();
+        dismissLightboxFromGesture(deltaY);
+        return;
+      }
+
+      if (isImagePage && lightboxMediaLayout.isLong) {
+        const scroller = lightboxScrollRef.current;
+        if (!scroller) return;
+        const atTop = scroller.scrollTop <= 1;
+        const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+        const movingOutward = (deltaY < 0 && atTop) || (deltaY > 0 && atBottom);
+        if (!movingOutward) {
+          state.boundary = 0;
+          return;
+        }
+        event.preventDefault();
+        state.boundary += Math.abs(deltaY);
+        if (state.boundary < 28) return;
+      } else {
+        event.preventDefault();
+        state.boundary += Math.abs(deltaY);
+        if (state.boundary < 28) return;
+      }
+      dismissLightboxFromGesture(deltaY);
+    };
+    const clearTouch = () => { lightboxTouchRef.current = null; };
+    shell.addEventListener('touchstart', onTouchStart, { passive: true });
+    shell.addEventListener('touchmove', onTouchMove, { passive: false });
+    shell.addEventListener('touchend', clearTouch, { passive: true });
+    shell.addEventListener('touchcancel', clearTouch, { passive: true });
+    return () => {
+      shell.removeEventListener('touchstart', onTouchStart);
+      shell.removeEventListener('touchmove', onTouchMove);
+      shell.removeEventListener('touchend', clearTouch);
+      shell.removeEventListener('touchcancel', clearTouch);
+    };
+  }, [dismissLightboxFromGesture, isImagePage, isLightbox, lightboxMediaLayout.isLong]);
+
+  const handleLightboxClickCapture = useCallback((event) => {
+    if (!isLightbox || lightboxSwipe.consumeSuppressedClick()) return;
+    if (event.target.closest('.lightbox-dismiss, .lb-nav, .lb-dots, .img-page-caption-bar')) return;
+    const media = isComparisonPage
+      ? shellRef.current?.querySelector('.cs-lb-wrap')
+      : activeLightboxImageRef.current;
+    if (!media) return;
+    const rect = media.getBoundingClientRect();
+    const outsideMedia = event.clientX < rect.left || event.clientX > rect.right
+      || event.clientY < rect.top || event.clientY > rect.bottom;
+    if (outsideMedia) onBack?.();
+  }, [isComparisonPage, isLightbox, lightboxSwipe, onBack]);
+
   const motionShell = isLightbox
-    ? { initial: { opacity: 0, scale: 0.96 }, animate: { opacity: 1, scale: 1 } }
+    ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
+    : isImagePage
+      ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
     : skipLayoutTransition
       ? { initial: { opacity: 0 }, animate: { opacity: 1 } }
       : { layoutId: `item-${node.id}` };
@@ -720,14 +1011,31 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
     <motion.div
       ref={shellRef}
       className={shellClass}
-      style={{ zIndex, ...(isImagePage && node.bg ? { background: node.bg } : {}) }}
+      style={{ zIndex }}
       tabIndex={-1}
       aria-hidden={!isActive || undefined}
       inert={!isActive || undefined}
+      onWheelCapture={isLightbox ? handleLightboxWheel : undefined}
+      onClickCapture={isLightbox ? handleLightboxClickCapture : undefined}
       {...motionShell}
-      exit={{ opacity: 0, scale: 0.97, transition: T }}
-      transition={isLightbox ? SPRING_SLOW : T}
+      exit={isLightbox
+        ? { opacity: [1, 1, 0], transition: reduceMotion ? { duration: 0.01 } : { ...LIGHTBOX_ZOOM, times: [0, 0.92, 1] } }
+        : isImagePage
+          ? { opacity: 1, transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM }
+        : { opacity: 0, transition: T }}
+      transition={isLightbox ? (reduceMotion ? { duration: 0.01 } : LIGHTBOX_FADE) : T}
     >
+      {(isLightbox || isImagePage) && (
+        <motion.div
+          className="lightbox-scrim"
+          style={isImagePage && node.bg ? { background: node.bg } : undefined}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={reduceMotion ? { duration: 0.01 } : LIGHTBOX_FADE}
+          aria-hidden="true"
+        />
+      )}
       {/* Dismiss button — on lightbox, image, and embed pages */}
       {(isLightbox || isImagePage || isEmbedPage) && (
         <button className="lightbox-dismiss" onClick={onBack} aria-label="Close" title="Close">
@@ -759,24 +1067,33 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       ) : isComparisonPage ? (
         <div className="img-page-body">
           <div className="img-page-scroll">
-            <div className="cs-lb-wrap">
+            <motion.div
+              className="cs-lb-wrap"
+              layoutId={node.sourceId ? `comparison-${node.sourceId}` : undefined}
+              layoutCrossfade={false}
+              transition={{ layout: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM }}
+            >
               <ComparisonSlider before={content.before} after={content.after} />
-            </div>
+            </motion.div>
           </div>
         </div>
       ) : isImagePage ? (
         <>
           <div className="img-page-body">
-            <div className="img-page-scroll">
+            <div
+              ref={lightboxScrollRef}
+              className={`img-page-scroll${lightboxMediaLayout.isLong ? ' img-page-scroll--long' : ''}`}
+            >
               <div
                 ref={lightboxTrackRef}
                 className="lightbox-swipe-track"
+                style={lightboxMediaLayout.height ? { '--lightbox-media-height': `${lightboxMediaLayout.height}px` } : undefined}
                 data-swipe-enabled={lbCount > 1 || undefined}
                 aria-label={lbCount > 1 ? 'Image lightbox. Swipe left or right to browse.' : undefined}
                 {...lightboxSwipe.handlers}
               >
                 {(lbCount > 1 ? [-1, 0, 1] : [0]).map((offset) => {
-                  const sourceImages = lbImages || [{ src: content.src, caption: content.caption }];
+                  const sourceImages = lbImages || [{ id: node.sourceId, src: content.src, caption: content.caption }];
                   const slide = sourceImages[((lbIdx + offset) % sourceImages.length + sourceImages.length) % sourceImages.length];
                   return (
                     <div
@@ -785,14 +1102,27 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                       style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
                       aria-hidden={offset !== 0 || undefined}
                     >
-                      <img
-                        src={asset(slide.src)}
-                        alt={offset === 0 ? slide.caption || '' : ''}
-                        className={`img-page-img${node.fit === 'contain' ? ' img-page-img--contain' : ''}`}
-                        loading="eager"
-                        decoding="async"
-                        draggable={false}
-                      />
+                      <motion.div
+                        className="lightbox-zoom-frame"
+                      >
+                        <motion.img
+                          ref={offset === 0 ? activeLightboxImageRef : undefined}
+                          src={asset(slide.src)}
+                          alt={offset === 0 ? slide.caption || '' : ''}
+                          className={`img-page-img${node.fit === 'contain' ? ' img-page-img--contain' : ''}`}
+                          layoutId={offset === 0
+                            ? (isLightbox && slide.id === node.sourceId
+                                ? (lbImages ? `carousel-img-${node.sourceId}` : `item-img-${node.sourceId}`)
+                                : (!isLightbox ? `item-img-${node.id}` : undefined))
+                            : undefined}
+                          layoutCrossfade={false}
+                          transition={{ layout: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM }}
+                          loading="eager"
+                          decoding="async"
+                          draggable={false}
+                          onLoad={offset === 0 ? measureLightboxImage : undefined}
+                        />
+                      </motion.div>
                     </div>
                   );
                 })}
@@ -951,7 +1281,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
         {s.body && <div className="project-design-goal-copy"><BodyText text={s.body} /></div>}
         {s.src && (
           <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
-            <img src={asset(s.src)} alt={s.caption || goalLabel} className="section-image" loading="lazy" />
+            <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || goalLabel} className="section-image" loading="lazy" />
           </ProjectImageWrap>
         )}
         {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
@@ -1011,7 +1341,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
       ? <ProjectLottie src={s.src} label={s.caption || s.heading} />
       : (
         <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
-          <img src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
+          <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
         </ProjectImageWrap>
       );
 
@@ -1111,7 +1441,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
         {heading}
         {s.body && <BodyText text={s.body} />}
         <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
-          <img src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
+          <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
         </ProjectImageWrap>
         {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
@@ -1131,7 +1461,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
           <div className={`section-gallery section-gallery--${count <= 2 ? '2up' : count === 3 ? '3up' : '4up'}`}>
             {s.images.map((img) => (
               <ProjectImageWrap key={img.id} id={img.id} src={img.src} caption={img.caption} onImageClick={onImageClick}>
-                <img src={asset(img.src)} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
+                <motion.img layoutId={`item-img-${img.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(img.src)} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
               </ProjectImageWrap>
             ))}
           </div>
@@ -1153,7 +1483,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
               {item.body && <BodyText text={item.body} />}
               {item.image && (
                 <ProjectImageWrap id={item.id} src={item.image} caption={item.caption} onImageClick={onImageClick}>
-                  <img src={asset(item.image)} alt={item.caption || item.heading || ''} className="section-image" loading="lazy" />
+                  <motion.img layoutId={`item-img-${item.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(item.image)} alt={item.caption || item.heading || ''} className="section-image" loading="lazy" />
                 </ProjectImageWrap>
               )}
             </div>
@@ -1169,7 +1499,12 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
       <motion.div className={cls} {...mp}>
         {heading}
         {s.body && <BodyText text={s.body} />}
-        <div className="cs-outer">
+        <motion.div
+          className="cs-outer"
+          layoutId={`comparison-${s.before.id || s.before.src}`}
+          layoutCrossfade={false}
+          transition={{ layout: LIGHTBOX_ZOOM }}
+        >
           <ComparisonSlider before={s.before} after={s.after} />
           {onComparisonClick && (
             <button
@@ -1183,7 +1518,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
               </svg>
             </button>
           )}
-        </div>
+        </motion.div>
         {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
     );
@@ -1307,6 +1642,9 @@ function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClic
         </motion.div>
       )}
 
+      {/* Mobile: enters with project content, then remains full-width at the top. */}
+      <OnThisPageMobile h2s={h2Sections} />
+
       <motion.div className="project-meta" custom={hasHero ? 0 : 1} variants={fadeUp} initial="hidden" animate="show">
         {metaFields.map(([l, v]) => (
           <div key={l} className="meta-item">
@@ -1328,12 +1666,9 @@ function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClic
             <ProjectSection key={i} s={s} onImageClick={onImageClick} onComparisonClick={onComparisonClick} />
           ))}
         </div>
-        {/* Desktop: sticky right sidebar in whitespace */}
+        {/* Desktop: fixed right-edge line menu */}
         <OnThisPage h2s={h2Sections} />
       </div>
-
-      {/* Mobile: sticky bottom selector pill */}
-      <OnThisPageMobile h2s={h2Sections} />
 
       <ProjectNav node={node} siblings={siblings} onNavigate={onNavigate} />
     </div>

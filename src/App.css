@@ -27,7 +27,14 @@
   --terracotta-hover: #b85a3a;
 
   /* OTP mobile overlay background (theme-aware) */
-  --otp-bg:          rgba(20,21,22,0.92);
+  --otp-bg:          rgba(20,21,22,0.80);
+  --otp-line:        rgba(247,248,248,0.28);
+  --otp-line-active: #f7f8f8;
+  --otp-tooltip-bg:  rgba(20,21,22,0.92);
+  --otp-tooltip-text:#f7f8f8;
+  --otp-tooltip-border: rgba(247,248,248,0.10);
+  --otp-tooltip-shadow: rgba(0,0,0,0.28);
+  --otp-mobile-shadow: rgba(0,0,0,0.24);
 
   /* Typography */
   --font-serif: Georgia, 'Times New Roman', serif;
@@ -102,7 +109,14 @@
   --back-btn-hover: rgba(40,42,48,0.88);
   --dot:            rgba(40,42,48,0.10);
   --dot-hi:         rgba(40,42,48,0.26);
-  --otp-bg:          rgba(244,244,244,0.92);
+  --otp-bg:          rgba(255,255,255,0.84);
+  --otp-line:        rgba(40,42,48,0.28);
+  --otp-line-active: #282a30;
+  --otp-tooltip-bg:  rgba(244,244,244,0.94);
+  --otp-tooltip-text:#282a30;
+  --otp-tooltip-border: rgba(40,42,48,0.12);
+  --otp-tooltip-shadow: rgba(40,42,48,0.14);
+  --otp-mobile-shadow: rgba(40,42,48,0.12);
 
   /* Lightbox / carousel chrome — dismiss button, nav arrows, footnote bar */
   --media-scrim:          rgba(255,255,255,0.55);
@@ -335,13 +349,17 @@ a:focus-visible,
 /* ─── Page inside an overlay (PageView) ──────────────────────────────────────── */
 .page-body { height: 100%; overflow-y: auto; overflow-x: hidden; }
 .page-body--about {
-  scroll-snap-type: y mandatory;
   overscroll-behavior-y: contain;
 }
 .page-body::-webkit-scrollbar { width: 3px; }
 .page-body::-webkit-scrollbar-track { background: transparent; }
 .page-body::-webkit-scrollbar-thumb { background: var(--hairline-strong); border-radius: 2px; }
-.page-content { max-width: 740px; margin: 0 auto; padding: 32px 48px 100px; }
+.page-content {
+  --page-inline-gutter: 48px;
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 32px var(--page-inline-gutter) 100px;
+}
 
 /* ─── Grid Item ──────────────────────────────────────────────────────────────── */
 .grid-item {
@@ -614,9 +632,16 @@ a:focus-visible,
   aspect-ratio: 3/2;
   overflow: hidden;
   border-radius: var(--r-md);
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.section-gallery-img { width:100%; height:100%; object-fit:cover; border-radius:var(--r-md); display:block; }
+.section-gallery-img {
+  width: auto; height: auto;
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--r-md); display: block;
+}
 
 /* Section: multi-column cards (heading + body + image each) — 3-up on desktop,
    stacks to 1 column on mobile alongside the rest of the project layout. */
@@ -1341,6 +1366,13 @@ a:focus-visible,
   -webkit-user-drag: none;
 }
 .grid-item-media--contain { object-fit: contain; }
+.grid-item-media--zoom-source {
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
+  width: auto; height: auto;
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+}
 /* Image cards: always white text regardless of theme — overrides ink token declarations */
 .item-has-image .grid-item-label   { color: #fff; }
 .item-has-image .grid-item-sub     { color: rgba(255,255,255,0.86); }
@@ -1428,7 +1460,7 @@ a:focus-visible,
 /* ─── Clickable image wrapper ─────────────────────────────────────────────────── */
 .section-img-wrap { display: block; border-radius: var(--r-lg); overflow: hidden; }
 .section-img-wrap--clickable { cursor: zoom-in; }
-.section-img-wrap--clickable:hover { opacity: 0.90; transition: opacity 0.15s; }
+.section-img-wrap--clickable:hover { filter: brightness(0.98); transition: filter 0.15s; }
 
 /* ─── Lightbox / image-page dismiss button — fixed at top-right ───────────── */
 .lightbox-dismiss {
@@ -1451,7 +1483,16 @@ a:focus-visible,
 .embed-page-body { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .embed-page-frame { flex: 1; width: 100%; height: 100%; border: none; background: #fff; }
 .img-page-body {
+  position: relative;
+  z-index: 1;
   height: 100%; display: flex; flex-direction: column; overflow: hidden;
+}
+.page-overlay--lightbox.card-image,
+.page-overlay--img.card-image { background: transparent; }
+.lightbox-scrim {
+  position: absolute; inset: 0; z-index: 0;
+  background: var(--surface-1);
+  pointer-events: none;
 }
 .img-page-scroll {
   flex: 1; overflow-y: auto; padding: 44px 44px 24px;
@@ -1478,6 +1519,14 @@ a:focus-visible,
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
+.lightbox-zoom-frame {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  border-radius: 6px;
+  transform-origin: center;
+  will-change: transform;
+}
 .img-page-img {
   width: 100%; height: auto; display: block;
   border-radius: 6px;
@@ -1491,18 +1540,53 @@ a:focus-visible,
   max-width: 100%; max-height: 100%;
   margin: auto;
 }
-.page-overlay--lightbox .img-page-scroll { overflow: hidden; }
+.page-overlay--lightbox .img-page-scroll {
+  overflow: hidden;
+}
 .page-overlay--lightbox .img-page-img,
 .page-overlay--lightbox .img-page-img--contain {
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
   margin: 0;
   object-fit: contain;
 }
+.page-overlay--lightbox .img-page-scroll--long {
+  display: block;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.page-overlay--lightbox .img-page-scroll--long .lightbox-swipe-track {
+  flex: none;
+  height: var(--lightbox-media-height);
+  min-height: var(--lightbox-media-height);
+}
+.page-overlay--lightbox .img-page-scroll--long .lightbox-zoom-frame {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+}
+.page-overlay--lightbox .img-page-scroll--long .img-page-img,
+.page-overlay--lightbox .img-page-scroll--long .img-page-img--contain {
+  width: 100%;
+  height: auto;
+  max-width: none;
+  max-height: none;
+}
+.page-overlay--lightbox .lightbox-dismiss,
+.page-overlay--lightbox .lb-nav,
+.page-overlay--lightbox .lb-dots,
+.page-overlay--lightbox .img-page-caption-bar {
+  animation: lightbox-chrome-in 0.32s 0.18s both cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes lightbox-chrome-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 .img-page-caption-bar {
-  flex-shrink: 0;
+  position: relative; z-index: 2; flex-shrink: 0;
   display: flex; align-items: center; gap: 10px;
   padding: 11px 44px 12px;
   background: var(--media-caption-bg);
@@ -1592,15 +1676,28 @@ a:focus-visible,
   max-height: 52vh;           /* cap at 52 % of viewport so it never dominates */
   max-height: 52svh;
   border-radius: var(--r-lg); overflow: hidden;
-  background: var(--surface-2);
+  /* Letterbox against the actual page surface. The responsive stage may be
+     wider/taller than a source image, but it must never introduce a separate
+     panel colour or crop product UI after a window resize. */
+  background: transparent;
 }
 .carousel-swipe-track { position: absolute; inset: 0; contain: layout paint; }
-.carousel-swipe-slide { position: absolute; inset: 0; }
+.carousel-swipe-slide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
 /* cursor lives on the img, not the stage, to avoid arrow misclicks */
 .img-carousel-img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; display: block;  /* fills stage, clips edges uniformly */
+  /* The element's box must match the pixels the user can actually see.
+     A 100% x 100% object-fit box has the stage's aspect ratio rather than
+     the image's; shared-layout animation then interpolates unequal x/y
+     scales and makes the image appear to "open" or stretch. Keeping the
+     intrinsic ratio here gives the inline and Lightbox images identical
+     geometry, so the zoom is translate + uniform scale only (Linear-style). */
+  position: relative;
+  width: auto; height: auto;
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; object-position: center; display: block;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -1734,7 +1831,10 @@ a:focus-visible,
     grid-auto-rows: 28vw;
   }
 
-  .page-content  { padding: 20px 28px 80px; }
+  .page-content  {
+    --page-inline-gutter: 28px;
+    padding: 20px var(--page-inline-gutter) 80px;
+  }
 
   /* Landing page only: pair the hero + projects tiles into one row instead of
      each claiming a full row at their native 2-col span (avoids a lopsided,
@@ -1801,7 +1901,11 @@ a:focus-visible,
   .grid-item[data-tile="hero"] .grid-item-sub { display: block; }
 
   /* Page content */
-  .page-content { padding: 16px 18px 80px; max-width: 100%; }
+  .page-content {
+    --page-inline-gutter: 18px;
+    padding: 16px var(--page-inline-gutter) 80px;
+    max-width: 100%;
+  }
   /* Image galleries: max 2 cols */
   .section-gallery--3up,
   .section-gallery--4up { grid-template-columns: 1fr 1fr; }
@@ -1844,25 +1948,24 @@ a:focus-visible,
    ══════════════════════════════════════════════════════════════════════════════ */
 
 /*
- * Desktop: content is centered in a 4-col grid [1fr][700px][304px][1fr].
- * Pre-body elements (header, meta, overview) sit in col 2 via grid-column.
- * OTP auto-places in col 3 with position:sticky.
+ * Desktop: project copy is centered at a readable 700px measure.
+ * The section navigator is a fixed line menu at the right-center edge, so it
+ * stays reachable without shifting the reading column off center.
  *
- * Mobile ≤768px: TOC becomes a sticky bottom selector pill.
+ * Mobile ≤768px: TOC becomes a full-width selector that enters after the
+ * hero and then sticks to the top of the scrolling project page.
  */
 
-/* Widen page-content for project pages to accommodate sidebar */
+/* Project copy stays centered; the desktop line menu floats at the viewport edge. */
 .page-content--project {
-  max-width: calc(1024px + 96px); /* 1024px content+OTP + 48px padding each side */
+  max-width: calc(700px + 96px);
 }
 
-/* 2-col grid: [content] [220px OTP sidebar], max 1024px combined */
 .project-content {
   display: grid;
-  grid-template-columns: minmax(0, 700px) 220px;
+  grid-template-columns: minmax(0, 700px);
   justify-content: center;
   align-items: start;
-  column-gap: 24px;
 }
 
 /* Body layout wrapper is invisible to parent grid — children become direct items */
@@ -1875,53 +1978,112 @@ a:focus-visible,
   min-width: 0;
 }
 
-/* Desktop TOC sidebar — col 2, sticky */
+/* Desktop TOC — Framer-inspired ticks fixed at the right-center edge. */
 .on-this-page {
-  grid-column: 2;
-  align-self: start;
-  position: sticky;
-  top: 36px;
+  position: fixed;
+  z-index: 40;
+  top: 50%;
+  right: clamp(14px, 2vw, 28px);
+  transform: translate(6px, -50%);
   display: block;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 0.2s;
 }
-.otp-heading {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 590;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-tertiary);
-  display: block;
-  margin-bottom: 8px;
-  padding-left: 12px;
+.on-this-page--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(0, -50%);
+  transition-delay: 0s;
 }
-.on-this-page ul { list-style: none; margin: 0; padding: 0; }
+.on-this-page ul {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+.on-this-page li {
+  display: flex;
+  justify-content: flex-end;
+}
 .otp-link {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 24px;
+  height: 100%;
+  padding: 0;
+  background: transparent;
   border: none;
-  border-left: 2px solid var(--hairline);
-  padding: 4px 0 4px 10px;
   font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.5;
-  letter-spacing: -0.011em;
-  color: var(--ink-tertiary);
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  outline: none;
 }
-.otp-link:hover { color: var(--ink); border-left-color: var(--hairline-strong); }
-.otp-link--active,
-.otp-link--active:hover {
-  color: var(--ink);
+.otp-link-tick {
+  display: block;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--otp-line);
+  transform-origin: right center;
+  transition:
+    background-color 0.18s ease,
+    opacity 0.18s ease;
+}
+.otp-link-label {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 80px));
+  padding: 5px 8px;
+  border: 1px solid var(--otp-tooltip-border);
+  border-radius: var(--r-sm);
+  background: var(--otp-tooltip-bg);
+  color: var(--otp-tooltip-text);
+  box-shadow: 0 4px 16px var(--otp-tooltip-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 12px;
   font-weight: 500;
-  border-left-color: var(--ink);
+  line-height: 1.35;
+  letter-spacing: -0.006em;
+  text-align: right;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(5px, -50%);
+  transition:
+    opacity 0.16s ease,
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.otp-link--active .otp-link-tick {
+  background: var(--otp-line-active);
+}
+.otp-link:hover .otp-link-label,
+.otp-link:focus-visible .otp-link-label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+.otp-link:focus-visible .otp-link-label {
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 16px var(--otp-tooltip-shadow);
+}
+.otp-link--active .otp-link-label {
+  color: var(--otp-tooltip-text);
 }
 
-/* ── Mobile: sticky bottom selector pill ─────────────────────────────────── */
-.otp-mobile { display: none; }
+/* ── Mobile: full-width, top-sticky section selector ────────────────── */
+.otp-mobile,
+.otp-mobile-sentinel { display: none; }
 
 @media (max-width: 768px) {
   /* Reset project grid to block layout */
@@ -1931,29 +2093,42 @@ a:focus-visible,
   /* Hide desktop sidebar */
   .on-this-page { display: none; }
 
-  /* Show mobile pill — no side padding; .page-content gutters already provide it */
+  /* It starts in normal flow below the hero. Once it reaches the viewport
+     edge it stays available without covering the project imagery. */
   .otp-mobile {
     display: block;
     position: sticky;
-    bottom: 16px;
+    top: 0;
+    width: calc(100% + var(--page-inline-gutter) + var(--page-inline-gutter));
     z-index: 30;
+    margin: 0 calc(0px - var(--page-inline-gutter)) 28px;
     pointer-events: none;     /* container is passthrough */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition:
+      opacity 0.22s ease,
+      transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s linear 0.3s;
   }
+  .otp-mobile--visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition-delay: 0s;
+  }
+  .otp-mobile-sentinel { display: block; height: 0; }
   .otp-mobile-inner {
     pointer-events: all;
     background: var(--otp-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--hairline);
-    border-radius: 24px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.28);
+    backdrop-filter: blur(18px) saturate(120%);
+    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    border: none;
+    border-radius: 0;
+    box-shadow: 0 8px 24px var(--otp-mobile-shadow);
     overflow: hidden;
-    transition: border-radius 0.22s ease;
+    transition: box-shadow 0.2s ease;
   }
-  [data-theme="light"] .otp-mobile-inner {
-    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
-  }
-  .otp-mobile-inner--open { border-radius: 16px; }
 
   /* Current section / toggle row */
   .otp-mobile-toggle {
@@ -1961,13 +2136,14 @@ a:focus-visible,
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 10px 16px;
+    min-height: 40px;
+    padding: 9px 12px;
     background: none;
     border: none;
     cursor: pointer;
     color: currentColor;
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     gap: 8px;
   }
@@ -1987,7 +2163,8 @@ a:focus-visible,
   }
   .otp-mobile-chevron {
     flex-shrink: 0;
-    transition: transform 0.22s ease;
+    color: var(--ink-subtle);
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .otp-mobile-chevron--up { transform: rotate(180deg); }
 
@@ -1996,10 +2173,17 @@ a:focus-visible,
     border-top: 1px solid var(--hairline);
     overflow: hidden;
     max-height: 0;
-    transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 0 4px;
+    opacity: 0;
+    transition:
+      max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.16s ease,
+      padding 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .otp-mobile-list--open {
-    max-height: 240px;
+    max-height: 280px;
+    padding: 4px;
+    opacity: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -2009,17 +2193,25 @@ a:focus-visible,
     text-align: left;
     background: none;
     border: none;
-    padding: 10px 16px;
+    padding: 8px 10px;
+    border-radius: var(--r-sm);
     font-family: var(--font-sans);
     font-size: 13px;
-    color: var(--ink-subtle);
+    color: var(--ink-muted);
     cursor: pointer;
-    transition: color 0.14s ease;
+    line-height: 1.4;
+    transition:
+      color 0.14s ease,
+      background-color 0.14s ease;
   }
-  .otp-mobile-list button:hover       { color: var(--ink-muted); }
-  .otp-mobile-list button.otp-active  { color: var(--ink); font-weight: 500; }
-  .otp-mobile-list button:not(:last-child) {
-    border-bottom: 1px solid var(--hairline);
+  .otp-mobile-list button:hover {
+    color: var(--ink);
+    background: var(--surface-3);
+  }
+  .otp-mobile-list button.otp-active {
+    color: var(--ink);
+    font-weight: 500;
+    background: var(--surface-3);
   }
 }
 
@@ -2213,7 +2405,6 @@ a:focus-visible,
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-y: none;
-    scroll-snap-type: y mandatory;
     scroll-padding: 0;
   }
 

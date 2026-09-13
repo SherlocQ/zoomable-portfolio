@@ -31,11 +31,12 @@ export function GridItem({ item, onItemClick }) {
         '--rs': row,
         ...(hasImage ? {
           ...(item.bg ? { backgroundColor: item.bg } : {}),
-          ...(!isAnimatedImage ? {
+          ...(!isAnimatedImage && !isImageTile ? {
             backgroundImage: item.bgImage
               ? `url(${asset(item.image)}), url(${asset(item.bgImage)})`
               : `url(${asset(item.image)})`,
           } : {}),
+          ...(isImageTile && item.bgImage ? { backgroundImage: `url(${asset(item.bgImage)})` } : {}),
           backgroundSize: item.fit === 'contain'
             ? (item.bgImage ? 'contain, cover' : 'contain')
             : 'cover',
@@ -56,12 +57,15 @@ export function GridItem({ item, onItemClick }) {
       }}
       transition={{ layout: T }}
     >
-      {isAnimatedImage && (
-        <img
+      {isImageTile && (
+        <motion.img
           src={asset(item.image)}
           alt=""
           aria-hidden="true"
-          className={`grid-item-media${item.fit === 'contain' ? ' grid-item-media--contain' : ''}`}
+          className="grid-item-media grid-item-media--zoom-source"
+          layoutId={`item-img-${item.id}`}
+          layoutCrossfade={false}
+          transition={{ layout: T }}
           draggable={false}
           decoding="async"
         />

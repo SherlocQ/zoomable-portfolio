@@ -361,7 +361,7 @@ Linear's custom typeface isn't publicly distributed; the documented fallback `SF
 
 ### Project Detail Reading Rhythm
 
-- The primary reading column is capped at 700px, paired with a 220px on-page navigation column and a 24px gap. This preserves a documentation-like line length instead of stretching prose across the available project canvas.
+- The primary reading column is centered and capped at 700px. Desktop on-page navigation floats at the right-center viewport edge, so it remains reachable without shifting or stretching the prose column.
 - Chapter-level H2 sections begin after 56px of vertical separation. Related H3 subsections use a compact 40px section rhythm.
 - H2-to-body spacing is 12px; H3-to-body spacing is 8px. Paragraphs are separated by 16px. Avoid adding blank spacer elements between prose blocks.
 - Media follows the preceding copy through that copy's 16px bottom rhythm; captions sit 10px below media. Split-layout copy and media remain top-aligned.
@@ -492,6 +492,18 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 **`top-nav`** — Sticky dark bar with the Linear wordmark left, primary nav links centered, and a `button-secondary` ("Sign in") + `button-primary` ("Get started") pair right.
 - Background `{colors.canvas}`, text `{colors.ink}`, type `{typography.body-sm}`, height 56px.
 
+**`project-section-menu-desktop`** — Compact right-edge table of contents for project detail pages.
+- Remains hidden over the project hero and slides/fades in at the right-center edge once the project content reaches the scroll viewport top.
+- Every resting tick is 12×3px with compact 16px row height. The current section uses the high-contrast neutral ink token; never use the chromatic accent for selection.
+- Hover expands the target tick to 24px and its immediate neighbors to 18px with a 400ms, 0.2-bounce spring. Labels reveal to the left in one consistent tokenized tooltip shell; active position is communicated by the persistent tick contrast rather than a competing tooltip color.
+- Labels remain keyboard accessible, and clicking any tick smoothly scrolls to its section with enough top offset to preserve the heading.
+
+**`project-section-menu-mobile`** — Full-width sticky dropdown for project detail pages at ≤768px.
+- It lives immediately after the hero/header in document order. A zero-height sentinel reveals it only when that location reaches the top of the project scroll viewport; entrance is a 10px downward slide plus a 220–300ms fade/settle, and reversing above the trigger hides and closes it.
+- The collapsed bar and downward-opening list span the project viewport edge to edge. Compute the breakout from the shared `--page-inline-gutter` token so both the 28px tablet gutter and 18px phone gutter resolve correctly; never hardcode one breakpoint's gutter into the component width.
+- Use the theme-aware translucent `{colors.surface}` glass treatment (`rgba(20,21,22,0.80)` dark / `rgba(255,255,255,0.84)` light) with 18px backdrop blur, 120% saturation, and a restrained downward shadow. The outer shell has no border or radius.
+- Keep the control hidden from pointer and keyboard interaction before reveal. The current section label truncates to one line; the chevron points down while closed and up while open.
+
 ### Resume Globe
 
 **`resume-globe`** — The `/hero` page presents the résumé as a geographic, scroll-driven narrative rather than a linear timeline.
@@ -501,8 +513,8 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - The globe is rendered at device pixel ratio for crisp output and redraws correctly after route entry, resize, and theme changes.
 - Light and dark modes use the same hierarchy and geometry; only tokenized colors change.
 - Descriptions use `{typography.body}` at 16px; journey tags are intentionally hidden.
-- Scrolling remains native and continuous. `scroll-snap-type: y mandatory` and `scroll-snap-stop: always` align the nearest scene after input ends; JavaScript must not impose a wheel threshold or lock normal page scrolling.
-- At ≤768px, copy and globe each occupy 50% of the viewport. A gesture that begins over the globe continuously forwards movement to the copy scroller and settles to the nearest scene on release.
+- Wheel and trackpad navigation has no distance threshold: the first vertical delta immediately animates to exactly one adjacent scene using a 480–640ms smoothstep curve, while later momentum events from that same gesture are consumed. Motion accelerates gently, maintains a readable middle pace, and decelerates continuously into the final pixel. There must be no preliminary native-scroll movement, timeout pause, CSS snap, aggressive ease-out launch, or final browser correction.
+- At ≤768px, copy and globe each occupy 50% of the viewport. Touch gestures remain directly draggable over either half and complete to the adjacent scene on release using the same settle curve.
 
 ### Project Image Readability
 
@@ -526,7 +538,13 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Inline and Lightbox carousels use the same behavior. Each measures its own track width; never use a padded outer container to calculate travel distance.
 - Touch gestures preserve vertical scrolling with `touch-action: pan-y`. A 50px drag, or a fast gesture of at least 28px / 400px/s, advances the carousel; shorter gestures ease back.
 - Adjacent images may be mounted/preloaded for continuity but must remain clipped while idle. Non-active images use empty alt text and `aria-hidden`.
-- Lightbox gestures bind directly to `.lightbox-swipe-track`, and every Lightbox image fills the same fixed-height stage with `object-fit: contain`.
+- Inline carousel media always uses `object-fit: contain`. The stage keeps its declared responsive aspect ratio and 52svh height cap; any extra letterbox area stays transparent so the current page surface shows through. Never crop product UI to fill the frame, including after viewport resize.
+- Lightbox gestures bind directly to `.lightbox-swipe-track`. At open, slide change, and viewport resize, compare the active image's natural aspect ratio with the available media area before the browser paints. Images whose width-fit height fits the viewport use a centered fixed-height `contain` stage; taller images use their full width and create a native vertical scroll region so product details remain readable. Never show an intermediate fit layout before switching to long-image mode.
+- Opening an image or before/after comparison uses a shared-position transition: the media expands continuously from its inline card, carousel frame, or comparison frame into the Lightbox, while the surrounding overlay fades in separately. Closing reverses the same path. Use `cubic-bezier(0.32, 0.72, 0, 1)` at roughly 560ms so the movement starts deliberately and settles with a long smooth tail; never scale the whole page shell.
+- The Lightbox shell itself remains opaque during almost the entire shared transition; only a dedicated scrim layer fades. Set `layoutCrossfade={false}` on every shared media pair. The shared `layoutId` always belongs to the actual visible media element for single images, galleries, GIF craft tiles, and carousel slides—never to a card wrapper, fixed-ratio stage, three-slide track, caption, or control layer. Each source media element must hug its visible, intrinsic-aspect-ratio pixels (`width/height: auto` with `max-width/max-height: 100%`) instead of using a stage-sized `100% × 100%` `object-fit` box; this keeps x/y scale identical and makes every zoom a distortion-free translate plus uniform scale, matching Linear Docs.
+- For a viewport-fit image, a vertical wheel/trackpad gesture dismisses the Lightbox and continuously forwards the complete momentum stream to the underlying project scroller. For a long image, vertical input first scrolls the image natively; only 28px of continued outward input at its top or bottom dismisses the Lightbox and hands off to the page. Coalesce forwarded deltas into one update per animation frame. Touch direction locks after a 10px dead zone and requires 1.25× axis dominance; horizontal gestures remain reserved for carousel navigation.
+- Close, Escape, and clicks on genuine backdrop space always reverse the shared-position zoom. Clicking the rendered image itself never dismisses it. Switching carousel slides resets the new image to its top and remeasures its mode.
+- Lightbox controls and captions enter after the media begins expanding. Reduced-motion visitors receive a near-instant state change while retaining every navigation and dismissal path.
 - Craft GIF tiles use real `<img>` elements so animation plays on mobile; they are not CSS background images.
 
 ### Project Narrative Components
