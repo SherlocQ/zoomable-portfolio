@@ -1,12 +1,143 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { flushSync } from 'react-dom';
+import lottie from 'lottie-web/build/player/lottie_light.js';
 import { T, fadeUp, SPRING_SLOW, EASE_HERO } from '../transitions';
 import { asset } from '../utils/asset';
 import ResumeGlobe from './ResumeGlobe';
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+const HEADING_TERMS = new Map([
+  ['account', 'Account'],
+  ['academy', 'Academy'],
+  ['ai', 'AI'],
+  ['api', 'API'],
+  ['b2b', 'B2B'],
+  ['csat', 'CSAT'],
+  ['figjam', 'FigJam'],
+  ['figma', 'Figma'],
+  ['gai', 'GAI'],
+  ['genai', 'GenAI'],
+  ['hci', 'HCI'],
+  ['hatcher', 'Hatcher'],
+  ['hi-fi', 'Hi-Fi'],
+  ['i', 'I'],
+  ['iq', 'IQ'],
+  ['jill', 'Jill'],
+  ['lighthouse', 'Lighthouse'],
+  ['linkedin', 'LinkedIn'],
+  ['liz', 'Liz'],
+  ['mmm', 'MMM'],
+  ['mta', 'MTA'],
+  ['neustar', 'Neustar'],
+  ['oscar', 'Oscar'],
+  ['pete', 'Pete'],
+  ['scenario', 'Scenario'],
+  ['listing', 'Listing'],
+  ['servicenow', 'ServiceNow'],
+  ['ui', 'UI'],
+  ['ux', 'UX'],
+]);
+
+function sentenceCaseHeading(text) {
+  if (!text) return text;
+  let isFirstWord = true;
+  return text.replace(/[A-Za-z][A-Za-z0-9]*(?:[-'][A-Za-z0-9]+)*/g, (word) => {
+    const canonical = HEADING_TERMS.get(word.toLowerCase());
+    const isAcronym = /[A-Z]/.test(word) && word === word.toUpperCase();
+    const isMixedCaseName = /[a-z][A-Z]/.test(word);
+    let result = canonical || (isAcronym || isMixedCaseName ? word : word.toLowerCase());
+    if (isFirstWord) {
+      result = result.charAt(0).toUpperCase() + result.slice(1);
+      isFirstWord = false;
+    }
+    return result;
+  });
+}
+
+function ProjectLottie({ src, label }) {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let animation = null;
+    let cancelled = false;
+    let visible = false;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (!animation || reduceMotion) return;
+      if (visible) animation.play();
+      else animation.pause();
+    }, { rootMargin: '120px 0px', threshold: 0.05 });
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    fetch(asset(src), { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Unable to load animation: ${src}`);
+        return response.json();
+      })
+      .then((animationData) => {
+        if (cancelled || !containerRef.current) return;
+        animation = lottie.loadAnimation({
+          container: containerRef.current,
+          renderer: 'svg',
+          loop: true,
+          autoplay: false,
+          animationData,
+          rendererSettings: { preserveAspectRatio: 'xMidYMid meet' },
+        });
+        if (reduceMotion) animation.goToAndStop(0, true);
+        else if (visible) animation.play();
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') console.error(error);
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+      observer.disconnect();
+      animation?.destroy();
+    };
+  }, [src]);
+
+  return (
+    <div ref={containerRef} className="project-lottie" role="img" aria-label={label || 'Animated illustration'} />
+  );
+}
+
+function ProjectSectionHeading({ section, isH2 }) {
+  if (!section.heading) return null;
+  const label = sentenceCaseHeading(section.heading);
+  return isH2
+    ? <h2 id={slugify(section.heading)} className="section-h2">{label}</h2>
+    : <h3 className="section-h3">{label}</h3>;
+}
+
+function ProjectImageWrap({ id, src, caption, onImageClick, children }) {
+  const interactive = Boolean(id && onImageClick);
+  return (
+    <motion.div
+      className={`section-img-wrap${onImageClick ? ' section-img-wrap--clickable' : ''}`}
+      layoutId={id ? `item-img-${id}` : undefined}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? (caption || 'View image') : undefined}
+      onClick={interactive ? () => onImageClick(id, src, caption) : undefined}
+      onKeyDown={interactive ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onImageClick(id, src, caption);
+        }
+      } : undefined}
+      whileHover={interactive ? { scale: 1.01, transition: { duration: 0.15 } } : {}}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 /* ─── Animated number counter (triggers on first viewport entry) ─────────── */
 function CountUp({ value, duration = 1400 }) {
@@ -304,7 +435,7 @@ function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
 }
 
 /* ─── Image carousel ─────────────────────────────────────────────────────── */
-function ImageCarousel({ images, onImageClick, aspectRatio }) {
+function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false }) {
   const [idx, setIdx] = useState(0);
   const trackRef = useRef(null);
   const count = images.length;
@@ -387,7 +518,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio }) {
         )}
       </div>
 
-      {img.caption && <p className="section-caption">{img.caption}</p>}
+      {showCaption && img.caption && <p className="section-caption">{img.caption}</p>}
       {count > 1 && (
         <div className="img-carousel-dots">
           {images.map((_, i) => (
@@ -482,7 +613,7 @@ function OnThisPage({ h2s }) {
               className={`otp-link${active === slugify(s.heading) ? ' otp-link--active' : ''}`}
               onClick={() => scrollTo(s.heading)}
             >
-              {s.heading}
+              {sentenceCaseHeading(s.heading)}
             </button>
           </li>
         ))}
@@ -497,8 +628,9 @@ function OnThisPageMobile({ h2s }) {
   const [open, setOpen] = useState(false);
   if (h2s.length < 2) return null;
 
-  const activeLabel = h2s.find((s) => slugify(s.heading) === active)?.heading
-    ?? h2s[0].heading;
+  const activeLabel = sentenceCaseHeading(
+    h2s.find((s) => slugify(s.heading) === active)?.heading ?? h2s[0].heading,
+  );
 
   const handleSelect = (heading) => {
     scrollTo(heading);
@@ -516,7 +648,7 @@ function OnThisPageMobile({ h2s }) {
               className={active === slugify(s.heading) ? 'otp-active' : ''}
               onClick={() => handleSelect(s.heading)}
             >
-              {s.heading}
+              {sentenceCaseHeading(s.heading)}
             </button>
           ))}
         </div>
@@ -713,14 +845,26 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           {hasHero && (
             <div className={`project-hero-section${content.heroImage ? '' : ' project-hero-section--empty'}`}>
               {content.heroImage && (
-                <motion.img
-                  src={asset(content.heroImage)}
-                  alt={node.label}
-                  className="project-hero-img"
-                  initial={{ opacity: 0, filter: 'blur(12px)' }}
-                  animate={{ opacity: 1, filter: 'blur(0px)' }}
-                  transition={{ duration: 1.1, ease: EASE_HERO }}
-                />
+                <>
+                  <motion.img
+                    src={asset(content.heroImage)}
+                    alt={node.label}
+                    className="project-hero-img"
+                    initial={{ opacity: 0, filter: 'blur(12px)' }}
+                    animate={{ opacity: 1, filter: 'blur(0px)' }}
+                    transition={{ duration: 1.1, ease: EASE_HERO }}
+                  />
+                  <motion.img
+                    src={asset(content.heroImage)}
+                    alt=""
+                    aria-hidden="true"
+                    className="project-hero-img project-hero-img--progressive-blur"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1.1, ease: EASE_HERO }}
+                    draggable={false}
+                  />
+                </>
               )}
               <div className="project-hero-meta">
                 <motion.h1
@@ -729,7 +873,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                   animate={{ opacity: 1, y: 0,  filter: 'blur(0px)' }}
                   transition={{ duration: 0.9, delay: 0.18, ease: EASE_HERO }}
                 >
-                  {node.label}
+                  {sentenceCaseHeading(node.label)}
                 </motion.h1>
                 <motion.p
                   className="project-hero-tagline"
@@ -762,11 +906,20 @@ function BodyText({ text }) {
   if (!text) return null;
   return text.split('\n\n').filter(Boolean).map((p, i) => {
     const lines = p.split('\n');
-    if (lines.length > 1 && lines.every(l => l.trimStart().startsWith('•'))) {
+    const isUnordered = lines.length > 0 && lines.every((line) => /^\s*(?:•|[-*])\s+/.test(line));
+    const isOrdered = lines.length > 0 && lines.every((line) => /^\s*\d+[.)]\s+/.test(line));
+    if (isUnordered) {
       return (
         <ul key={i} className="section-bullets">
-          {lines.map((l, j) => <li key={j}>{l.replace(/^\s*•\s*/, '')}</li>)}
+          {lines.map((line, j) => <li key={j}>{line.replace(/^\s*(?:•|[-*])\s+/, '')}</li>)}
         </ul>
+      );
+    }
+    if (isOrdered) {
+      return (
+        <ol key={i} className="section-numbered">
+          {lines.map((line, j) => <li key={j}>{line.replace(/^\s*\d+[.)]\s+/, '')}</li>)}
+        </ol>
       );
     }
     return <p key={i} className="section-body">{p}</p>;
@@ -774,6 +927,7 @@ function BodyText({ text }) {
 }
 
 function ProjectSection({ s, onImageClick, onComparisonClick }) {
+  const reduceMotion = useReducedMotion();
   // Scroll-triggered reveal (rather than all-at-once on mount) — plays once,
   // slightly before the section is fully in view so it feels responsive to scroll.
   const mp   = {
@@ -785,34 +939,137 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   };
   const isH2 = s.level === 'h2';
   const cls  = `project-section${isH2 ? ' section--h2' : ''}`;
+  const heading = <ProjectSectionHeading section={s} isH2={isH2} />;
 
-  const Heading = () => {
-    if (!s.heading) return null;
-    return isH2
-      ? <h2 id={slugify(s.heading)} className="section-h2">{s.heading}</h2>
-      : <h3 className="section-h3">{s.heading}</h3>;
-  };
+  if (s.type === 'design-goal') {
+    const goalLabel = sentenceCaseHeading(s.heading || 'Design goal');
+    return (
+      <motion.section className={`${cls} project-design-goal-card`} {...mp}>
+        {isH2
+          ? <h2 id={slugify(s.heading || 'Design goal')} className="project-design-goal-eyebrow">{goalLabel}</h2>
+          : <h3 className="project-design-goal-eyebrow">{goalLabel}</h3>}
+        {s.body && <div className="project-design-goal-copy"><BodyText text={s.body} /></div>}
+        {s.src && (
+          <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
+            <img src={asset(s.src)} alt={s.caption || goalLabel} className="section-image" loading="lazy" />
+          </ProjectImageWrap>
+        )}
+        {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
+      </motion.section>
+    );
+  }
 
-  const ImgWrap = ({ id, src, caption, children }) => (
-    <motion.div
-      className={`section-img-wrap${onImageClick ? ' section-img-wrap--clickable' : ''}`}
-      layoutId={id ? `item-img-${id}` : undefined}
-      role={id && onImageClick ? 'button' : undefined}
-      tabIndex={id && onImageClick ? 0 : undefined}
-      aria-label={id && onImageClick ? (caption || 'View image') : undefined}
-      onClick={id && onImageClick ? () => onImageClick(id, src, caption) : undefined}
-      onKeyDown={id && onImageClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onImageClick(id, src, caption); } } : undefined}
-      whileHover={id && onImageClick ? { scale: 1.01, transition: { duration: 0.15 } } : {}}
-    >
-      {children}
-    </motion.div>
-  );
+  if (s.type === 'message-bubbles') {
+    const bubble = {
+      hidden: (side) => reduceMotion
+        ? { opacity: 1 }
+        : { opacity: 0, x: side === 'left' ? '-110%' : '110%', filter: 'blur(5px)' },
+      show: {
+        opacity: 1,
+        x: 0,
+        filter: 'blur(0px)',
+        transition: { duration: reduceMotion ? 0 : 0.62, ease: [0.32, 0.72, 0, 1] },
+      },
+    };
+    return (
+      <motion.section className={`${cls} project-message-bubbles`} {...mp}>
+        {heading}
+        {s.body && <BodyText text={s.body} />}
+        <motion.div
+          className="project-message-thread"
+          role="list"
+        >
+          {s.items.map((quote, index) => {
+            const side = index % 2 === 0 ? 'left' : 'right';
+            return (
+              <motion.div
+                className={`project-message-slot project-message-slot--${side}`}
+                initial={reduceMotion ? false : 'hidden'}
+                whileInView="show"
+                viewport={{ once: false, amount: 0.42, margin: '0px 0px -6% 0px' }}
+                role="listitem"
+                key={quote.id || index}
+              >
+                <motion.blockquote
+                  className={`project-message-bubble project-message-bubble--${side}`}
+                  custom={side}
+                  variants={bubble}
+                >
+                  <p>{quote.text}</p>
+                </motion.blockquote>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </motion.section>
+    );
+  }
+
+  // ── narrative split (copy + local image/Lottie) ─────────────────────────
+  if (s.type === 'split') {
+    const media = s.mediaType === 'lottie'
+      ? <ProjectLottie src={s.src} label={s.caption || s.heading} />
+      : (
+        <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
+          <img src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
+        </ProjectImageWrap>
+      );
+
+    return (
+      <motion.div className={`${cls} project-split project-split--media-${s.mediaSide === 'left' ? 'left' : 'right'}${s.mediaType === 'lottie' ? ' project-split--lottie' : ''}${s.mediaGroup ? ` project-split--${s.mediaGroup}` : ''}`} {...mp}>
+        <div className="project-split-copy">
+          {heading}
+          {s.body && <BodyText text={s.body} />}
+        </div>
+        <div className="project-split-media">
+          {media}
+          {s.showCaption && s.caption && s.mediaType !== 'lottie' && <p className="section-caption">{s.caption}</p>}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── research / outcome quotes ───────────────────────────────────────────
+  if (s.type === 'quotes') {
+    return (
+      <motion.div className={`${cls} project-quotes`} {...mp}>
+        {heading}
+        {s.body && <BodyText text={s.body} />}
+        <div className={`project-quote-grid project-quote-grid--${s.items.length}`}>
+          {s.items.map((quote, index) => (
+            <blockquote className="project-quote" key={quote.id || index}>
+              <p>{quote.text}</p>
+              {quote.attribution && <footer>{quote.attribution}</footer>}
+            </blockquote>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (s.type === 'insights') {
+    return (
+      <motion.div className={`${cls} project-insights`} {...mp}>
+        {heading}
+        {s.body && <BodyText text={s.body} />}
+        <div className="project-insight-grid">
+          {s.items.map((item, index) => (
+            <article className="project-insight" key={item.id || index}>
+              {item.value && <strong className="project-insight-value">{item.value}</strong>}
+              <h3>{sentenceCaseHeading(item.heading)}</h3>
+              <BodyText text={item.body} />
+            </article>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
 
   // ── metrics ───────────────────────────────────────────────────────────────
   if (s.type === 'metrics') {
     return (
       <motion.div className={cls} {...mp}>
-        <Heading />
+        {heading}
         <div className={`section-metrics section-metrics--${s.items.length}`}>
           {s.items.map((m) => (
             <div key={m.label} className="metric-item">
@@ -823,7 +1080,26 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
             </div>
           ))}
         </div>
-        {s.body && <p className="section-body-after">{s.body}</p>}
+        {s.body && <div className="section-body-after"><BodyText text={s.body} /></div>}
+        {s.links?.length > 0 && (
+          <div className="project-source-links" aria-label="Media coverage">
+            <span className="project-source-links-label">Media coverage</span>
+            <div className="project-source-links-list">
+              {s.links.map((link) => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="project-source-link"
+                >
+                  {link.label}<span aria-hidden="true">↗</span>
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </motion.div>
     );
   }
@@ -832,12 +1108,12 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   if (s.type === 'image') {
     return (
       <motion.div className={cls} {...mp}>
-        <Heading />
+        {heading}
         {s.body && <BodyText text={s.body} />}
-        <ImgWrap id={s.id} src={s.src} caption={s.caption}>
+        <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
           <img src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
-        </ImgWrap>
-        {s.caption && <p className="section-caption">{s.caption}</p>}
+        </ProjectImageWrap>
+        {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
     );
   }
@@ -847,16 +1123,16 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
     const count = s.images.length;
     return (
       <motion.div className={cls} {...mp}>
-        <Heading />
+        {heading}
         {s.body && <BodyText text={s.body} />}
         {s.carousel ? (
-          <ImageCarousel images={s.images} onImageClick={onImageClick} aspectRatio={s.aspectRatio} />
+          <ImageCarousel images={s.images} onImageClick={onImageClick} aspectRatio={s.aspectRatio} showCaption={s.showCaption} />
         ) : (
           <div className={`section-gallery section-gallery--${count <= 2 ? '2up' : count === 3 ? '3up' : '4up'}`}>
             {s.images.map((img) => (
-              <ImgWrap key={img.id} id={img.id} src={img.src} caption={img.caption}>
+              <ProjectImageWrap key={img.id} id={img.id} src={img.src} caption={img.caption} onImageClick={onImageClick}>
                 <img src={asset(img.src)} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
-              </ImgWrap>
+              </ProjectImageWrap>
             ))}
           </div>
         )}
@@ -868,17 +1144,17 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   if (s.type === 'columns') {
     return (
       <motion.div className={cls} {...mp}>
-        <Heading />
+        {heading}
         {s.body && <BodyText text={s.body} />}
         <div className="section-columns">
           {s.items.map((item, i) => (
             <div key={item.id || i} className="section-column">
-              {item.heading && <h3 className="section-h3">{item.heading}</h3>}
+              {item.heading && <h3 className="section-h3">{sentenceCaseHeading(item.heading)}</h3>}
               {item.body && <BodyText text={item.body} />}
               {item.image && (
-                <ImgWrap id={item.id} src={item.image} caption={item.caption}>
+                <ProjectImageWrap id={item.id} src={item.image} caption={item.caption} onImageClick={onImageClick}>
                   <img src={asset(item.image)} alt={item.caption || item.heading || ''} className="section-image" loading="lazy" />
-                </ImgWrap>
+                </ProjectImageWrap>
               )}
             </div>
           ))}
@@ -891,7 +1167,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   if (s.type === 'comparison') {
     return (
       <motion.div className={cls} {...mp}>
-        <Heading />
+        {heading}
         {s.body && <BodyText text={s.body} />}
         <div className="cs-outer">
           <ComparisonSlider before={s.before} after={s.after} />
@@ -908,7 +1184,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
             </button>
           )}
         </div>
-        {s.caption && <p className="section-caption">{s.caption}</p>}
+        {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
     );
   }
@@ -917,7 +1193,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   if (s.type === 'video') {
     return (
       <motion.div className={cls} {...mp}>
-        <Heading />
+        {heading}
         {s.body && <BodyText text={s.body} />}
         <div className="section-video-wrap" style={{ '--video-ratio': s.aspectRatio || '16/9' }}>
           <iframe
@@ -930,7 +1206,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
             loading="lazy"
           />
         </div>
-        {s.caption && <p className="section-caption">{s.caption}</p>}
+        {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
     );
   }
@@ -938,7 +1214,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   // ── default: heading + body text ──────────────────────────────────────────
   return (
     <motion.div className={cls} {...mp}>
-      <Heading />
+      {heading}
       {s.body && <BodyText text={s.body} />}
       {s.link && (
         <a href={s.link.url} target="_blank" rel="noopener noreferrer" className="section-link-btn">
@@ -1021,14 +1297,12 @@ function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClic
   const h2Sections = (content.sections || []).filter(
     (s) => s.level === 'h2' && s.heading,
   );
-  const hasOtp = h2Sections.length >= 2;
-
   return (
     <div className="project-content">
       {!hasHero && (
         <motion.div className="project-header" custom={0} variants={fadeUp} initial="hidden" animate="show">
           <span className="project-year">{content.year}</span>
-          <h1>{node.label}</h1>
+          <h1>{sentenceCaseHeading(node.label)}</h1>
           <p className="project-tagline">{content.tagline}</p>
         </motion.div>
       )}
@@ -1070,7 +1344,7 @@ function ProjectContent({ node, content, hasHero, onImageClick, onComparisonClic
 function HeroContent({ node, content }) {
   return (
     <div className="hero-content">
-      <motion.h1 custom={0} variants={fadeUp} initial="hidden" animate="show">{node.label}</motion.h1>
+      <motion.h1 custom={0} variants={fadeUp} initial="hidden" animate="show">{sentenceCaseHeading(node.label)}</motion.h1>
       <motion.p className="hero-role" custom={1} variants={fadeUp} initial="hidden" animate="show">
         {content.role} — {content.location}
       </motion.p>
@@ -1086,21 +1360,21 @@ function AboutContent({ node, content }) {
   return <ResumeGlobe node={node} content={content} />;
 }
 
-function ProcessContent({ node, content }) {
+function ProcessContent({ content }) {
   return (
     <div className="process-content">
       <motion.h1 custom={0} variants={fadeUp} initial="hidden" animate="show">Process</motion.h1>
       {content.steps.map((step, i) => (
         <motion.div key={step.number} className="process-step" custom={i + 1} variants={fadeUp} initial="hidden" animate="show">
           <span className="step-number">{step.number}</span>
-          <div><h3>{step.label}</h3><p>{step.body}</p></div>
+          <div><h3>{sentenceCaseHeading(step.label)}</h3><p>{step.body}</p></div>
         </motion.div>
       ))}
     </div>
   );
 }
 
-function ContactContent({ node, content }) {
+function ContactContent({ content }) {
   const [form, setForm]   = useState({ name: '', email: '', topic: '', message: '' });
   const [status, setStatus] = useState('idle'); // idle | sent
 
@@ -1204,7 +1478,7 @@ function ContactContent({ node, content }) {
   );
 }
 
-function CraftContent({ node, content }) {
+function CraftContent({ content }) {
   return (
     <div className="craft-content">
       <motion.div className="craft-image-wrap" custom={0} variants={fadeUp} initial="hidden" animate="show">
@@ -1212,7 +1486,7 @@ function CraftContent({ node, content }) {
       </motion.div>
       <motion.div custom={1} variants={fadeUp} initial="hidden" animate="show">
         <span className="craft-subtitle">{content.subtitle}</span>
-        <h1>{content.title}</h1>
+        <h1>{sentenceCaseHeading(content.title)}</h1>
         <p className="craft-description">{content.description}</p>
       </motion.div>
       {content.works && (

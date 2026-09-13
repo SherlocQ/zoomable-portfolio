@@ -14,11 +14,16 @@
     <title>Chengchang Qian — Product Design Portfolio</title>
     <script>
       (function () {
-        var stored = localStorage.getItem('theme');
+        var stored = localStorage.getItem('theme-preference');
         var theme = stored === 'dark' || stored === 'light'
           ? stored
           : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]').setAttribute(
+          'content',
+          theme === 'dark' ? '#010102' : '#ffffff'
+        );
       })();
     </script>
   </head>

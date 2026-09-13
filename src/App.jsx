@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import GridView       from './components/GridView';
 import GridOverlay    from './components/GridOverlay';
@@ -19,28 +19,43 @@ const urlToPath = () =>
     .split('/')
     .filter(Boolean);
 
-const THEME_KEY = 'theme';
+const THEME_KEY = 'theme-preference';
+const getSystemTheme = () =>
+  window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 const getInitialTheme = () => {
   const stored = localStorage.getItem(THEME_KEY);
   if (stored === 'dark' || stored === 'light') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return getSystemTheme();
 };
 
 export default function App() {
   const [path, setPath]           = useState(() => urlToPath());
   const [theme, setTheme]         = useState(getInitialTheme);
   const [lightboxNode, setLightbox] = useState(null);
-  const isReplaceNav = useRef(false);
+  const [skipTransition, setSkipTransition] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
+    document.documentElement.style.colorScheme = theme;
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    themeColor?.setAttribute('content', theme === 'dark' ? '#010102' : '#ffffff');
   }, [theme]);
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const followSystemTheme = (event) => {
+      if (!localStorage.getItem(THEME_KEY)) {
+        setTheme(event.matches ? 'dark' : 'light');
+      }
+    };
+    media.addEventListener('change', followSystemTheme);
+    return () => media.removeEventListener('change', followSystemTheme);
+  }, []);
 
   // Seed the initial history entry so popstate always has state
   useEffect(() => {
     window.history.replaceState({ path: urlToPath() }, '');
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Browser back / forward → sync React state
   useEffect(() => {
@@ -53,7 +68,7 @@ export default function App() {
   }, []);
 
   const navigateTo = useCallback((item) => {
-    isReplaceNav.current = false;
+    setSkipTransition(false);
     const next = [...path, item.id];
     setPath(next);
     window.history.pushState({ path: next }, '', pathToUrl(next));
@@ -61,7 +76,7 @@ export default function App() {
 
   // Replace the last path segment (used for project-to-project navigation)
   const navigateReplace = useCallback((item) => {
-    isReplaceNav.current = true;
+    setSkipTransition(true);
     const next = [...path.slice(0, -1), item.id];
     setPath(next);
     window.history.pushState({ path: next }, '', pathToUrl(next));
@@ -74,10 +89,13 @@ export default function App() {
     window.history.pushState({ path: next }, '', pathToUrl(next));
   }, [path]);
 
-  const toggleTheme = useCallback(
-    () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')),
-    [],
-  );
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => {
+      const next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, next);
+      return next;
+    });
+  }, []);
 
   const overlayStack = path
     .map((_, i) => ({
@@ -121,8 +139,6 @@ export default function App() {
   }, []);
 
   const topZ = 10 + overlayStack.length * 5 + 5;
-  const skipTransition = isReplaceNav.current;
-
   return (
     <div className="app">
       <a className="skip-link" href="#main-content">Skip to content</a>

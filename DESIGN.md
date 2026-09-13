@@ -342,6 +342,8 @@ The marketing surface treats Display and Text as one continuous voice; the famil
 - **Eyebrow uses positive tracking** (+0.4px) — contrast against the negative-tracked display marks the eyebrow as taxonomy.
 - **Mono only in code contexts.** Linear Mono lives inside product screenshots — not on marketing chrome.
 - **Project hierarchy is fixed.** Project title uses 32–40px display type, H2 uses 24px, H3 uses 20px, and all project body/list/after-copy variants use `{typography.body}` with `{colors.ink-muted}`. On mobile, project titles scale to 28–32px and lead copy scales to 16px.
+- **Documentation reading hierarchy.** Project-detail prose follows the measured rhythm of Linear Docs: H2 is 24px/32px at weight 590 with -0.012em tracking; H3 is 20px/28px at weight 590 with only slight negative tracking; body and list copy remain 16px/24px at weight 400. Headings use `{colors.ink}` and supporting copy uses `{colors.ink-muted}`.
+- **Project headings use sentence case.** Apply sentence case consistently to project H1, H2, H3, desktop on-page navigation, and the mobile section selector. Preserve canonical acronyms and product names such as AI, GAI, HCI, UX, UI, MMM, MTA, B2B, Account IQ, LinkedIn, ServiceNow, Neustar, Figma, and FigJam. Display casing must not change the underlying section string or anchor ID.
 
 ### Note on Font Substitutes
 
@@ -356,6 +358,23 @@ Linear's custom typeface isn't publicly distributed; the documented fallback `SF
 - Card interior padding: `{spacing.lg}` 24px on feature/pricing cards; `{spacing.xl}` 32px on testimonial cards; `{spacing.xxl}` 48px on CTA banners.
 - Pill button padding: 8px vertical · 14px horizontal — Linear's compact button spec.
 - Form input padding: 8px vertical · 12px horizontal.
+
+### Project Detail Reading Rhythm
+
+- The primary reading column is capped at 700px, paired with a 220px on-page navigation column and a 24px gap. This preserves a documentation-like line length instead of stretching prose across the available project canvas.
+- Chapter-level H2 sections begin after 56px of vertical separation. Related H3 subsections use a compact 40px section rhythm.
+- H2-to-body spacing is 12px; H3-to-body spacing is 8px. Paragraphs are separated by 16px. Avoid adding blank spacer elements between prose blocks.
+- Media follows the preceding copy through that copy's 16px bottom rhythm; captions sit 10px below media. Split-layout copy and media remain top-aligned.
+- On mobile, the same hierarchy is preserved in one column; page gutters reduce to 18px and card padding reduces without changing the 16px body size.
+
+### Prose Lists
+
+- Render list-shaped source content as semantic `<ul>` or `<ol>` elements; never leave bullet or numbered content as a newline-filled paragraph.
+- Unordered lists use a standard disc marker. Ordered lists use decimal markers with tabular numerals. Both use 24px visual indentation (ordered lists may reserve 28px for two-digit alignment), 4px marker-to-copy breathing room, and 8px between items.
+- Lists use the same 16px/24px body typography and `{colors.ink-muted}` as paragraphs. Markers step down to `{colors.ink-tertiary}` so the copy remains dominant.
+- Keep 16px between a list and the next prose block. The final item has no extra bottom margin; the list container owns the external spacing.
+- Outcome statements that represent parallel evidence belong in a semantic list rather than separate oversized paragraphs. Keep the contextual setup and follow-up as prose around that list.
+- External coverage or evidence links sit in a dedicated source row after the related prose: 16px top rule inset, 24px separation from the copy, a muted 13px label, and wrapping 14px underlined text links. Preserve the original destination URL and open external sources in a new tab.
 
 ### Grid & Container
 
@@ -494,7 +513,7 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 **`project-hero-media`** — Full-viewport hero image at the top of a project detail page.
 - Use a wider bottom vignette from approximately 92% black at the bottom to transparent near 94% of the image height.
-- Apply a progressive 3px backdrop blur behind the lower text region, masked so it fades to a fully crisp image rather than ending as a rectangular blur band.
+- Apply a restrained progressive 2px blur only behind the lower text region: fully present through roughly the bottom 14%, then fading out completely by 48% of the image height. The upper half remains fully crisp and the transition must never form a rectangular blur band.
 - Titles are white and supporting text is 86% white in both light and dark modes. Do not add text shadows. Empty/no-image heroes use normal theme tokens and no media blur.
 
 ### Image Carousel and Lightbox
@@ -509,6 +528,32 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Adjacent images may be mounted/preloaded for continuity but must remain clipped while idle. Non-active images use empty alt text and `aria-hidden`.
 - Lightbox gestures bind directly to `.lightbox-swipe-track`, and every Lightbox image fills the same fixed-height stage with `object-fit: contain`.
 - Craft GIF tiles use real `<img>` elements so animation plays on mobile; they are not CSS background images.
+
+### Project Narrative Components
+
+**`project-split`** — Alternating copy and media used for personas, pain points, and supporting illustrations.
+- Desktop columns align to the top, with the first heading and the visible image edge sharing the same physical top edge.
+- Media has no frame, border, padding, or background. Images and transparent Lottie illustrations sit directly in the reading flow.
+- Related desktop pain-point Lotties share one 160–184px responsive stage height, preserving a consistent illustration scale while remaining close to the adjacent copy height and eliminating the former square-canvas whitespace. At ≤768px they return to a stable `16:9` stage below the copy.
+- At ≤768px, copy appears before media and both remain flush inside the single-column reading flow.
+
+**`project-message-bubbles`** — Learner or customer feedback presented as an alternating conversation.
+- Match the original portfolio's alternating rounded-message layout, but let every bubble hug its text up to an 82% / 720px desktop maximum (90% on mobile). Use an 18px desktop thread gap and 14px mobile gap. Every bubble uses the shared project callout shell: neutral `surface-3`, a subtle `hairline` border, and a 16px radius. Left messages have a square bottom-left corner; right messages have a square bottom-right corner.
+- The thread has no enclosing card, border, fill, or inset; bubbles sit directly in the reading flow.
+- Each bubble independently follows viewport presence: it starts fully outside the clipped thread at ±110%, fades/slides in from its corresponding side on entry, and reverses out toward that side when scrolling away. The thread uses paint containment so offscreen messages cannot leak into view. Reduced-motion users see the final state immediately.
+
+**Metric units** — Keep compact values on one line, such as `11m 34s` and `9m 4d`. Do not spell out units inside metric values.
+
+**`project-design-goal-card`** — The reusable design-goal treatment across every project.
+- Use the shared project callout shell and center its contents. Render `Design goal` / `Design goals` as the 13px eyebrow token: weight 500, 1.3 line height, +0.4px tracking, uppercase visual treatment, `{colors.ink-tertiary}`, and 16px below it.
+- The goal copy is the visual subject at 17–18px / 1.55 and may be followed by an existing supporting image after 24px. Preserve the original wording and keep image Lightbox behavior.
+- Retain semantic H2/H3 markup for the eyebrow label so desktop and mobile on-page navigation continue to work; the visual eyebrow treatment does not alter its source string or anchor ID.
+
+**`project-quote-grid--1`** — A single pull-quote statement not classified as a design goal.
+- Center the statement inside the shared project callout shell, with no shadow, quotation decoration, or redundant label.
+- Use responsive 20–28px display type and preserve the original project wording.
+
+**Shared project callout shell** — Message bubbles, metrics, insight/highlight cards, and text-based design goals share the Linear Docs highlight-card treatment: `surface-3` background, 1px `hairline` border, 16px radius, and no shadow. Their internal layouts remain purpose-specific so metrics emphasize values, design goals center the statement, and messages preserve the alternating conversation rhythm.
 
 ### Footer
 
@@ -584,5 +629,6 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - The four-step surface ladder values are extracted directly from Linear's `--color-bg-level-3`, `--color-line-tint`, etc. CSS variables; they are Linear's canonical surface spec.
 - Form-field error and validation styling is not visible on the inspected pages.
 - This portfolio extends the source Linear palette with a fully tokenized light mode; geometry, hierarchy, and interaction behavior remain identical across themes.
+- Theme defaults to the browser/operating-system `prefers-color-scheme` value. Before React mounts, the document applies that value to `data-theme`, `color-scheme`, and the browser `theme-color` meta tag to prevent a wrong-theme flash. Continue following live system changes until the visitor explicitly selects light or dark; only explicit selections are persisted under `theme-preference`.
 - Linear's actual product UI uses a richer color-tag palette (red, orange, yellow, green, blue, purple) for issue priorities and project labels — those colors live in the in-product surfaces shown in mockups.
 - The custom display, text, and mono families are proprietary; an open-source substitute is acceptable.

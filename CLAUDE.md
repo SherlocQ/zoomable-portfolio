@@ -46,7 +46,8 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 - Page overlays use `card-{tone}` CSS class → project pages have `background: var(--surface-1)`
 - Every `page` node's `content.type` (`hero`, `about`, `project`, `process`, `contact`, `craft`, `image`, `comparison`) selects which sub-component `PageView.jsx` renders (`HeroContent`, `AboutContent`, `ProjectContent`, etc.) — adding a new content shape means adding both the data and a matching branch/component in `PageView.jsx`
 - Lightboxes (single image and before/after comparison) are synthetic `page` nodes built on the fly in `App.jsx` (`openLightbox` / `openComparisonLightbox`), not part of `portfolio.js`
-- Within a project's `content.sections`, section `type: 'video'` accepts an optional `aspectRatio` (e.g. `'330/240'`) for embeds that aren't 16:9 — drives `.section-video-wrap`'s CSS `aspect-ratio`, defaults to `16/9`. `type: 'columns'` renders a 3-col desktop / 1-col mobile grid of heading+body+image cards (see Lighthouse's "Be Transparent/Effective/Delightful").
+- Within a project's `content.sections`, section `type: 'video'` accepts an optional `aspectRatio` (e.g. `'330/240'`) for embeds that aren't 16:9 — drives `.section-video-wrap`'s CSS `aspect-ratio`, defaults to `16/9`. `type: 'columns'` renders a 3-col desktop / 1-col mobile grid of heading+body+image cards (see Lighthouse's "Be Transparent/Effective/Delightful"). `type: 'design-goal'` renders the reusable neutral goal card with an eyebrow label, optional local image, and preserved Lightbox behavior.
+- `BodyText` converts bullet-shaped and numbered source blocks into semantic `<ul>` / `<ol>` markup. Project headings and both desktop/mobile table-of-contents labels share `sentenceCaseHeading()`; preserve registered product names, personal names, and acronyms in its canonical-term map.
 - The `/hero` page is an interactive resume globe, rendered by `ResumeGlobe.jsx`. Its copy, dates, locations, and coordinates live in `portfolioData.hero.content.journey`; keep factual edits in the data file rather than the renderer. Journey tags are intentionally not rendered.
 - `ResumeGlobe` uses `d3-geo`, `topojson-client`, and the local `world-atlas` package. It draws a high-DPI canvas, supports light/dark themes, and scrolls through Beijing → Ann Arbor → Los Angeles → Sunnyvale (LBP) → Sunnyvale (LSS) → Santa Clara. The intro has no location marker; the final Santa Clara scene has a single pulsing marker and no outgoing route.
 - On desktop, resume copy stays left and the globe stays sticky on the right. At ≤768px the viewport is split 50/50: scrollable copy above, large globe below, with no content/globe overlap.
@@ -60,12 +61,16 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 - Swipe activation uses either a 50px distance or a fast gesture of at least 28px / 400px/s. Insufficient gestures ease back without bounce. `touch-action: pan-y` preserves vertical page scrolling.
 - Craft GIF thumbnails render as real `<img>` elements, not CSS backgrounds, so they animate reliably on mobile. Adjacent carousel assets are preloaded in memory.
 - Lightbox swipe handlers live on `.lightbox-swipe-track`; all Lightbox image elements fill one fixed-height contain-fit stage so mixed source aspect ratios do not resize the viewer.
+- Local project Lottie files live under `public/animations/projects/` and render through `lottie-web`. Related Lighthouse pain-point illustrations share a consistent responsive stage height and replay according to viewport presence.
 
 ## Current project status — 2026-09-12
 - Hero résumé globe is responsive, theme-aware, high-DPI, native-scroll snapped, and uses body typography for descriptions with no journey tags.
-- Project typography is unified: project title → H2 → H3 → 16px body; project body variants use `var(--ink-muted)` consistently.
-- Project preview cards use a progressive 1px backdrop blur plus a bottom vignette. Project detail hero images use a progressive 3px backdrop blur plus a broader vignette. Media text uses high-contrast white without text shadows in both themes.
+- Project-detail reading follows a Linear Docs rhythm: a 700px prose column beside the 220px TOC, 24px H2, 20px H3, 16px/24px body, 56px chapter spacing, semantic lists, and sentence-case headings/TOC labels.
+- Message bubbles, metrics, insight/highlight cards, and design-goal cards share a neutral `surface-3` shell with a subtle hairline border and 16px radius. Message bubbles remain content-hugging, alternate sides, and reversibly fade/slide with viewport entry.
+- Academy, Lighthouse, and LinkedIn Design Challenge use the reusable `design-goal` component. Account IQ outcomes use semantic bullets and restored external media-coverage links.
+- Project preview cards use a progressive 1px backdrop blur plus a bottom vignette. Project detail hero images use a shorter progressive 2px blur that clears by 48% of image height plus a broader vignette. Media text uses high-contrast white without text shadows in both themes.
 - Inline carousels and Lightboxes support swipe and arrow navigation with the same transform-only animation; Lightbox image height is stable.
+- Theme defaults to live browser/system `prefers-color-scheme` with a pre-React no-flash bootstrap. Only explicit light/dark selections persist under `theme-preference`; browser `color-scheme` and `theme-color` stay synchronized.
 
 ## Icons & illustrations
 - Root grid tiles get a theme-adaptive SVG via `item.illustration` (key into `ILLUSTRATIONS` map in `GridItem.jsx`) — these are React components with `fill="var(--ink)"`/`var(--surface-1)"` so they recolor automatically per theme.
