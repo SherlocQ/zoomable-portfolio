@@ -51,6 +51,7 @@
 
   --gap:      10px;
   --header-h: 50px;
+  --lightbox-chrome-inset: 16px;
 
   /* Dark UI chrome */
   --chrome-bg:      var(--canvas);
@@ -350,6 +351,8 @@ a:focus-visible,
 .page-body { height: 100%; overflow-y: auto; overflow-x: hidden; }
 .page-body--about {
   overscroll-behavior-y: contain;
+  scroll-snap-type: y mandatory;
+  scroll-padding: 0;
 }
 .page-body::-webkit-scrollbar { width: 3px; }
 .page-body::-webkit-scrollbar-track { background: transparent; }
@@ -999,12 +1002,11 @@ a:focus-visible,
   justify-content: center;
   padding: clamp(44px, 8vh, 92px) 0;
   opacity: 0.3;
-  transform: translateY(14px);
-  transition:
-    opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1),
-    transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+  /* Never transform a scroll-snap target: changing its geometry while the
+     browser settles forces a second position correction at the end. */
+  transition: opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1);
   scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal;
 }
 
 .resume-step--intro {
@@ -1013,7 +1015,6 @@ a:focus-visible,
 
 .resume-step.is-active {
   opacity: 1;
-  transform: translateY(0);
 }
 
 .resume-eyebrow {
@@ -1480,7 +1481,7 @@ a:focus-visible,
 
 /* ─── Lightbox / image-page dismiss button — fixed at top-right ───────────── */
 .lightbox-dismiss {
-  position: absolute; top: 10px; right: 12px; z-index: 20;
+  position: absolute; top: 10px; right: var(--lightbox-chrome-inset); z-index: 20;
   width: 44px; height: 44px; border-radius: 50%;
   background: var(--media-scrim); border: 1px solid var(--media-chrome-border);
   color: var(--media-chrome-text);
@@ -1604,7 +1605,7 @@ a:focus-visible,
 .img-page-caption-bar {
   position: relative; z-index: 2; flex-shrink: 0;
   display: flex; align-items: center; gap: 10px;
-  padding: 11px 44px 12px;
+  padding: 11px var(--lightbox-chrome-inset) 12px;
   background: var(--media-caption-bg);
   border-top: 1px solid var(--media-caption-border);
 }
@@ -1613,7 +1614,7 @@ a:focus-visible,
   line-height: 1.4; color: var(--media-caption-counter); white-space: nowrap; flex-shrink: 0;
 }
 /* Embed footnote — title + description stacked instead of the single-line image caption */
-.img-page-caption-bar--stacked { flex-direction: column; align-items: flex-start; gap: 3px; padding: 12px 44px 14px; }
+.img-page-caption-bar--stacked { flex-direction: column; align-items: flex-start; gap: 3px; padding: 12px var(--lightbox-chrome-inset) 14px; }
 .img-page-caption-title {
   font-family: var(--font-sans); font-size: 0.8125rem; font-weight: 590;
   line-height: 1.4; letter-spacing: -0.01em; color: var(--media-caption-title);
@@ -1764,8 +1765,8 @@ a:focus-visible,
   transition: background 0.14s, color 0.14s;
 }
 .lb-nav:hover { background: var(--media-scrim-hover); color: var(--media-chrome-text-hi); }
-.lb-nav--prev { left: 16px; }
-.lb-nav--next { right: 16px; }
+.lb-nav--prev { left: var(--lightbox-chrome-inset); }
+.lb-nav--next { right: var(--lightbox-chrome-inset); }
 .lb-dots {
   position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
   display: flex; gap: 5px; z-index: 21; flex-wrap: wrap; justify-content: center;
@@ -1940,7 +1941,7 @@ a:focus-visible,
 
   /* Lightbox: tighter padding on mobile */
   .img-page-scroll { padding: 52px 16px 20px; }
-  .img-page-caption-bar { padding: 10px 16px 11px; }
+  .img-page-caption-bar { padding-block: 10px 11px; }
 
   /* Touch targets */
   .img-carousel-arrow { width: 40px; height: 40px; opacity: 0.72; }
@@ -2421,6 +2422,7 @@ a:focus-visible,
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-y: none;
+    scroll-snap-type: y mandatory;
     scroll-padding: 0;
   }
 
@@ -2440,13 +2442,8 @@ a:focus-visible,
     min-height: 100%;
     padding: 32px 0;
     scroll-snap-align: start;
-    scroll-snap-stop: always;
-    transform: none;
+    scroll-snap-stop: normal;
     transition: opacity 0.24s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  .resume-step.is-active {
-    transform: none;
   }
 
   .resume-step h1 {

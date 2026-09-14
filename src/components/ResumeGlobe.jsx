@@ -376,174 +376,52 @@ export default function ResumeGlobe({ content }) {
     };
   }, [chapters.length]);
 
+  // Desktop and copy-panel scrolling stay fully native. On stacked layouts the
+  // globe is a sibling of the scrollable copy, so only gestures that begin on
+  // the globe are forwarded to that native scroller; CSS scroll snap handles
+  // the final resting scene.
   useEffect(() => {
     const component = rootRef.current;
     const stage = component?.querySelector('.resume-globe-stage');
     const copy = component?.querySelector('.resume-globe-copy');
-    const pageScrollRoot = component?.closest('.page-body');
-    if (!stage || !copy || !pageScrollRoot) return undefined;
+    if (!stage || !copy) return undefined;
 
     let previousTouchY = null;
-    let touchStartIndex = 0;
-    let touchDirection = 0;
-    let settleTimer;
-    let wheelGestureTimer;
-    let wheelGestureActive = false;
-    let settleRaf = 0;
-    let isSettling = false;
-    let ignoreNativeScrollUntil = 0;
-
     const isStacked = () => window.matchMedia('(max-width: 768px)').matches;
-    const getScrollRoot = () => isStacked() ? copy : pageScrollRoot;
-    const cancelSettle = () => {
-      window.clearTimeout(settleTimer);
-      settleTimer = undefined;
-      if (settleRaf) cancelAnimationFrame(settleRaf);
-      settleRaf = 0;
-      isSettling = false;
-    };
-    const scenePositions = (scrollRoot) => {
-      const rootRect = scrollRoot.getBoundingClientRect();
-      const maxTop = scrollRoot.scrollHeight - scrollRoot.clientHeight;
-      return stepsRef.current.map((step) => {
-        if (!step) return 0;
-        const stepRect = step.getBoundingClientRect();
-        const top = scrollRoot.scrollTop + stepRect.top - rootRect.top;
-        return Math.max(0, Math.min(top, maxTop));
-      });
-    };
-    const nearestSceneIndex = (scrollRoot) => {
-      const positions = scenePositions(scrollRoot);
-      return positions.reduce((best, top, index) => (
-        Math.abs(top - scrollRoot.scrollTop) < best.distance
-          ? { index, distance: Math.abs(top - scrollRoot.scrollTop) }
-          : best
-      ), { index: 0, distance: Number.POSITIVE_INFINITY }).index;
-    };
-    const animateToScene = (scrollRoot, targetIndex) => {
-      const positions = scenePositions(scrollRoot);
-      const safeIndex = Math.max(0, Math.min(targetIndex, positions.length - 1));
-      const from = scrollRoot.scrollTop;
-      const target = positions[safeIndex];
-      const distance = target - from;
-      if (Math.abs(distance) < 0.75) {
-        scrollRoot.scrollTop = target;
-        return;
-      }
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        scrollRoot.scrollTop = target;
-        return;
-      }
 
-      cancelSettle();
-      isSettling = true;
-      const startedAt = performance.now();
-      const duration = Math.min(640, Math.max(480, 480 + Math.abs(distance) * 0.2));
-      const tick = (now) => {
-        const progress = Math.min(1, (now - startedAt) / duration);
-        // Smoothstep keeps the direct scene navigation responsive without the
-        // previous fast launch: it accelerates gently, carries speed through
-        // the middle, then decelerates continuously into the exact pixel.
-        const eased = progress * progress * (3 - 2 * progress);
-        // A scroll event caused by this assignment can be delivered after the
-        // animation frame has completed. Keep a short suppression window so
-        // that delayed programmatic events cannot start a second snap.
-        ignoreNativeScrollUntil = now + 120;
-        scrollRoot.scrollTop = from + distance * eased;
-        if (progress < 1) {
-          settleRaf = requestAnimationFrame(tick);
-        } else {
-          // Hold the settling state through two paints. Some browsers dispatch
-          // the final scroll event on the following frame; releasing here used
-          // to create the occasional last-pixel "pull" at the end.
-          settleRaf = requestAnimationFrame(() => {
-            settleRaf = requestAnimationFrame(() => {
-              settleRaf = 0;
-              isSettling = false;
-            });
-          });
-        }
-      };
-      settleRaf = requestAnimationFrame(tick);
+    const onStageWheel = (event) => {
+      if (!isStacked() || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      event.preventDefault();
+      copy.scrollBy({ top: event.deltaY, behavior: 'auto' });
     };
-    const settleToNearestScene = () => {
-      const scrollRoot = getScrollRoot();
-      animateToScene(scrollRoot, nearestSceneIndex(scrollRoot));
-    };
-    const scheduleSettle = () => {
-      if (isSettling) return;
-      window.clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(settleToNearestScene, 80);
-    };
-    const onNativeScroll = () => {
-      if (!isSettling && performance.now() >= ignoreNativeScrollUntil) scheduleSettle();
-    };
-
-    const onTouchStart = (event) => {
+    const onStageTouchStart = (event) => {
       if (!isStacked() || event.touches.length !== 1) return;
-      cancelSettle();
       previousTouchY = event.touches[0].clientY;
-      touchStartIndex = nearestSceneIndex(copy);
-      touchDirection = 0;
     };
-
-    const onTouchMove = (event) => {
+    const onStageTouchMove = (event) => {
       if (previousTouchY === null || event.touches.length !== 1) return;
       event.preventDefault();
       const nextY = event.touches[0].clientY;
-      const delta = previousTouchY - nextY;
-      if (Math.abs(delta) > 0.5) touchDirection = Math.sign(delta);
-      copy.scrollTop += delta;
+      copy.scrollTop += previousTouchY - nextY;
       previousTouchY = nextY;
     };
-
-    const onTouchEnd = () => {
-      if (previousTouchY === null) return;
+    const onStageTouchEnd = () => {
       previousTouchY = null;
-      animateToScene(copy, touchStartIndex + touchDirection);
     };
 
-    const onWheelNavigate = (event) => {
-      if (Math.abs(event.deltaX) > Math.abs(event.deltaY) || Math.abs(event.deltaY) < 0.5) return;
-      event.preventDefault();
-      window.clearTimeout(wheelGestureTimer);
-      wheelGestureTimer = window.setTimeout(() => { wheelGestureActive = false; }, 140);
-      if (wheelGestureActive) return;
-      wheelGestureActive = true;
-
-      const scrollRoot = getScrollRoot();
-      const currentIndex = nearestSceneIndex(scrollRoot);
-      cancelSettle();
-      animateToScene(scrollRoot, currentIndex + Math.sign(event.deltaY));
-    };
-
-    stage.addEventListener('touchstart', onTouchStart, { passive: true });
-    stage.addEventListener('touchmove', onTouchMove, { passive: false });
-    stage.addEventListener('touchend', onTouchEnd, { passive: true });
-    stage.addEventListener('touchcancel', onTouchEnd, { passive: true });
-    copy.addEventListener('touchstart', onTouchStart, { passive: true });
-    copy.addEventListener('touchmove', onTouchMove, { passive: false });
-    copy.addEventListener('touchend', onTouchEnd, { passive: true });
-    copy.addEventListener('touchcancel', onTouchEnd, { passive: true });
-    pageScrollRoot.addEventListener('wheel', onWheelNavigate, { passive: false });
-    pageScrollRoot.addEventListener('scroll', onNativeScroll, { passive: true });
-    copy.addEventListener('scroll', onNativeScroll, { passive: true });
+    stage.addEventListener('wheel', onStageWheel, { passive: false });
+    stage.addEventListener('touchstart', onStageTouchStart, { passive: true });
+    stage.addEventListener('touchmove', onStageTouchMove, { passive: false });
+    stage.addEventListener('touchend', onStageTouchEnd, { passive: true });
+    stage.addEventListener('touchcancel', onStageTouchEnd, { passive: true });
     return () => {
-      stage.removeEventListener('touchstart', onTouchStart);
-      stage.removeEventListener('touchmove', onTouchMove);
-      stage.removeEventListener('touchend', onTouchEnd);
-      stage.removeEventListener('touchcancel', onTouchEnd);
-      copy.removeEventListener('touchstart', onTouchStart);
-      copy.removeEventListener('touchmove', onTouchMove);
-      copy.removeEventListener('touchend', onTouchEnd);
-      copy.removeEventListener('touchcancel', onTouchEnd);
-      pageScrollRoot.removeEventListener('wheel', onWheelNavigate);
-      pageScrollRoot.removeEventListener('scroll', onNativeScroll);
-      copy.removeEventListener('scroll', onNativeScroll);
-      window.clearTimeout(wheelGestureTimer);
-      cancelSettle();
+      stage.removeEventListener('wheel', onStageWheel);
+      stage.removeEventListener('touchstart', onStageTouchStart);
+      stage.removeEventListener('touchmove', onStageTouchMove);
+      stage.removeEventListener('touchend', onStageTouchEnd);
+      stage.removeEventListener('touchcancel', onStageTouchEnd);
     };
-  }, [chapters.length]);
+  }, []);
 
   return (
     <div className="resume-globe" ref={rootRef}>

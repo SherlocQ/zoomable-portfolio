@@ -773,7 +773,7 @@ function OnThisPageMobile({ h2s }) {
 }
 
 /* ─── PageView ────────────────────────────────────────────────────────────── */
-export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, onLightboxScrollDismiss, zIndex, skipLayoutTransition, isActive = true }) {
+export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, zIndex, skipLayoutTransition, isActive = true }) {
   const { content } = node;
   const tone            = node.tone || 'base';
   const isImagePage     = content.type === 'image';
@@ -808,9 +808,6 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const lightboxTrackRef = useRef(null);
   const lightboxScrollRef = useRef(null);
   const activeLightboxImageRef = useRef(null);
-  const lightboxBoundaryDeltaRef = useRef(0);
-  const lightboxExitStartedRef = useRef(false);
-  const lightboxTouchRef = useRef(null);
   const [lightboxMediaLayout, setLightboxMediaLayout] = useState({ isLong: false, height: null });
   const lbGo = useCallback(
     (n) => {
@@ -865,7 +862,6 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
 
   useLayoutEffect(() => {
     if (!isLightbox || !isImagePage) return;
-    lightboxBoundaryDeltaRef.current = 0;
     lightboxScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
     measureLightboxImage();
   }, [isImagePage, isLightbox, lbIdx, measureLightboxImage]);
@@ -875,118 +871,6 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       lightboxScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
     }
   }, [lightboxMediaLayout.isLong]);
-
-  const dismissLightboxFromGesture = useCallback((deltaY) => {
-    if (!isLightbox || !onLightboxScrollDismiss) return;
-    lightboxExitStartedRef.current = true;
-    // Keep forwarding momentum deltas while AnimatePresence retains the
-    // exiting overlay so the underlying project never pauses.
-    onLightboxScrollDismiss(deltaY);
-  }, [isLightbox, onLightboxScrollDismiss]);
-
-  const handleLightboxWheel = useCallback((event) => {
-    if (!isLightbox || Math.abs(event.deltaY) < 1 || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
-    const deltaY = event.deltaY * unit;
-
-    if (lightboxExitStartedRef.current) {
-      event.preventDefault();
-      dismissLightboxFromGesture(deltaY);
-      return;
-    }
-
-    if (isImagePage && lightboxMediaLayout.isLong) {
-      const scroller = lightboxScrollRef.current;
-      if (!scroller) return;
-      const atTop = scroller.scrollTop <= 1;
-      const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
-      const movingOutward = (deltaY < 0 && atTop) || (deltaY > 0 && atBottom);
-      if (!movingOutward) {
-        lightboxBoundaryDeltaRef.current = 0;
-        return;
-      }
-
-      event.preventDefault();
-      lightboxBoundaryDeltaRef.current += Math.abs(deltaY);
-      if (lightboxBoundaryDeltaRef.current < 28) return;
-    } else {
-      event.preventDefault();
-    }
-
-    dismissLightboxFromGesture(deltaY);
-  }, [dismissLightboxFromGesture, isImagePage, isLightbox, lightboxMediaLayout.isLong]);
-
-  useEffect(() => {
-    if (!isLightbox) return undefined;
-    const shell = shellRef.current;
-    if (!shell) return undefined;
-
-    const onTouchStart = (event) => {
-      const touch = event.touches[0];
-      if (!touch) return;
-      lightboxTouchRef.current = {
-        x: touch.clientX,
-        y: touch.clientY,
-        lastY: touch.clientY,
-        intent: null,
-        boundary: 0,
-      };
-    };
-    const onTouchMove = (event) => {
-      const state = lightboxTouchRef.current;
-      const touch = event.touches[0];
-      if (!state || !touch) return;
-      const dx = touch.clientX - state.x;
-      const dy = touch.clientY - state.y;
-      if (!state.intent && Math.hypot(dx, dy) >= 10) {
-        if (Math.abs(dx) > Math.abs(dy) * 1.25) state.intent = 'horizontal';
-        else if (Math.abs(dy) > Math.abs(dx) * 1.25) state.intent = 'vertical';
-      }
-      if (state.intent !== 'vertical') {
-        state.lastY = touch.clientY;
-        return;
-      }
-
-      const deltaY = state.lastY - touch.clientY;
-      state.lastY = touch.clientY;
-      if (lightboxExitStartedRef.current) {
-        event.preventDefault();
-        dismissLightboxFromGesture(deltaY);
-        return;
-      }
-
-      if (isImagePage && lightboxMediaLayout.isLong) {
-        const scroller = lightboxScrollRef.current;
-        if (!scroller) return;
-        const atTop = scroller.scrollTop <= 1;
-        const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
-        const movingOutward = (deltaY < 0 && atTop) || (deltaY > 0 && atBottom);
-        if (!movingOutward) {
-          state.boundary = 0;
-          return;
-        }
-        event.preventDefault();
-        state.boundary += Math.abs(deltaY);
-        if (state.boundary < 28) return;
-      } else {
-        event.preventDefault();
-        state.boundary += Math.abs(deltaY);
-        if (state.boundary < 28) return;
-      }
-      dismissLightboxFromGesture(deltaY);
-    };
-    const clearTouch = () => { lightboxTouchRef.current = null; };
-    shell.addEventListener('touchstart', onTouchStart, { passive: true });
-    shell.addEventListener('touchmove', onTouchMove, { passive: false });
-    shell.addEventListener('touchend', clearTouch, { passive: true });
-    shell.addEventListener('touchcancel', clearTouch, { passive: true });
-    return () => {
-      shell.removeEventListener('touchstart', onTouchStart);
-      shell.removeEventListener('touchmove', onTouchMove);
-      shell.removeEventListener('touchend', clearTouch);
-      shell.removeEventListener('touchcancel', clearTouch);
-    };
-  }, [dismissLightboxFromGesture, isImagePage, isLightbox, lightboxMediaLayout.isLong]);
 
   const handleLightboxClickCapture = useCallback((event) => {
     if (!isLightbox || lightboxSwipe.consumeSuppressedClick()) return;
@@ -1027,7 +911,6 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       tabIndex={-1}
       aria-hidden={!isActive || undefined}
       inert={!isActive || undefined}
-      onWheelCapture={isLightbox ? handleLightboxWheel : undefined}
       onClickCapture={isLightbox ? handleLightboxClickCapture : undefined}
       {...motionShell}
       exit={isLightbox

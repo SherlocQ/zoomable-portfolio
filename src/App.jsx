@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import GridView       from './components/GridView';
 import GridOverlay    from './components/GridOverlay';
@@ -33,9 +33,6 @@ export default function App() {
   const [theme, setTheme]         = useState(getInitialTheme);
   const [lightboxNode, setLightbox] = useState(null);
   const [skipTransition, setSkipTransition] = useState(false);
-  const lightboxScrollTargetRef = useRef(null);
-  const lightboxScrollDeltaRef = useRef(0);
-  const lightboxScrollRafRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -122,12 +119,6 @@ export default function App() {
   }, [navigateBack]);
 
   const openLightbox = useCallback((id, src, caption, images, imgIdx) => {
-    if (lightboxScrollRafRef.current) {
-      window.cancelAnimationFrame(lightboxScrollRafRef.current);
-      lightboxScrollRafRef.current = null;
-    }
-    lightboxScrollTargetRef.current = null;
-    lightboxScrollDeltaRef.current = 0;
     setLightbox({
       id:       `img-${id}`,
       sourceId: id,
@@ -139,38 +130,7 @@ export default function App() {
     });
   }, []);
 
-  const dismissLightboxWithScroll = useCallback((deltaY) => {
-    // Keep one stable target for the full trackpad momentum stream. Browsers
-    // may continue dispatching that stream to the exiting Lightbox even after
-    // it stops participating in hit-testing, so every delta is forwarded.
-    if (!lightboxScrollTargetRef.current) {
-      const pageScrollers = document.querySelectorAll(
-        '.page-overlay:not(.page-overlay--lightbox) .page-body',
-      );
-      lightboxScrollTargetRef.current = pageScrollers[pageScrollers.length - 1] || null;
-    }
-    const pageScroller = lightboxScrollTargetRef.current;
-    const lightbox = document.querySelector('.page-overlay--lightbox');
-    if (lightbox) lightbox.style.pointerEvents = 'none';
-    setLightbox(null);
-    lightboxScrollDeltaRef.current += deltaY;
-    if (!lightboxScrollRafRef.current) {
-      lightboxScrollRafRef.current = window.requestAnimationFrame(() => {
-        const distance = lightboxScrollDeltaRef.current;
-        lightboxScrollDeltaRef.current = 0;
-        lightboxScrollRafRef.current = null;
-        pageScroller?.scrollBy({ top: distance, behavior: 'auto' });
-      });
-    }
-  }, []);
-
   const openComparisonLightbox = useCallback((before, after) => {
-    if (lightboxScrollRafRef.current) {
-      window.cancelAnimationFrame(lightboxScrollRafRef.current);
-      lightboxScrollRafRef.current = null;
-    }
-    lightboxScrollTargetRef.current = null;
-    lightboxScrollDeltaRef.current = 0;
     const sourceId = before.id || before.src;
     setLightbox({
       id:      `comparison-${sourceId}`,
@@ -234,7 +194,6 @@ export default function App() {
                 key={lightboxNode.id}
                 node={lightboxNode}
                 onBack={navigateBack}
-                onLightboxScrollDismiss={dismissLightboxWithScroll}
                 isLightbox
                 zIndex={topZ}
               />
