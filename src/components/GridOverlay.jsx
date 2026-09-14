@@ -73,6 +73,7 @@ export default function GridOverlay({ node, onItemClick, zIndex, isActive = true
     >
       <motion.div
         className={`grid-overlay-inner${isGallery ? ' gallery-inner' : ''}${isGallery && !fits ? ' gallery-inner--scroll' : ''}`}
+        data-grid-id={node.id}
         style={innerStyle}
         variants={{ show: { transition: { staggerChildren: 0.06, delayChildren: 0.22 } } }}
         initial="hidden"

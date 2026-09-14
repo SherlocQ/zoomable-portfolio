@@ -518,15 +518,18 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 ### Project Image Readability
 
-**`project-preview-media`** — Image-backed cards on the Projects grid.
+**`project-preview-media`** — The shared readability treatment for every image-backed portfolio card, including Projects, all Craft galleries, and the Craft Data Visualization entry.
 - Keep the source image crisp except for a progressive 1px backdrop blur limited to the lower text region.
 - Use a smooth bottom vignette from approximately 90% black at the bottom to transparent near 91% of the card height.
 - Titles are white; supporting text is 86% white. Do not add text shadows.
+- Apply the same overlay component and values everywhere rather than creating section-specific Craft or project variants. Artwork fit and its source-of-truth background remain independent from this text-readability layer.
+- Fine-detail Craft GIF and print thumbnails use the same vignette geometry but omit backdrop blur so small raster artwork remains crisp; this is a media-resolution safeguard, not a different label treatment.
 
-**`project-hero-media`** — Full-viewport hero image at the top of a project detail page.
+**`project-hero-media`** — Full-viewport hero image at the top of every project detail page, including Data Visualization reached through Craft.
 - Use a wider bottom vignette from approximately 92% black at the bottom to transparent near 94% of the image height.
 - Apply a restrained progressive 2px blur only behind the lower text region: fully present through roughly the bottom 14%, then fading out completely by 48% of the image height. The upper half remains fully crisp and the transition must never form a rectangular blur band.
 - Titles are white and supporting text is 86% white in both light and dark modes. Do not add text shadows. Empty/no-image heroes use normal theme tokens and no media blur.
+- Any project-like entry uses this shared hero treatment regardless of which top-level portfolio section links to it; navigation context must never change media readability.
 
 ### Image Carousel and Lightbox
 

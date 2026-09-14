@@ -781,6 +781,18 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const isEmbedPage     = content.type === 'embed';
   const isProject       = content.type === 'project';
   const hasHero     = isProject && ('heroImage' in content);
+  const forceImageContain = isImagePage && node.fit === 'contain';
+  const imageBackdropStyle = isImagePage && (node.bg || node.bgImage)
+    ? {
+        ...(node.bg ? { backgroundColor: node.bg } : {}),
+        ...(node.bgImage ? {
+          backgroundImage: `url(${asset(node.bgImage)})`,
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+        } : {}),
+      }
+    : undefined;
   const reduceMotion = useReducedMotion();
 
   // Move keyboard focus into this overlay when it becomes the active (topmost) layer
@@ -831,13 +843,13 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       scroller.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom),
     );
     const widthFitHeight = availableWidth * image.naturalHeight / image.naturalWidth;
-    const isLong = widthFitHeight > availableHeight + 1;
+    const isLong = !forceImageContain && widthFitHeight > availableHeight + 1;
     setLightboxMediaLayout((current) => {
       const height = isLong ? widthFitHeight : null;
       if (current.isLong === isLong && Math.abs((current.height || 0) - (height || 0)) < 0.5) return current;
       return { isLong, height };
     });
-  }, [isImagePage, isLightbox]);
+  }, [forceImageContain, isImagePage, isLightbox]);
 
   useLayoutEffect(() => {
     if (!isLightbox || !isImagePage) return undefined;
@@ -1028,7 +1040,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       {(isLightbox || isImagePage) && (
         <motion.div
           className="lightbox-scrim"
-          style={isImagePage && node.bg ? { background: node.bg } : undefined}
+          style={imageBackdropStyle}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -1109,7 +1121,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                           ref={offset === 0 ? activeLightboxImageRef : undefined}
                           src={asset(slide.src)}
                           alt={offset === 0 ? slide.caption || '' : ''}
-                          className={`img-page-img${node.fit === 'contain' ? ' img-page-img--contain' : ''}`}
+                          className={`img-page-img${forceImageContain ? ' img-page-img--contain' : ''}`}
                           layoutId={offset === 0
                             ? (isLightbox && slide.id === node.sourceId
                                 ? (lbImages ? `carousel-img-${node.sourceId}` : `item-img-${node.sourceId}`)

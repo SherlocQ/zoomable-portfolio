@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { T, SPRING_SLOW } from '../transitions';
+import { T, EASE, SPRING_SLOW } from '../transitions';
 import { asset } from '../utils/asset';
 import { BuildIllustration } from './illustrations/BuildIllustration';
 import { ContactIllustration } from './illustrations/ContactIllustration';
@@ -14,6 +14,8 @@ const ILLUSTRATIONS = {
   process: ProcessIllustration,
   projects: ProjectsIllustration,
 };
+
+const IMAGE_ZOOM = { duration: 0.56, ease: EASE };
 
 export function GridItem({ item, onItemClick }) {
   const [col, row] = item.span || [1, 1];
@@ -30,16 +32,21 @@ export function GridItem({ item, onItemClick }) {
         '--cs': col,
         '--rs': row,
         ...(hasImage ? {
-          ...(item.bg ? { backgroundColor: item.bg } : {}),
+          ...(item.previewBg || item.bg ? { backgroundColor: item.previewBg || item.bg } : {}),
           ...(!isAnimatedImage && !isImageTile ? {
             backgroundImage: item.bgImage
               ? `url(${asset(item.image)}), url(${asset(item.bgImage)})`
               : `url(${asset(item.image)})`,
           } : {}),
           ...(isImageTile && item.bgImage ? { backgroundImage: `url(${asset(item.bgImage)})` } : {}),
-          backgroundSize: item.fit === 'contain'
-            ? (item.bgImage ? 'contain, cover' : 'contain')
-            : 'cover',
+          // Image-page thumbnails use a real intrinsic-ratio <img>; this only
+          // controls the optional backdrop layer beneath transparent pixels.
+          // Entry-card CSS backgrounds continue to respect their own `fit`.
+          backgroundSize: isImageTile
+            ? 'cover'
+            : item.fit === 'contain'
+              ? (item.bgImage ? 'contain, cover' : 'contain')
+              : 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
         } : {}),
@@ -57,15 +64,15 @@ export function GridItem({ item, onItemClick }) {
       }}
       transition={{ layout: T }}
     >
-      {isImageTile && (
+      {(isImageTile || isAnimatedImage) && (
         <motion.img
           src={asset(item.image)}
           alt=""
           aria-hidden="true"
-          className="grid-item-media grid-item-media--zoom-source"
-          layoutId={`item-img-${item.id}`}
+          className={`grid-item-media${item.previewFit === 'cover' ? ' grid-item-media--cover' : ''}`}
+          layoutId={isImageTile ? `item-img-${item.id}` : undefined}
           layoutCrossfade={false}
-          transition={{ layout: T }}
+          transition={{ layout: IMAGE_ZOOM }}
           draggable={false}
           decoding="async"
         />
