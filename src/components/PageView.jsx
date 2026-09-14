@@ -1026,9 +1026,21 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
             {activeCaption && (
               <motion.div
                 className="img-page-caption-bar"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, delay: 0.1 }}
+                initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: reduceMotion
+                    ? { duration: 0.01 }
+                    : { duration: 0.3, delay: 0.14, ease: EASE },
+                }}
+                exit={{
+                  opacity: 0,
+                  y: reduceMotion ? 0 : 10,
+                  transition: reduceMotion
+                    ? { duration: 0.01 }
+                    : { duration: 0.22, ease: EASE },
+                }}
               >
                 {lbCount > 1 && (
                   <span className="img-page-caption-counter">{lbIdx + 1} / {lbCount}</span>

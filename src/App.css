@@ -1594,8 +1594,7 @@ a:focus-visible,
 }
 .page-overlay--lightbox .lightbox-dismiss,
 .page-overlay--lightbox .lb-nav,
-.page-overlay--lightbox .lb-dots,
-.page-overlay--lightbox .img-page-caption-bar {
+.page-overlay--lightbox .lb-dots {
   animation: lightbox-chrome-in 0.32s 0.18s both cubic-bezier(0.32, 0.72, 0, 1);
 }
 @keyframes lightbox-chrome-in {

@@ -549,6 +549,7 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Project Lightboxes never dismiss or zoom out in response to vertical wheel, trackpad, or touch input. Viewport-fit media remains stationary; long media scrolls natively inside the Lightbox and remains open at both boundaries. Horizontal gestures remain reserved for carousel navigation.
 - Close, Escape, and clicks on genuine backdrop space always reverse the shared-position zoom. Clicking the rendered image itself never dismisses it. Switching carousel slides resets the new image to its top and remeasures its mode.
 - Use one shared 16px Lightbox chrome inset: the footer label starts on the same left edge as the previous-carousel control, while the next-carousel and dismiss controls use the mirrored right edge. Preserve this alignment at every breakpoint.
+- Every image Lightbox footer, whether opened from Projects or Craft, enters by fading and sliding 10px upward from below, then exits by fading and sliding 10px downward. Keep this transform on the footer only so it does not disturb the shared-position media zoom; reduced-motion mode uses opacity only.
 - Lightbox controls and captions enter after the media begins expanding. Reduced-motion visitors receive a near-instant state change while retaining every navigation and dismissal path.
 - Craft GIF tiles use real `<img>` elements so animation plays on mobile; they are not CSS background images.
 
