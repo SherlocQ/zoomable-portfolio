@@ -5,6 +5,7 @@ import lottie from 'lottie-web/build/player/lottie_light.js';
 import { T, fadeUp, EASE, EASE_HERO } from '../transitions';
 import { asset } from '../utils/asset';
 import ResumeGlobe from './ResumeGlobe';
+import ScrollCue from './ScrollCue';
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -781,6 +782,8 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const isEmbedPage     = content.type === 'embed';
   const isProject       = content.type === 'project';
   const hasHero     = isProject && ('heroImage' in content);
+  const pageBodyRef = useRef(null);
+  const [showProjectScrollCue, setShowProjectScrollCue] = useState(true);
   const forceImageContain = isImagePage && node.fit === 'contain';
   const imageBackdropStyle = isImagePage && (node.bg || node.bgImage)
     ? {
@@ -794,6 +797,21 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       }
     : undefined;
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!isProject || !hasHero) return undefined;
+    const scrollRoot = pageBodyRef.current;
+    if (!scrollRoot) return undefined;
+
+    const updateCue = () => {
+      const nextVisible = scrollRoot.scrollTop <= 2;
+      setShowProjectScrollCue((current) => current === nextVisible ? current : nextVisible);
+    };
+
+    updateCue();
+    scrollRoot.addEventListener('scroll', updateCue, { passive: true });
+    return () => scrollRoot.removeEventListener('scroll', updateCue);
+  }, [hasHero, isProject, node.id]);
 
   // Move keyboard focus into this overlay when it becomes the active (topmost) layer
   const shellRef = useRef(null);
@@ -1078,7 +1096,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           )}
         </>
       ) : (
-        <div className={`page-body${content.type === 'about' ? ' page-body--about' : ''}`}>
+        <div ref={pageBodyRef} className={`page-body${content.type === 'about' ? ' page-body--about' : ''}`}>
           {hasHero && (
             <div className={`project-hero-section${content.heroImage ? '' : ' project-hero-section--empty'}`}>
               {content.heroImage && (
@@ -1121,6 +1139,11 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                   {content.tagline}
                 </motion.p>
               </div>
+              <ScrollCue
+                visible={showProjectScrollCue}
+                overMedia={Boolean(content.heroImage)}
+                className="project-scroll-cue"
+              />
             </div>
           )}
 

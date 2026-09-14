@@ -10,6 +10,7 @@ import {
 import { feature } from 'topojson-client';
 import landTopology from 'world-atlas/land-110m.json';
 import { fadeUp } from '../transitions';
+import ScrollCue from './ScrollCue';
 
 const land = feature(landTopology, landTopology.objects.land);
 const sphere = { type: 'Sphere' };
@@ -458,12 +459,7 @@ export default function ResumeGlobe({ content }) {
         ))}
       </div>
 
-      <span className={`resume-scroll-cue${isAtStart ? ' is-visible' : ''}`} aria-hidden="true">
-        <span>Scroll to explore</span>
-        <svg viewBox="0 0 16 16" focusable="false">
-          <path d="M8 2.5v10M4.5 9.5 8 13l3.5-3.5" />
-        </svg>
-      </span>
+      <ScrollCue visible={isAtStart} className="resume-scroll-cue" />
     </div>
   );
 }

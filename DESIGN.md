@@ -508,13 +508,14 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 **`resume-globe`** — The `/hero` page presents the résumé as a geographic, scroll-driven narrative rather than a linear timeline.
 - Desktop: copy occupies the left column and a sticky, unclipped globe occupies the right column.
-- Intro: no eyebrow or location marker; the globe is larger than in subsequent scenes and `Scroll to explore` appears centered at the viewport bottom only while the page is at the top.
+- Intro: no eyebrow or location marker; the globe is larger than in subsequent scenes and the shared animated mouse scroll cue appears centered at the viewport bottom only while the page is at the top.
 - Journey scenes use geographically accurate markers and great-circle route animation for Beijing, Ann Arbor, Los Angeles, Sunnyvale, and Santa Clara. Repeated Sunnyvale chapters change content without inventing a new location.
 - The globe is rendered at device pixel ratio for crisp output and redraws correctly after route entry, resize, and theme changes.
 - Light and dark modes use the same hierarchy and geometry; only tokenized colors change.
 - Descriptions use `{typography.body}` at 16px; journey tags are intentionally hidden.
 - Wheel, trackpad, scrollbar, and keyboard input use the browser's native scrolling and momentum. Each scene is a scoped `scroll-snap-align: start` stop inside the Hero scroller; do not cancel wheel events, lock input while motion is running, or replace native movement with scene-by-scene JavaScript animation. Use `scroll-snap-stop: normal` so sustained input can continue through scenes, while a completed gesture settles at the nearest scene.
 - Scroll-snap scene containers must never animate `transform`, height, padding, or position as their active state changes. Animate opacity only; moving a snap target during native settling causes a visible final-position correction.
+- Hero and project-detail hero sections share one compact scroll cue inspired by the Framer Scroll Cue reference: a 20×34px, 1.5px rounded mouse outline with a 3.5px dot moving 5px down and back before pausing. It replaces all scroll-label and arrow copy. The cue is centered against the visual viewport—not an asymmetrically padded content wrapper—and keeps a shared 24px bottom inset. On stacked Hero layouts it anchors 24px above the copy/globe division. Mobile project hero metadata reserves 72px at the bottom so long taglines cannot collide with it. The cue fades away as soon as its own scroll container leaves the top and returns only when scrolled back to the top. Use semantic `--scroll-cue-color` mapped to `ink-tertiary` on normal light/dark surfaces, and muted `--scroll-cue-media-color` over project imagery so it remains subordinate to white hero copy; reduced-motion mode disables the repeating translation.
 - At ≤768px, copy and globe each occupy 50% of the viewport. Touch gestures remain directly draggable over either half and complete to the adjacent scene on release using the same settle curve.
 
 ### Project Image Readability
@@ -554,6 +555,8 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Craft GIF tiles use real `<img>` elements so animation plays on mobile; they are not CSS background images.
 
 ### Project Narrative Components
+
+- Metric-card labels are concise sentence-case noun phrases, never sentence fragments with trailing verbs such as “is,” “reached,” or “spend.” Preserve the factual value and unit while naming the measure directly, for example “Total page views,” “Customer satisfaction (CSAT),” or “Average daily time per user.”
 
 **`project-split`** — Alternating copy and media used for personas, pain points, and supporting illustrations.
 - Desktop columns align to the top, with the first heading and the visible image edge sharing the same physical top edge.

@@ -223,9 +223,9 @@ export const portfolioData = {
                 heading: 'Outcome and Impact',
                 type: 'metrics',
                 items: [
-                  { value: '22.6M', label: 'Helped deliver in 2 months' },
-                  { value: '86%',   label: 'CSAT is' },
-                  { value: '86%',   label: 'Thumbs up rate is' },
+                  { value: '22.6M', label: 'Revenue delivered in 2 months' },
+                  { value: '86%',   label: 'Customer satisfaction (CSAT)' },
+                  { value: '86%',   label: 'Thumbs-up rate' },
                 ],
                 body: 'Account IQ is the biggest revenue driving GAI investment across all of LinkedIn. In just 2 months, Account IQ has helped deliver $17M in new customer acquisition and revenue wins.\n\n• Sellers start to book more meetings\n• Sellers said prospects were impressed by their knowledge about their companies\n• Sellers were considering replacing other sales tools\n\nAccount IQ has received over 50 media coverages as of November 2013, and this number continues to rise.',
                 links: [
@@ -697,10 +697,10 @@ export const portfolioData = {
                 heading: 'Outcome and Impact',
                 type: 'metrics',
                 items: [
-                  { value: '420',       label: 'Total number of visitors is' },
-                  { value: '180',       label: 'Total number of Accounts is' },
-                  { value: '31,385',    label: 'Total number of Page Views reached' },
-                  { value: '11m 34s',   label: 'Average time Per day Per user spend on this page is' },
+                  { value: '420',       label: 'Total visitors' },
+                  { value: '180',       label: 'Total accounts' },
+                  { value: '31,385',    label: 'Total page views' },
+                  { value: '11m 34s',   label: 'Average daily time per user' },
                 ],
                 body: 'This page became the most frequently used page across the entire MMM app. Clients say this is the most intuitive feature among all feature updates. This page became the navigation hub for the entire application. For year 2019 across all clients (Jan.1, 2019 - Dec 31, 2019):',
               },
