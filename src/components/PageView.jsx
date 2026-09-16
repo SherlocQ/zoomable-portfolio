@@ -1186,6 +1186,78 @@ function BodyText({ text }) {
   });
 }
 
+function FigmaMark() {
+  return (
+    <svg className="project-case-study-figma" width="14" height="20" viewBox="0 0 14 20" fill="none" aria-hidden="true">
+      <path d="M0 3.333A3.333 3.333 0 0 1 3.333 0H7v6.667H3.333A3.333 3.333 0 0 1 0 3.333Z" fill="#F24E1E"/>
+      <path d="M7 0h3.667a3.333 3.333 0 1 1 0 6.667H7V0Z" fill="#FF7262"/>
+      <path d="M0 10a3.333 3.333 0 0 1 3.333-3.333H7v6.666H3.333A3.333 3.333 0 0 1 0 10Z" fill="#A259FF"/>
+      <path d="M7 6.667h3.333a3.333 3.333 0 1 1 0 6.666H7V6.667Z" fill="#1ABCFE"/>
+      <path d="M0 16.667a3.333 3.333 0 0 1 3.333-3.334H7v3.334a3.5 3.5 0 0 1-7 0Z" fill="#0ACF83"/>
+    </svg>
+  );
+}
+
+function CaseStudyCard({ s, cls, mp, isH2 }) {
+  const reduceMotion = useReducedMotion();
+  const [interaction, setInteraction] = useState({ rotateX: 0, rotateY: 0, glareX: 50, glareY: 50, hovering: false });
+  const title = sentenceCaseHeading(s.heading || 'Full case study');
+
+  const handlePointerMove = (event) => {
+    if (reduceMotion || event.pointerType === 'touch') return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+    setInteraction({
+      rotateX: (0.5 - y) * 5,
+      rotateY: (x - 0.5) * 5,
+      glareX: x * 100,
+      glareY: y * 100,
+      hovering: true,
+    });
+  };
+
+  const handlePointerLeave = () => {
+    setInteraction((current) => ({ ...current, rotateX: 0, rotateY: 0, hovering: false }));
+  };
+
+  return (
+    <motion.section
+      className={`${cls} project-case-study-card`}
+      {...mp}
+      animate={{ rotateX: interaction.rotateX, rotateY: interaction.rotateY }}
+      transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.55 }}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+      style={{
+        transformPerspective: 900,
+        '--case-study-glare-x': `${interaction.glareX}%`,
+        '--case-study-glare-y': `${interaction.glareY}%`,
+        '--case-study-glare-opacity': interaction.hovering && !reduceMotion ? 1 : 0,
+      }}
+    >
+      <span className="project-case-study-glare" aria-hidden="true" />
+      <div className="project-case-study-content">
+        {isH2
+          ? <h2 id={slugify(s.heading || 'Full case study')} className="project-case-study-title">{title}</h2>
+          : <h3 className="project-case-study-title">{title}</h3>}
+        {s.body && <div className="project-case-study-copy"><BodyText text={s.body} /></div>}
+        {s.url ? (
+          <a className="project-case-study-cta" href={s.url} target="_blank" rel="noopener noreferrer">
+            <FigmaMark />
+            <span>{s.ctaLabel || 'View Figma case study'}</span>
+          </a>
+        ) : (
+          <button className="project-case-study-cta project-case-study-cta--disabled" type="button" disabled title="Figma link coming soon">
+            <FigmaMark />
+            <span>{s.ctaLabel || 'View Figma case study'}</span>
+          </button>
+        )}
+      </div>
+    </motion.section>
+  );
+}
+
 function ProjectSection({ s, onImageClick, onComparisonClick }) {
   const reduceMotion = useReducedMotion();
   // Scroll-triggered reveal (rather than all-at-once on mount) — plays once,
@@ -1200,6 +1272,10 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   const isH2 = s.level === 'h2';
   const cls  = `project-section${isH2 ? ' section--h2' : ''}`;
   const heading = <ProjectSectionHeading section={s} isH2={isH2} />;
+
+  if (s.type === 'case-study') {
+    return <CaseStudyCard s={s} cls={cls} mp={mp} isH2={isH2} />;
+  }
 
   if (s.type === 'design-goal') {
     const goalLabel = sentenceCaseHeading(s.heading || 'Design goal');

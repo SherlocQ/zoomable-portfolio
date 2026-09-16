@@ -194,7 +194,7 @@ export const portfolioData = {
           id: 'project-account-iq',
           type: 'page',
           label: 'Account IQ',
-          span: [2, 1],
+          span: [1, 1],
           tone: 'base',
           image: '/images/projects/account-iq.png',
           content: {
@@ -215,7 +215,7 @@ export const portfolioData = {
               },
               {
                 level: 'h2',
-                heading: 'My Role',
+                heading: 'My contributions',
                 body: 'As the lead designer on the team:\n\n• I collaborated with my product partner to create a clear product roadmap and negotiated feature priorities for launch in various stages.\n• I partnered with user researcher and PMM to run user testings and surveys to uncover insights and quickly gather feedback to help the design iterations.\n• I presented my designs to gain approval from senior stakeholders in both design and product, and prepared materials for presentation to the LinkedIn CEO and CPO.\n• I designed user flows, wireframes, hi-fi prototypes and collaborated with engineers and PM partners to ensure a smooth handoff. I also created the vision and strategy for future design explorations.',
               },
               {
@@ -249,14 +249,54 @@ export const portfolioData = {
               },
               {
                 level: 'h2',
-                heading: 'Contact Me to Learn More',
-                body: "To comply with my non-disclosure agreement, I've omitted and obfuscated all the details and confidential information in this case study. Please reach out to me if you'd like to learn more about the full case study for this project.",
+                heading: 'Full case study',
+                type: 'case-study',
+                body: 'This presentation contains confidential work and is password protected. Please contact me to request access.',
+                ctaLabel: 'View case study',
+                url: 'https://www.figma.com/proto/GVEm7Ukm5xElVtbLONnTZF/Job-Application-2023?node-id=2025-76203&viewport=423%2C44%2C0.06&t=aQEkCYbPg0xyGLla-1&scaling=min-zoom&content-scaling=fixed&starting-point-node-id=2025%3A76203&page-id=2025%3A69897',
               },
             ],
           },
         },
 
-        // ── LinkedIn Design Challenge ─────────────────────────────────────────
+        // ── Configurable checkout ─────────────────────────────────────────────
+        {
+          id: 'project-configurable-checkout',
+          type: 'page',
+          label: 'Configurable checkout',
+          span: [1, 1],
+          tone: 'base',
+          image: '/images/projects/configurable-checkout-hero.png',
+          content: {
+            type: 'project',
+            heroImage: '/images/projects/configurable-checkout-hero.png',
+            tagline: "Design vision and strategy to unify LinkedIn's checkout experience",
+            year: '2023',
+            role: 'Lead designer',
+            timeline: 'May 2023 - Aug. 2023',
+            team: '1 designer and 1 researcher',
+            tools: 'Figma',
+            tags: ['Platform', 'Checkout', 'Design system', 'LinkedIn'],
+            overview: "Configurable Checkout explored a unified foundation for LinkedIn's checkout experience. The vision used flexible, reusable components to support different product needs while creating a more consistent purchasing experience across the ecosystem.",
+            sections: [
+              {
+                level: 'h2',
+                heading: 'My contributions',
+                body: "• Strategy: I helped the team align by visualizing and presenting a complex strategy to cross-functional stakeholders, enabling a clearer product roadmap for LinkedIn's online self-serve transformation.\n• Design system: I created a custom design library aligned with LinkedIn's global design system and tailored to checkout and payment management experiences.\n• Coordination: I collaborated with multiple LinkedIn product teams to create a unified checkout experience while allowing each team to configure the experience for its needs.",
+              },
+              {
+                level: 'h2',
+                heading: 'Full case study',
+                type: 'case-study',
+                body: 'This presentation contains confidential work and is password protected. Please contact me to request access.',
+                ctaLabel: 'View case study',
+                url: 'https://www.figma.com/proto/GVEm7Ukm5xElVtbLONnTZF/Job-Application-2023?node-id=2025-73172&viewport=343%2C302%2C0.06&t=t6kwMM2xmCmroRAQ-1&scaling=min-zoom&content-scaling=fixed&starting-point-node-id=2025%3A73172&page-id=2025%3A69897',
+              },
+            ],
+          },
+        },
+
+        // ── LinkedIn Design Challenge ────────────────────────────
         {
           id: 'project-linkedin-ask',
           type: 'page',
@@ -462,7 +502,7 @@ export const portfolioData = {
               { level: 'h2', heading: 'Prototype' },
               {
                 heading: 'Hi-Fi Prototype',
-                body: 'Annie is an entry level UX designer with 2 years of working experience. She is passionate about what she does, even though she is currently working in a local startup, she wants to grow to be an influencer in her industry and join a big name company.\n\nAnnie likes looking for jobs or browsing for interesting industry articles on LinkedIn mobile. As usual, she surprisingly found out a set of newly designed on-boarding screens shown up on her LinkedIn app, it introduced a new feature called LinkedIn Ask, a new home where you can ask and answer questions within topics that you are interested in. Annie was curious about this new feature and kept swiping, she was guided to select up to three topics she was interested in, Design, Technology and UX Research.\n\nShe entered the home page, then she saw a guide inviting her to try out LinkedIn Ask. She clicked into that tab, then she found out she can discover and manage topics that are interesting to her, which is really cool, because she has always found the LinkedIn feed too diverse and not relevant. It is very hard for her to find insightful industry articles and career development tips, those are the things that she found most valuable on LinkedIn.\n\nShe explored topics and chose Figma Topic to follow, because that\'s a UI design tool she recently picked up.\n\nGreat! Figma Topic is added to the list, she clicked into Figma Topic and found lots of interesting questions, then, she clicked into one of them and read through the responses. She felt she gained more knowledge about why Figma is better than Sketch in many ways.\n\nBack to the Figma questions list, she got inspired to post a question, "What are some good learning materials to get started on Figma?", because she really wanted to start learning this tool. Also, she didn’t need to worry about her professional identity, because asking questions is anonymous, it\'s all about sharing and exchanging knowledge. She clicked the ask a question button. The Figma Topic is automatically added to the question, this is awesome! She posted the question, and found out it already shown up in the question list. She couldn\'t wait to get some responses and actively contribute to this Topic.\n\nFinally, Annie was surprised to find out she could also connect with users who were actively contributing to this topic, this is even better, she can learn from the talents in her industry now. Moreover, questions they have asked and responses they have written are included as part of their profiles. Annie felt very excited to start asking and answering more questions to build up her professional reputation and develop her career.',
+                body: 'Annie is an entry-level UX designer with two years of experience. She wants to grow her expertise, build her professional reputation, and eventually join a larger company.\n\nWhile browsing LinkedIn on mobile, Annie discovers LinkedIn Ask, a place to ask and answer questions by topic. After choosing Design, Technology, and UX Research, she follows Figma, reads relevant discussions, and anonymously asks, “What are some good learning materials to get started with Figma?” The topic is added automatically, making posting feel simple and low-risk.\n\nBy contributing to topic-based conversations and connecting with knowledgeable members, Annie can learn, build relationships, and strengthen her professional profile.',
                 type: 'video',
                 src: 'https://player.vimeo.com/video/390843638?quality=1080p',
               },

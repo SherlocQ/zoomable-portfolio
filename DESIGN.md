@@ -163,6 +163,13 @@ components:
     typography: "{typography.button}"
     rounded: "{rounded.md}"
     padding: 8px 14px
+  project-case-study-card:
+    backgroundColor: "{colors.surface-3}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.xl}"
+    borderColor: "{colors.hairline}"
+    padding: 48px 32px
   pricing-card:
     backgroundColor: "{colors.surface-1}"
     textColor: "{colors.ink}"
@@ -575,6 +582,12 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Use the shared project callout shell and center its contents. Render `Design goal` / `Design goals` as the 13px eyebrow token: weight 500, 1.3 line height, +0.4px tracking, uppercase visual treatment, `{colors.ink-tertiary}`, and 16px below it.
 - The goal copy is the visual subject at 17–18px / 1.55 and may be followed by an existing supporting image after 24px. Preserve the original wording and keep image Lightbox behavior.
 - Retain semantic H2/H3 markup for the eyebrow label so desktop and mobile on-page navigation continue to work; the visual eyebrow treatment does not alter its source string or anchor ID.
+
+**`project-case-study-card`** — The protected-work handoff used by Account IQ and Configurable checkout.
+- Center the section title, NDA explanation, and CTA inside a `surface-3` card with a subtle `hairline` border, 16px radius, and no shadow. The CTA reuses the Contact page's primary button styling and places the Figma file mark to the left of “View case study.”
+- The card may tilt up to roughly 2.5° per axis as the pointer moves across it. A soft radial glare follows the pointer; keep dark-mode opacity deliberately restrained (8% at the center, fading through 3%) and use the brighter token-compatible treatment only in light mode. This is an interaction affordance for this component, not a decorative page spotlight.
+- Use a damped spring (`stiffness: 210`, `damping: 24`, `mass: 0.55`) and return cleanly to zero rotation on pointer leave. Disable both tilt and glare under `prefers-reduced-motion`.
+- Open the Figma prototype in a new tab with `noopener noreferrer`. Password entry and validation remain entirely within Figma; never store an NDA password, presentation content, or access token in the public GitHub Pages bundle.
 
 **`project-quote-grid--1`** — A single pull-quote statement not classified as a design goal.
 - Center the statement inside the shared project callout shell, with no shadow, quotation decoration, or redundant label.
