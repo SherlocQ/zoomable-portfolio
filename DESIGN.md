@@ -608,6 +608,10 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Preserve the illustration's transparent exterior and opaque internal black/white planes. Dark mode applies a full inversion so contours become white and internal white planes become dark; light mode uses the source colors unchanged. Do not add a card, border, shadow, or colored treatment.
 - The supporting introduction is intentionally limited to: “Whether you have a role, a project, or just want to connect, I'd love to hear from you.”
 
+### Confidential case-study access
+
+- In the centered `Full case study` card, render “contact me” as an inline semantic email link using normal link affordances: primary ink, medium weight, a subtle underlined resting state, accent hover, and a visible focus ring. Prefill the email subject as “Request case study access.” The link supplements rather than replaces the primary Figma CTA.
+
 ## Do's and Don'ts
 
 ### Do

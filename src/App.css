@@ -914,6 +914,23 @@ a:focus-visible,
   color: var(--ink-muted);
   text-wrap: balance;
 }
+.project-case-study-contact-link {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration-line: underline;
+  text-decoration-color: var(--hairline-strong);
+  text-underline-offset: 4px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.project-case-study-contact-link:hover {
+  color: var(--accent-hover);
+  text-decoration-color: currentColor;
+}
+.project-case-study-contact-link:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
 .project-case-study-cta {
   display: inline-flex;
   align-items: center;

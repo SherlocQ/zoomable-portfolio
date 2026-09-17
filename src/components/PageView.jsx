@@ -1202,6 +1202,11 @@ function CaseStudyCard({ s, cls, mp, isH2 }) {
   const reduceMotion = useReducedMotion();
   const [interaction, setInteraction] = useState({ rotateX: 0, rotateY: 0, glareX: 50, glareY: 50, hovering: false });
   const title = sentenceCaseHeading(s.heading || 'Full case study');
+  const contactLabel = 'contact me';
+  const contactIndex = s.body?.toLowerCase().indexOf(contactLabel) ?? -1;
+  const contactHref = s.contactEmail
+    ? `mailto:${s.contactEmail}?subject=${encodeURIComponent(s.contactSubject || 'Request case study access')}`
+    : null;
 
   const handlePointerMove = (event) => {
     if (reduceMotion || event.pointerType === 'touch') return;
@@ -1241,7 +1246,19 @@ function CaseStudyCard({ s, cls, mp, isH2 }) {
         {isH2
           ? <h2 id={slugify(s.heading || 'Full case study')} className="project-case-study-title">{title}</h2>
           : <h3 className="project-case-study-title">{title}</h3>}
-        {s.body && <div className="project-case-study-copy"><BodyText text={s.body} /></div>}
+        {s.body && (
+          <div className="project-case-study-copy">
+            {contactHref && contactIndex >= 0 ? (
+              <p className="section-body">
+                {s.body.slice(0, contactIndex)}
+                <a className="project-case-study-contact-link" href={contactHref}>{s.body.slice(contactIndex, contactIndex + contactLabel.length)}</a>
+                {s.body.slice(contactIndex + contactLabel.length)}
+              </p>
+            ) : (
+              <BodyText text={s.body} />
+            )}
+          </div>
+        )}
         {s.url ? (
           <a className="project-case-study-cta" href={s.url} target="_blank" rel="noopener noreferrer">
             <FigmaMark />
