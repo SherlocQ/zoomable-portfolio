@@ -1236,12 +1236,12 @@ a:focus-visible,
 }
 
 .resume-scroll-cue {
-  top: calc(100vh - var(--header-h) - 58px);
+  top: calc(100vh - var(--header-h) - 50px);
   left: calc(50% - 24px);
 }
 
 .project-scroll-cue {
-  bottom: 24px;
+  bottom: 16px;
 }
 
 .about-content { padding-bottom: 60px; }
@@ -1347,16 +1347,24 @@ a:focus-visible,
 }
 
 /* Left column */
-.contact-eyebrow {
-  font-family: var(--font-sans); font-size: 11px; font-weight: 600;
-  letter-spacing: 0.7px; text-transform: uppercase;
-  color: var(--ink-subtle); display: block; margin-bottom: 18px;
+.contact-copy { min-width: 0; }
+.contact-illustration {
+  display: block;
+  width: clamp(130px, 16.25vw, 170px);
+  height: auto;
+  margin: 0 0 24px;
+  transform: translateX(-16%);
+  filter: invert(1);
 }
+[data-theme="light"] .contact-illustration { filter: none; }
 .contact-heading {
   font-family: var(--font-sans);
-  font-size: clamp(22px, 2.5vw, 32px);
-  font-weight: 590; letter-spacing: -0.022em; line-height: 1.125;
-  margin-bottom: 20px;
+  font-size: clamp(36px, 4vw, 48px);
+  font-weight: 590;
+  letter-spacing: -1.6px;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  text-wrap: balance;
 }
 .contact-desc {
   font-family: var(--font-sans); font-size: 15px;
@@ -1380,10 +1388,13 @@ a:focus-visible,
 }
 .contact-direct-item {
   display: flex; align-items: center; gap: 9px;
+  min-width: 0;
   font-family: var(--font-sans); font-size: 14px; font-weight: 500;
   color: var(--ink-muted); text-decoration: none;
+  overflow-wrap: anywhere;
   transition: color 0.14s;
 }
+.contact-direct-item svg { flex: 0 0 auto; }
 .contact-direct-item:hover { color: var(--ink); text-decoration: underline; }
 
 /* Right column — form card */
@@ -1462,28 +1473,44 @@ a:focus-visible,
 /* ─── Grid item illustration (decorative background SVG) ─────────────────── */
 
 .grid-item-img-gradient {
-  position: absolute; inset: 0; pointer-events: none;
-  -webkit-backdrop-filter: blur(1px);
-  backdrop-filter: blur(1px);
-  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 28%, rgba(0,0,0,0.72) 48%, rgba(0,0,0,0.24) 66%, transparent 80%);
-  mask-image: linear-gradient(to top, #000 0%, #000 28%, rgba(0,0,0,0.72) 48%, rgba(0,0,0,0.24) 66%, transparent 80%);
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: linear-gradient(
     to top,
-    rgba(0,0,0,0.90) 0%,
-    rgba(0,0,0,0.78) 14%,
-    rgba(0,0,0,0.56) 30%,
-    rgba(0,0,0,0.32) 47%,
-    rgba(0,0,0,0.15) 63%,
-    rgba(0,0,0,0.05) 78%,
-    transparent 91%
+    rgba(0,0,0,0.86) 0%,
+    rgba(0,0,0,0.70) 14%,
+    rgba(0,0,0,0.44) 30%,
+    rgba(0,0,0,0.22) 46%,
+    rgba(0,0,0,0.08) 60%,
+    transparent 72%
   );
 }
-/* Motion GIFs and print artwork contain fine raster detail that softens
-   noticeably under even a 1px backdrop blur at card scale. Keep the shared
-   vignette/readability geometry, but leave the source pixels unblurred. */
-.grid-overlay-inner[data-grid-id^="craft"] .grid-item-img-gradient {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+
+/* Frostline-inspired progressive blur. Each masked band is an independent copy
+   of the source image, so blur never accumulates across the entire lower layer.
+   The dark vignette remains separate because blur reduces detail but cannot
+   guarantee text contrast on a bright image. */
+.progressive-blur {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+}
+.progressive-blur-band {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: blur(var(--progressive-blur-radius));
+  -webkit-mask-image: var(--progressive-blur-mask);
+  mask-image: var(--progressive-blur-mask);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .grid-item-media {
   /* Show the complete artwork in gallery cards. Keeping this box at the
@@ -1525,21 +1552,18 @@ a:focus-visible,
   overflow: hidden;
   background: var(--surface-2);
 }
+.project-hero-media {
+  position: absolute;
+  inset: 0;
+}
 .project-hero-img {
   width: 100%; height: 100%; object-fit: cover; display: block;
 }
-.project-hero-img--progressive-blur {
+.project-hero-progressive-blur {
   position: absolute;
-  inset: -4px;
+  inset: 0;
   z-index: 1;
-  width: calc(100% + 8px);
-  height: calc(100% + 8px);
-  filter: blur(2px);
   pointer-events: none;
-  user-select: none;
-  -webkit-user-drag: none;
-  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 14%, rgba(0,0,0,0.68) 24%, rgba(0,0,0,0.24) 36%, transparent 48%);
-  mask-image: linear-gradient(to top, #000 0%, #000 14%, rgba(0,0,0,0.68) 24%, rgba(0,0,0,0.24) 36%, transparent 48%);
 }
 /* Empty hero: suppress the dark gradient, use muted text colours */
 .project-hero-section--empty .project-hero-meta {
@@ -1561,13 +1585,13 @@ a:focus-visible,
   pointer-events: none;
   background: linear-gradient(
     to top,
-    rgba(0,0,0,0.92) 0%,
-    rgba(0,0,0,0.80) 12%,
-    rgba(0,0,0,0.58) 24%,
-    rgba(0,0,0,0.34) 38%,
-    rgba(0,0,0,0.16) 50%,
-    rgba(0,0,0,0.05) 62%,
-    transparent 74%
+    rgba(0,0,0,0.86) 0%,
+    rgba(0,0,0,0.72) 10%,
+    rgba(0,0,0,0.50) 22%,
+    rgba(0,0,0,0.28) 34%,
+    rgba(0,0,0,0.12) 46%,
+    rgba(0,0,0,0.04) 58%,
+    transparent 66%
   );
 }
 .project-hero-title {
@@ -2067,12 +2091,56 @@ a:focus-visible,
 
   /* Contact: stack columns */
   .contact-content { grid-template-columns: 1fr; gap: 32px; }
+  .contact-left {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 24px;
+  }
+  .contact-copy {
+    display: contents;
+  }
+  .contact-heading {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: clamp(30px, 8vw, 40px);
+    letter-spacing: -1.2px;
+    line-height: 1.1;
+    text-wrap: balance;
+    overflow: visible;
+  }
+  .contact-desc {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .contact-bullets {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .contact-direct {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .contact-illustration {
+    grid-column: 2;
+    grid-row: 2 / span 3;
+    align-self: start;
+    width: 130px;
+    margin: 0;
+    transform: translateY(-6%);
+  }
+  .contact-left { overflow: visible; }
 
   /* Prevent iOS auto-zoom on input focus (requires font-size ≥ 16px) */
   .contact-field input,
   .contact-field select,
   .contact-field textarea { font-size: 16px; }
 
+}
+
+@media (max-width: 360px) {
+  .contact-left { column-gap: 16px; }
+  .contact-heading { font-size: 30px; letter-spacing: -1px; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -2546,7 +2614,7 @@ a:focus-visible,
   }
 
   .resume-scroll-cue {
-    top: calc(50% - 58px);
+    top: calc(50% - 50px);
     left: 50%;
   }
 

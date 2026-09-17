@@ -6,6 +6,8 @@ import { T, fadeUp, EASE, EASE_HERO } from '../transitions';
 import { asset } from '../utils/asset';
 import ResumeGlobe from './ResumeGlobe';
 import ScrollCue from './ScrollCue';
+import ProgressiveBlur from './ProgressiveBlur';
+import contactIllustration from '../../assets/contact-envelope-paper-airplane.svg';
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -1100,26 +1102,24 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           {hasHero && (
             <div className={`project-hero-section${content.heroImage ? '' : ' project-hero-section--empty'}`}>
               {content.heroImage && (
-                <>
+                <motion.div
+                  className="project-hero-media"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1.1, ease: EASE_HERO }}
+                >
                   <motion.img
                     src={asset(content.heroImage)}
                     alt={node.label}
                     className="project-hero-img"
-                    initial={{ opacity: 0, filter: 'blur(12px)' }}
-                    animate={{ opacity: 1, filter: 'blur(0px)' }}
+                    initial={{ filter: 'blur(12px)' }}
+                    animate={{ filter: 'blur(0px)' }}
                     transition={{ duration: 1.1, ease: EASE_HERO }}
                   />
-                  <motion.img
-                    src={asset(content.heroImage)}
-                    alt=""
-                    aria-hidden="true"
-                    className="project-hero-img project-hero-img--progressive-blur"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 1.1, ease: EASE_HERO }}
-                    draggable={false}
-                  />
-                </>
+                  <div className="project-hero-progressive-blur" aria-hidden="true">
+                    <ProgressiveBlur src={asset(content.heroImage)} variant="hero" />
+                  </div>
+                </motion.div>
               )}
               <div className="project-hero-meta">
                 <motion.h1
@@ -1736,37 +1736,38 @@ function ContactContent({ content }) {
 
       {/* ── Left ── */}
       <motion.div className="contact-left" custom={0} variants={fadeUp} initial="hidden" animate="show">
-        <span className="contact-eyebrow">Get in touch</span>
-        <h1 className="contact-heading">Let's build<br />something great.</h1>
-        <p className="contact-desc">
-          I'm a product designer based in the San Francisco Bay Area, currently at ServiceNow.
-          Whether you have a role, a project, or just want to connect — I'd love to hear from you.
-        </p>
+        <img className="contact-illustration" src={contactIllustration} alt="" aria-hidden="true" />
+        <div className="contact-copy">
+          <h1 className="contact-heading">Let's build<br />something great.</h1>
+          <p className="contact-desc">
+            Whether you have a role, a project, or just want to connect, I'd love to hear from you.
+          </p>
 
-        <ul className="contact-bullets">
-          <li>Open to full-time product design roles</li>
-          <li>Selected freelance &amp; consulting projects</li>
-          <li>Design mentorship and collaboration</li>
-        </ul>
+          <ul className="contact-bullets">
+            <li>Open to full-time product design roles</li>
+            <li>Selected freelance &amp; consulting projects</li>
+            <li>Design mentorship and collaboration</li>
+          </ul>
 
-        <div className="contact-direct">
-          <a href={`mailto:${content.email}`} className="contact-direct-item">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-              <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-              <path d="M1 4.5l6.5 4.5L14 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            {content.email}
-          </a>
-          <a href={content.linkedin} target="_blank" rel="noreferrer" className="contact-direct-item">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-              <rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-              <path d="M4 6v5M4 4v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M7.5 11V8.5c0-1.38.5-2.5 2-2.5s2 1.12 2 2.5V11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M7.5 6v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
-            LinkedIn
-            <span className="sr-only"> (opens in a new tab)</span>
-          </a>
+          <div className="contact-direct">
+            <a href={`mailto:${content.email}`} className="contact-direct-item">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+                <path d="M1 4.5l6.5 4.5L14 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {content.email}
+            </a>
+            <a href={content.linkedin} target="_blank" rel="noreferrer" className="contact-direct-item">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                <rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+                <path d="M4 6v5M4 4v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M7.5 11V8.5c0-1.38.5-2.5 2-2.5s2 1.12 2 2.5V11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7.5 6v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+              LinkedIn
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </div>
         </div>
       </motion.div>
 

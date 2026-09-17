@@ -522,21 +522,22 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Descriptions use `{typography.body}` at 16px; journey tags are intentionally hidden.
 - Wheel, trackpad, scrollbar, and keyboard input use the browser's native scrolling and momentum. Each scene is a scoped `scroll-snap-align: start` stop inside the Hero scroller; do not cancel wheel events, lock input while motion is running, or replace native movement with scene-by-scene JavaScript animation. Use `scroll-snap-stop: normal` so sustained input can continue through scenes, while a completed gesture settles at the nearest scene.
 - Scroll-snap scene containers must never animate `transform`, height, padding, or position as their active state changes. Animate opacity only; moving a snap target during native settling causes a visible final-position correction.
-- Hero and project-detail hero sections share one compact scroll cue inspired by the Framer Scroll Cue reference: a 20×34px, 1.5px rounded mouse outline with a 3.5px dot moving 5px down and back before pausing. It replaces all scroll-label and arrow copy. The cue is centered against the visual viewport—not an asymmetrically padded content wrapper—and keeps a shared 24px bottom inset. On stacked Hero layouts it anchors 24px above the copy/globe division. Mobile project hero metadata reserves 72px at the bottom so long taglines cannot collide with it. The cue fades away as soon as its own scroll container leaves the top and returns only when scrolled back to the top. Use semantic `--scroll-cue-color` mapped to `ink-tertiary` on normal light/dark surfaces, and muted `--scroll-cue-media-color` over project imagery so it remains subordinate to white hero copy; reduced-motion mode disables the repeating translation.
+- Hero and project-detail hero sections share one compact scroll cue inspired by the Framer Scroll Cue reference: a 20×34px, 1.5px rounded mouse outline with a 3.5px dot moving 5px down and back before pausing. It replaces all scroll-label and arrow copy. The cue is centered against the visual viewport—not an asymmetrically padded content wrapper—and keeps a shared 16px bottom inset. On stacked Hero layouts it anchors 16px above the copy/globe division. Mobile project hero metadata reserves 72px at the bottom so long taglines cannot collide with it. The cue fades away as soon as its own scroll container leaves the top and returns only when scrolled back to the top. Use semantic `--scroll-cue-color` mapped to `ink-tertiary` on normal light/dark surfaces, and muted `--scroll-cue-media-color` over project imagery so it remains subordinate to white hero copy; reduced-motion mode disables the repeating translation.
 - At ≤768px, copy and globe each occupy 50% of the viewport. Touch gestures remain directly draggable over either half and complete to the adjacent scene on release using the same settle curve.
 
 ### Project Image Readability
 
 **`project-preview-media`** — The shared readability treatment for every image-backed portfolio card, including Projects, all Craft galleries, and the Craft Data Visualization entry.
-- Keep the source image crisp except for a progressive 1px backdrop blur limited to the lower text region.
-- Use a smooth bottom vignette from approximately 90% black at the bottom to transparent near 91% of the card height.
+- Keep the source image crisp above the label region. Within only the lower 34%, use four independently masked copies of the source image that rise from 0.35px to a maximum 2.5px blur. Independent image bands prevent blur from accumulating across the whole overlay and must transition without a visible horizontal boundary.
+- Keep contrast and blur as independent layers. Use a compact bottom vignette from 86% black at the bottom through 70% at 14%, 44% at 30%, and transparent by 72% of the card height. This dark media scrim is deliberately identical in light and dark modes because image luminance, not the page theme, determines white-label readability.
 - Titles are white; supporting text is 86% white. Do not add text shadows.
 - Apply the same overlay component and values everywhere rather than creating section-specific Craft or project variants. Artwork fit and its source-of-truth background remain independent from this text-readability layer.
 - Fine-detail Craft GIF and print thumbnails use the same vignette geometry but omit backdrop blur so small raster artwork remains crisp; this is a media-resolution safeguard, not a different label treatment.
 
 **`project-hero-media`** — Full-viewport hero image at the top of every project detail page, including Data Visualization reached through Craft.
-- Use a wider bottom vignette from approximately 92% black at the bottom to transparent near 94% of the image height.
-- Apply a restrained progressive 2px blur only behind the lower text region: fully present through roughly the bottom 14%, then fading out completely by 48% of the image height. The upper half remains fully crisp and the transition must never form a rectangular blur band.
+- Use a shorter bottom vignette from 86% black at the bottom through 72% at 10%, 50% at 22%, 28% at 34%, and transparent by 66% of the image height.
+- Apply six independently masked copies of the source image within only the lower 24% of the hero. Blur rises from 0.35px to a maximum 5px at the bottom so it covers the title area without softening the rest of the image. Keep this blur layer separate from the vignette and never animate blur strength during scroll.
+- The base hero and every blur band must share one opacity entrance container, identical dimensions, and identical `object-fit` geometry. Never enlarge a blurred copy to hide filter edges: even a small scale difference creates doubled UI details at a mask boundary.
 - Titles are white and supporting text is 86% white in both light and dark modes. Do not add text shadows. Empty/no-image heroes use normal theme tokens and no media blur.
 - Any project-like entry uses this shared hero treatment regardless of which top-level portfolio section links to it; navigation context must never change media readability.
 
@@ -599,6 +600,13 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 **`footer`** — Dense link grid on `{colors.canvas}` with the Linear wordmark left.
 - Background `{colors.canvas}`, text `{colors.ink-subtle}`, type `{typography.caption}`, padding 64px 32px.
+
+### Contact illustration
+
+- Style “Let's build something great.” with the Hero display language: 36–48px / 1.1 on desktop, 30–40px / 1.1 on mobile, weight 590, tight negative tracking, and balanced wrapping. At ≤360px hold the heading at 30px so the adjacent illustration cannot force clipping.
+- Place the monochrome envelope-and-paper-airplane illustration directly above the copy with no eyebrow label on desktop. Use 170px and offset its canvas 16% left so the visible envelope edge aligns optically with the heading edge. At ≤640px, keep the heading, invitation, opportunity list, and direct links in the fluid left grid column and place the 130px illustration in the fixed right column with a 24px gap. Start the image on the description row—not the heading row—and shift it 6% upward so its visible artwork aligns with the first line of “Whether you have a role…”. Below 360px, retain the 130px illustration but contract the gap to 16px. Give copy and links `min-width: 0` / wrapping behavior so nothing clips.
+- Preserve the illustration's transparent exterior and opaque internal black/white planes. Dark mode applies a full inversion so contours become white and internal white planes become dark; light mode uses the source colors unchanged. Do not add a card, border, shadow, or colored treatment.
+- The supporting introduction is intentionally limited to: “Whether you have a role, a project, or just want to connect, I'd love to hear from you.”
 
 ## Do's and Don'ts
 

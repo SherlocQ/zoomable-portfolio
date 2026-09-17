@@ -6,6 +6,7 @@ import { ContactIllustration } from './illustrations/ContactIllustration';
 import { CraftIllustration } from './illustrations/CraftIllustration';
 import { ProcessIllustration } from './illustrations/ProcessIllustration';
 import { ProjectsIllustration } from './illustrations/ProjectsIllustration';
+import ProgressiveBlur from './ProgressiveBlur';
 
 const ILLUSTRATIONS = {
   build: BuildIllustration,
@@ -22,6 +23,8 @@ export function GridItem({ item, onItemClick }) {
   const hasImage    = Boolean(item.image);
   const isAnimatedImage = /\.gif(?:$|\?)/i.test(item.image || '');
   const isImageTile = item.content?.type === 'image';
+  const preserveImageDetail = item.id?.startsWith('craft');
+  const useProgressiveBlur = hasImage && !preserveImageDetail && !isImageTile && !isAnimatedImage;
   const Illustration = ILLUSTRATIONS[item.illustration];
 
   return (
@@ -75,6 +78,13 @@ export function GridItem({ item, onItemClick }) {
           transition={{ layout: IMAGE_ZOOM }}
           draggable={false}
           decoding="async"
+        />
+      )}
+      {useProgressiveBlur && (
+        <ProgressiveBlur
+          src={asset(item.image)}
+          variant="card"
+          fit={item.fit === 'contain' ? 'contain' : 'cover'}
         />
       )}
       {hasImage && <div className="grid-item-img-gradient" aria-hidden="true" />}
