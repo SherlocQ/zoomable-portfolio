@@ -1811,13 +1811,18 @@ function ContactContent({ content }) {
             </div>
             <div className="contact-field">
               <label htmlFor="cf-topic">I'm reaching out about</label>
-              <select id="cf-topic" value={form.topic} onChange={set('topic')}>
-                <option value="">Select a topic</option>
-                <option value="Full-time opportunity">Full-time opportunity</option>
-                <option value="Freelance project">Freelance project</option>
-                <option value="Collaboration">Collaboration</option>
-                <option value="Just saying hi">Just saying hi</option>
-              </select>
+              <div className="contact-select-wrap">
+                <select id="cf-topic" value={form.topic} onChange={set('topic')}>
+                  <option value="">Select a topic</option>
+                  <option value="Full-time opportunity">Full-time opportunity</option>
+                  <option value="Freelance project">Freelance project</option>
+                  <option value="Collaboration">Collaboration</option>
+                  <option value="Just saying hi">Just saying hi</option>
+                </select>
+                <svg className="contact-select-caret" width="12" height="7" viewBox="0 0 12 7" fill="none" aria-hidden="true">
+                  <path d="m1 1 5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
             </div>
             <div className="contact-field">
               <label htmlFor="cf-msg">Message</label>

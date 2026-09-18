@@ -532,7 +532,7 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Keep contrast and blur as independent layers. Use a compact bottom vignette from 86% black at the bottom through 70% at 14%, 44% at 30%, and transparent by 72% of the card height. This dark media scrim is deliberately identical in light and dark modes because image luminance, not the page theme, determines white-label readability.
 - Titles are white; supporting text is 86% white. Do not add text shadows.
 - Apply the same overlay component and values everywhere rather than creating section-specific Craft or project variants. Artwork fit and its source-of-truth background remain independent from this text-readability layer.
-- Fine-detail Craft GIF and print thumbnails use the same vignette geometry but omit backdrop blur so small raster artwork remains crisp; this is a media-resolution safeguard, not a different label treatment.
+- Craft entry cards and every Motion & Animation / Print & Visual child card use the same vignette and lower-34% blur geometry as Projects. Static artwork uses the four independent source-image bands. Animated GIFs use one 2.5px masked `backdrop-filter` fading in from 66% to 100% so the browser decodes only one animation rather than four duplicate GIF layers; lazy-load those GIF thumbnails to protect mobile Safari.
 
 **`project-hero-media`** — Full-viewport hero image at the top of every project detail page, including Data Visualization reached through Craft.
 - Use a shorter bottom vignette from 86% black at the bottom through 72% at 10%, 50% at 22%, 28% at 34%, and transparent by 66% of the image height.
@@ -607,6 +607,7 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Place the monochrome envelope-and-paper-airplane illustration directly above the copy with no eyebrow label on desktop. Use 170px and offset its canvas 16% left so the visible envelope edge aligns optically with the heading edge. At ≤640px, keep the heading, invitation, opportunity list, and direct links in the fluid left grid column and place the 130px illustration in the fixed right column with a 24px gap. Start the image on the description row—not the heading row—and shift it 6% upward so its visible artwork aligns with the first line of “Whether you have a role…”. Below 360px, retain the 130px illustration but contract the gap to 16px. Give copy and links `min-width: 0` / wrapping behavior so nothing clips.
 - Preserve the illustration's transparent exterior and opaque internal black/white planes. Dark mode applies a full inversion so contours become white and internal white planes become dark; light mode uses the source colors unchanged. Do not add a card, border, shadow, or colored treatment.
 - The supporting introduction is intentionally limited to: “Whether you have a role, a project, or just want to connect, I'd love to hear from you.”
+- Contact selects use a custom 12×7px caret with native appearance removed. Align the text 12px from the left edge and the caret's right edge 12px from the right edge; reserve 40px of inline-end space so long values never collide with the icon.
 
 ### Confidential case-study access
 

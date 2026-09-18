@@ -3,10 +3,20 @@
  * without making each band blur the output of the previous band. The image
  * remains sharp above the text region and blur grows toward the bottom edge.
  */
-export default function ProgressiveBlur({ src, variant = 'hero', fit = 'cover', className = '' }) {
+export default function ProgressiveBlur({ src, variant = 'hero', fit = 'cover', animated = false, className = '' }) {
+  const isHero = variant === 'hero';
+  const classes = `progressive-blur progressive-blur--${variant}${animated ? ' progressive-blur--animated' : ''}${className ? ` ${className}` : ''}`;
+
+  if (animated) {
+    return (
+      <div className={classes} aria-hidden="true">
+        <span className="progressive-blur-backdrop-band" />
+      </div>
+    );
+  }
+
   if (!src) return null;
 
-  const isHero = variant === 'hero';
   const layerCount = isHero ? 6 : 4;
   const maxBlur = isHero ? 5 : 2.5;
   const regionStart = isHero ? 76 : 66;
@@ -49,7 +59,7 @@ export default function ProgressiveBlur({ src, variant = 'hero', fit = 'cover', 
 
   return (
     <div
-      className={`progressive-blur progressive-blur--${variant}${className ? ` ${className}` : ''}`}
+      className={classes}
       aria-hidden="true"
     >
       {layers}

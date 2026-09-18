@@ -1441,9 +1441,22 @@ a:focus-visible,
   resize: vertical;
 }
 .contact-field select {
-  padding-right: 36px;
-  -webkit-appearance: auto;
-  appearance: auto;
+  padding: 8px 40px 8px 12px;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.contact-select-wrap {
+  position: relative;
+  width: 100%;
+}
+.contact-select-caret {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  translate: 0 -50%;
+  color: var(--ink);
+  pointer-events: none;
 }
 .contact-field input::placeholder,
 .contact-field textarea::placeholder { color: var(--ink-tertiary); opacity: 1; }
@@ -1528,6 +1541,15 @@ a:focus-visible,
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+.progressive-blur-backdrop-band {
+  position: absolute;
+  inset: 0;
+  -webkit-backdrop-filter: blur(2.5px);
+  backdrop-filter: blur(2.5px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 66%, rgba(0,0,0,0.28) 74%, rgba(0,0,0,0.72) 84%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 66%, rgba(0,0,0,0.28) 74%, rgba(0,0,0,0.72) 84%, #000 100%);
+  pointer-events: none;
 }
 .grid-item-media {
   /* Show the complete artwork in gallery cards. Keeping this box at the
