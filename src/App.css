@@ -816,13 +816,6 @@ a:focus-visible,
   border: 1px solid var(--hairline);
 }
 
-.project-design-goal-card {
-  padding: clamp(24px, 4vw, 32px);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-xl);
-  background: var(--surface-3);
-  text-align: center;
-}
 .project-design-goal-eyebrow {
   display: block;
   margin: 0 0 16px;
@@ -850,7 +843,7 @@ a:focus-visible,
   margin-top: 24px;
 }
 
-.project-case-study-card {
+.project-feature-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -864,7 +857,7 @@ a:focus-visible,
   transform-style: preserve-3d;
   will-change: transform;
 }
-.project-case-study-content {
+.project-feature-content {
   position: relative;
   z-index: 1;
   display: flex;
@@ -873,7 +866,7 @@ a:focus-visible,
   width: 100%;
   transform: translateZ(18px);
 }
-.project-case-study-glare {
+.project-feature-glare {
   position: absolute;
   inset: -1px;
   z-index: 0;
@@ -887,7 +880,7 @@ a:focus-visible,
   );
   transition: opacity 0.28s ease;
 }
-[data-theme="light"] .project-case-study-glare {
+[data-theme="light"] .project-feature-glare {
   background: radial-gradient(
     circle at var(--case-study-glare-x, 50%) var(--case-study-glare-y, 50%),
     rgba(255,255,255,0.78) 0%,
@@ -961,9 +954,9 @@ a:focus-visible,
 .project-case-study-cta--disabled:hover { transform: none; }
 .project-case-study-figma { flex: 0 0 auto; }
 @media (prefers-reduced-motion: reduce) {
-  .project-case-study-card { transform: none !important; }
-  .project-case-study-content { transform: none; }
-  .project-case-study-glare { display: none; }
+  .project-feature-card { transform: none !important; }
+  .project-feature-content { transform: none; }
+  .project-feature-glare { display: none; }
 }
 .project-insight-value {
   display: block;
@@ -1651,6 +1644,32 @@ a:focus-visible,
 .section-video {
   position: absolute; inset: 0; width: 100%; height: 100%; border: none;
 }
+.section-video-fallback {
+  position: absolute;
+  inset: 0;
+  background-color: var(--surface-3);
+  background-position: center;
+  background-size: cover;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.section-video-fallback-action {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--media-scrim);
+  border: 1px solid var(--media-chrome-border);
+  color: var(--media-chrome-text-hi);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.section-video-fallback-action:hover { transform: scale(1.06); background: var(--media-scrim-hover); }
+.section-video-fallback-action:active { transform: scale(0.98); }
 
 
 /* ─── Clickable image wrapper ─────────────────────────────────────────────────── */

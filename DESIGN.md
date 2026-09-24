@@ -613,6 +613,12 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 - In the centered `Full case study` card, render “contact me” as an inline semantic email link using normal link affordances: primary ink, medium weight, a subtle underlined resting state, accent hover, and a visible focus ring. Prefill the email subject as “Request case study access.” The link supplements rather than replaces the primary Figma CTA.
 
+### Project media and navigation
+
+- Vimeo sections use a real lazy-loaded player rather than a static replacement card. Show the video poster while the player initializes, preserve autoplay/loop/muted behavior where the browser permits it, and reveal the external Vimeo action only after the embed reports a genuine error.
+- A project table of contents derives active state from its own page scroll root. At the document bottom, the last tick is active even when the last section is too short to cross the usual 25% viewport trigger line.
+- Craft image cards, GIF cards, carousels, and project media use the same 560ms shared-geometry zoom curve. On close, retain the overlay shell and scrim until that full transition completes; never let the generic 380ms page exit unmount a shared image early.
+
 ## Do's and Don'ts
 
 ### Do

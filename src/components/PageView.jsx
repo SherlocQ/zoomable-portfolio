@@ -7,6 +7,7 @@ import { asset } from '../utils/asset';
 import ResumeGlobe from './ResumeGlobe';
 import ScrollCue from './ScrollCue';
 import ProgressiveBlur from './ProgressiveBlur';
+import VimeoEmbed from './VimeoEmbed';
 import contactIllustration from '../../assets/contact-envelope-paper-airplane.svg';
 
 const slugify = (str) =>
@@ -545,18 +546,24 @@ function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false 
 }
 
 /* ─── On-this-page section navigator ─────────────────────────────────────── */
-function useOtpState(h2s) {
+function useOtpState(h2s, anchorRef) {
   const [active, setActive] = useState(() => h2s.length ? slugify(h2s[0].heading) : null);
   const isProgrammaticScroll = useRef(false);
   const scrollEndTimer       = useRef(null);
+  const headingKey = h2s.map((section) => slugify(section.heading)).join('|');
 
   useEffect(() => {
     if (!h2s.length) return;
-    const container = document.querySelector('.page-body');
+    const container = anchorRef.current?.closest('.page-body');
     if (!container) return;
 
     const update = () => {
       if (isProgrammaticScroll.current) return;
+      const bottomGap = container.scrollHeight - container.scrollTop - container.clientHeight;
+      if (bottomGap <= 4) {
+        setActive(slugify(h2s[h2s.length - 1].heading));
+        return;
+      }
       const containerRect = container.getBoundingClientRect();
       const trigger = containerRect.top + containerRect.height * 0.25;
       let found = h2s[0].heading;
@@ -569,9 +576,11 @@ function useOtpState(h2s) {
 
     container.addEventListener('scroll', update, { passive: true });
     update();
-    return () => container.removeEventListener('scroll', update);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      container.removeEventListener('scroll', update);
+      clearTimeout(scrollEndTimer.current);
+    };
+  }, [anchorRef, h2s, headingKey]);
 
   const scrollTo = (heading) => {
     setActive(slugify(heading));
@@ -610,8 +619,8 @@ function useOtpState(h2s) {
 
 /* Desktop edge-mounted line menu */
 function OnThisPage({ h2s }) {
-  const { active, scrollTo } = useOtpState(h2s);
   const navRef = useRef(null);
+  const { active, scrollTo } = useOtpState(h2s, navRef);
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const lineMenuSpring = { type: 'spring', duration: 0.4, bounce: 0.2 };
@@ -694,10 +703,10 @@ function OnThisPage({ h2s }) {
 
 /* Mobile top-sticky selector */
 function OnThisPageMobile({ h2s }) {
-  const { active, scrollTo } = useOtpState(h2s);
+  const sentinelRef = useRef(null);
+  const { active, scrollTo } = useOtpState(h2s, sentinelRef);
   const [open, setOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const sentinelRef = useRef(null);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -936,8 +945,14 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       exit={isLightbox
         ? { opacity: [1, 1, 0], transition: reduceMotion ? { duration: 0.01 } : { ...LIGHTBOX_ZOOM, times: [0, 0.92, 1] } }
         : isImagePage
+          // Keep the route-backed Craft image page mounted for the complete
+          // shared-image return animation. Ending the shell at T (0.38s)
+          // clipped the final 0.18s of LIGHTBOX_ZOOM and caused a visible
+          // hitch as the thumbnail reclaimed the image.
           ? { opacity: 1, transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM }
-        : { opacity: 0, transition: T }}
+          : skipLayoutTransition
+            ? { opacity: 0, transition: T }
+            : { opacity: 1, transition: reduceMotion ? { duration: 0.01 } : T }}
       transition={isLightbox ? (reduceMotion ? { duration: 0.01 } : LIGHTBOX_FADE) : T}
     >
       {(isLightbox || isImagePage) && (
@@ -946,7 +961,10 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           style={imageBackdropStyle}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          exit={{
+            opacity: 0,
+            transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM,
+          }}
           transition={reduceMotion ? { duration: 0.01 } : LIGHTBOX_FADE}
           aria-hidden="true"
         />
@@ -1198,15 +1216,9 @@ function FigmaMark() {
   );
 }
 
-function CaseStudyCard({ s, cls, mp, isH2 }) {
+function ProjectFeatureCard({ cls, mp, modifier, children }) {
   const reduceMotion = useReducedMotion();
   const [interaction, setInteraction] = useState({ rotateX: 0, rotateY: 0, glareX: 50, glareY: 50, hovering: false });
-  const title = sentenceCaseHeading(s.heading || 'Full case study');
-  const contactLabel = 'contact me';
-  const contactIndex = s.body?.toLowerCase().indexOf(contactLabel) ?? -1;
-  const contactHref = s.contactEmail
-    ? `mailto:${s.contactEmail}?subject=${encodeURIComponent(s.contactSubject || 'Request case study access')}`
-    : null;
 
   const handlePointerMove = (event) => {
     if (reduceMotion || event.pointerType === 'touch') return;
@@ -1228,7 +1240,7 @@ function CaseStudyCard({ s, cls, mp, isH2 }) {
 
   return (
     <motion.section
-      className={`${cls} project-case-study-card`}
+      className={`${cls} project-feature-card ${modifier}`}
       {...mp}
       animate={{ rotateX: interaction.rotateX, rotateY: interaction.rotateY }}
       transition={{ type: 'spring', stiffness: 210, damping: 24, mass: 0.55 }}
@@ -1241,37 +1253,68 @@ function CaseStudyCard({ s, cls, mp, isH2 }) {
         '--case-study-glare-opacity': interaction.hovering && !reduceMotion ? 1 : 0,
       }}
     >
-      <span className="project-case-study-glare" aria-hidden="true" />
-      <div className="project-case-study-content">
-        {isH2
-          ? <h2 id={slugify(s.heading || 'Full case study')} className="project-case-study-title">{title}</h2>
-          : <h3 className="project-case-study-title">{title}</h3>}
-        {s.body && (
-          <div className="project-case-study-copy">
-            {contactHref && contactIndex >= 0 ? (
-              <p className="section-body">
-                {s.body.slice(0, contactIndex)}
-                <a className="project-case-study-contact-link" href={contactHref}>{s.body.slice(contactIndex, contactIndex + contactLabel.length)}</a>
-                {s.body.slice(contactIndex + contactLabel.length)}
-              </p>
-            ) : (
-              <BodyText text={s.body} />
-            )}
-          </div>
-        )}
-        {s.url ? (
-          <a className="project-case-study-cta" href={s.url} target="_blank" rel="noopener noreferrer">
-            <FigmaMark />
-            <span>{s.ctaLabel || 'View Figma case study'}</span>
-          </a>
-        ) : (
-          <button className="project-case-study-cta project-case-study-cta--disabled" type="button" disabled title="Figma link coming soon">
-            <FigmaMark />
-            <span>{s.ctaLabel || 'View Figma case study'}</span>
-          </button>
-        )}
-      </div>
+      <span className="project-feature-glare" aria-hidden="true" />
+      <div className="project-feature-content">{children}</div>
     </motion.section>
+  );
+}
+
+function CaseStudyCard({ s, cls, mp, isH2 }) {
+  const title = sentenceCaseHeading(s.heading || 'Full case study');
+  const contactLabel = 'contact me';
+  const contactIndex = s.body?.toLowerCase().indexOf(contactLabel) ?? -1;
+  const contactHref = s.contactEmail
+    ? `mailto:${s.contactEmail}?subject=${encodeURIComponent(s.contactSubject || 'Request case study access')}`
+    : null;
+
+  return (
+    <ProjectFeatureCard cls={cls} mp={mp} modifier="project-case-study-card">
+      {isH2
+        ? <h2 id={slugify(s.heading || 'Full case study')} className="project-case-study-title">{title}</h2>
+        : <h3 className="project-case-study-title">{title}</h3>}
+      {s.body && (
+        <div className="project-case-study-copy">
+          {contactHref && contactIndex >= 0 ? (
+            <p className="section-body">
+              {s.body.slice(0, contactIndex)}
+              <a className="project-case-study-contact-link" href={contactHref}>{s.body.slice(contactIndex, contactIndex + contactLabel.length)}</a>
+              {s.body.slice(contactIndex + contactLabel.length)}
+            </p>
+          ) : (
+            <BodyText text={s.body} />
+          )}
+        </div>
+      )}
+      {s.url ? (
+        <a className="project-case-study-cta" href={s.url} target="_blank" rel="noopener noreferrer">
+          <FigmaMark />
+          <span>{s.ctaLabel || 'View Figma case study'}</span>
+        </a>
+      ) : (
+        <button className="project-case-study-cta project-case-study-cta--disabled" type="button" disabled title="Figma link coming soon">
+          <FigmaMark />
+          <span>{s.ctaLabel || 'View Figma case study'}</span>
+        </button>
+      )}
+    </ProjectFeatureCard>
+  );
+}
+
+function DesignGoalCard({ s, cls, mp, isH2, onImageClick }) {
+  const goalLabel = sentenceCaseHeading(s.heading || 'Design goal');
+  return (
+    <ProjectFeatureCard cls={cls} mp={mp} modifier="project-design-goal-card">
+      {isH2
+        ? <h2 id={slugify(s.heading || 'Design goal')} className="project-design-goal-eyebrow">{goalLabel}</h2>
+        : <h3 className="project-design-goal-eyebrow">{goalLabel}</h3>}
+      {s.body && <div className="project-design-goal-copy"><BodyText text={s.body} /></div>}
+      {s.src && (
+        <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
+          <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || goalLabel} className="section-image" loading="lazy" />
+        </ProjectImageWrap>
+      )}
+      {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
+    </ProjectFeatureCard>
   );
 }
 
@@ -1295,21 +1338,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   }
 
   if (s.type === 'design-goal') {
-    const goalLabel = sentenceCaseHeading(s.heading || 'Design goal');
-    return (
-      <motion.section className={`${cls} project-design-goal-card`} {...mp}>
-        {isH2
-          ? <h2 id={slugify(s.heading || 'Design goal')} className="project-design-goal-eyebrow">{goalLabel}</h2>
-          : <h3 className="project-design-goal-eyebrow">{goalLabel}</h3>}
-        {s.body && <div className="project-design-goal-copy"><BodyText text={s.body} /></div>}
-        {s.src && (
-          <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
-            <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || goalLabel} className="section-image" loading="lazy" />
-          </ProjectImageWrap>
-        )}
-        {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
-      </motion.section>
-    );
+    return <DesignGoalCard s={s} cls={cls} mp={mp} isH2={isH2} onImageClick={onImageClick} />;
   }
 
   if (s.type === 'message-bubbles') {
@@ -1553,17 +1582,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
       <motion.div className={cls} {...mp}>
         {heading}
         {s.body && <BodyText text={s.body} />}
-        <div className="section-video-wrap" style={{ '--video-ratio': s.aspectRatio || '16/9' }}>
-          <iframe
-            src={s.src}
-            className="section-video"
-            frameBorder="0"
-            allow="autoplay; fullscreen; picture-in-picture"
-            allowFullScreen
-            title={s.heading || 'Video'}
-            loading="lazy"
-          />
-        </div>
+        <VimeoEmbed src={s.src} title={s.heading || 'Video'} aspectRatio={s.aspectRatio || '16/9'} />
         {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
     );

@@ -60,6 +60,7 @@ export default function App() {
   // Browser back / forward → sync React state
   useEffect(() => {
     const onPopState = (e) => {
+      setSkipTransition(false);
       setPath(e.state?.path ?? urlToPath());
       setLightbox(null);
     };
@@ -83,6 +84,7 @@ export default function App() {
   }, [path]);
 
   const navigateToDepth = useCallback((i) => {
+    setSkipTransition(false);
     setLightbox(null);
     const next = path.slice(0, i);
     setPath(next);
