@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import GridView       from './components/GridView';
 import GridOverlay    from './components/GridOverlay';
@@ -6,10 +6,18 @@ import PageView       from './components/PageView';
 import AppHeader      from './components/AppHeader';
 import NotFoundPage   from './components/NotFoundPage';
 import { portfolioData, getNodeByPath, getBreadcrumbs } from './data/portfolio';
+import { LIGHTBOX_CLOSE_MS } from './transitions';
 import './App.css';
 
 const BASE = import.meta.env.BASE_URL; // '/zoomable-portfolio/' in prod, '/' in dev
 const BASE_STRIPPED = BASE.endsWith('/') ? BASE.slice(0, -1) : BASE; // '/zoomable-portfolio'
+const getLightboxCloseDuration = () =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : LIGHTBOX_CLOSE_MS;
+const clearLightboxReturnSources = () => {
+  document.querySelectorAll('.lightbox-return-source').forEach((element) => {
+    element.classList.remove('lightbox-return-source');
+  });
+};
 
 const pathToUrl = (p) => BASE + (p.length > 0 ? p.join('/') : '');
 const urlToPath = () =>
@@ -32,7 +40,9 @@ export default function App() {
   const [path, setPath]           = useState(() => urlToPath());
   const [theme, setTheme]         = useState(getInitialTheme);
   const [lightboxNode, setLightbox] = useState(null);
+  const [closingRouteMedia, setClosingRouteMedia] = useState(false);
   const [skipTransition, setSkipTransition] = useState(false);
+  const closeTimerRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -60,15 +70,23 @@ export default function App() {
   // Browser back / forward → sync React state
   useEffect(() => {
     const onPopState = (e) => {
+      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
       setSkipTransition(false);
       setPath(e.state?.path ?? urlToPath());
       setLightbox(null);
+      setClosingRouteMedia(false);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  useEffect(() => () => {
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+  }, []);
+
   const navigateTo = useCallback((item) => {
+    clearLightboxReturnSources();
     setSkipTransition(false);
     const next = [...path, item.id];
     setPath(next);
@@ -86,6 +104,7 @@ export default function App() {
   const navigateToDepth = useCallback((i) => {
     setSkipTransition(false);
     setLightbox(null);
+    setClosingRouteMedia(false);
     const next = path.slice(0, i);
     setPath(next);
     window.history.pushState({ path: next }, '', pathToUrl(next));
@@ -110,9 +129,30 @@ export default function App() {
 
   // Back: close lightbox first (no URL change), otherwise use browser history
   const navigateBack = useCallback(() => {
-    if (lightboxNode) { setLightbox(null); }
-    else              { window.history.back(); }
-  }, [lightboxNode]);
+    if (closeTimerRef.current) return;
+
+    if (lightboxNode) {
+      setLightbox((current) => current ? { ...current, isClosing: true } : current);
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
+        setLightbox(null);
+      }, getLightboxCloseDuration());
+      return;
+    }
+
+    const activeNode = getNodeByPath(portfolioData, path);
+    const isRouteMedia = activeNode?.content?.type === 'image' || activeNode?.content?.type === 'comparison';
+    if (isRouteMedia && !closingRouteMedia) {
+      setClosingRouteMedia(true);
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null;
+        window.history.back();
+      }, getLightboxCloseDuration());
+      return;
+    }
+
+    window.history.back();
+  }, [closingRouteMedia, lightboxNode, path]);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') navigateBack(); };
@@ -121,6 +161,7 @@ export default function App() {
   }, [navigateBack]);
 
   const openLightbox = useCallback((id, src, caption, images, imgIdx) => {
+    clearLightboxReturnSources();
     setLightbox({
       id:       `img-${id}`,
       sourceId: id,
@@ -133,6 +174,7 @@ export default function App() {
   }, []);
 
   const openComparisonLightbox = useCallback((before, after) => {
+    clearLightboxReturnSources();
     const sourceId = before.id || before.src;
     setLightbox({
       id:      `comparison-${sourceId}`,
@@ -187,6 +229,7 @@ export default function App() {
                   zIndex={zIndex}
                   skipLayoutTransition={isTop && skipTransition}
                   isActive={isTop && !lightboxNode}
+                  isClosing={isTop && closingRouteMedia}
                 />
               );
             })}
@@ -197,6 +240,7 @@ export default function App() {
                 node={lightboxNode}
                 onBack={navigateBack}
                 isLightbox
+                isClosing={Boolean(lightboxNode.isClosing)}
                 zIndex={topZ}
               />
             )}

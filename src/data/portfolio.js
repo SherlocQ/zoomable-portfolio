@@ -2,6 +2,7 @@
 // span: [colSpan, rowSpan]
 // level: 'h2' → large serif chapter heading; default → small-caps sub-label
 // type: 'video' → Vimeo responsive embed
+// type: 'accordion' → reusable Linear Docs FAQ-style disclosure rows; fields: heading, body, items[]
 // content.type: 'embed' → full-bleed iframe (live site), opens like the image lightbox — see 'build' below
 //   fields: src (iframe url), title (footnote heading, falls back to label), description (footnote body, optional)
 // bg: backdrop color behind an 'image' tone tile/lightbox (matches the original site's per-image mat color)
@@ -369,14 +370,9 @@ export const portfolioData = {
               },
               {
                 heading: 'Survey Findings',
-                type: 'insights',
+                type: 'accordion',
                 body: '77.3% of users consume content but only only 18.2% post content. Novice contributor takes up a huge portion of LinkedIn users.\n\nAmong those who consume or post LinkedIn feeds, more users use LinkedIn on mobile.',
                 items: [
-                  {
-                    value: '77.3%',
-                    heading: 'Users consume content',
-                    body: 'Only 18.2% post content.',
-                  },
                   {
                     heading: 'Top reasons users want to consume Feeds are:',
                     body: '• Learning interesting industry articles or news.\n• Learning my connections\' latest updates.',

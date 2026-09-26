@@ -15,11 +15,13 @@
   --hairline:        #23252a;
   --hairline-strong: #34343a;
   --hairline-3:      #3e3e44;
+  --hairline-translucent: rgba(255,255,255,0.05); /* Linear Docs row dividers */
 
   /* Dark text */
   --ink:             #f7f8f8;
   --ink-muted:       #d0d6e0;
   --ink-subtle:      #8a8f98;
+  --ink-quaternary:  #62666d; /* decorative icons only, never text */
   --ink-tertiary:    #777c84; /* nudged from #62666d — was 3.3:1 on surface-1, fails AA for the small badge/meta text it's used for; now 4.54:1 */
 
   /* Accent card color */
@@ -93,11 +95,13 @@
   --hairline:        rgba(0,0,0,0.06);
   --hairline-strong: rgba(0,0,0,0.12);
   --hairline-3:      rgba(0,0,0,0.18);
+  --hairline-translucent: rgba(0,0,0,0.05);
 
   /* Light text */
   --ink:             #282a30;
   --ink-muted:       #3c4149;
   --ink-subtle:      #6f6e77;
+  --ink-quaternary:  #86848d;
   --ink-tertiary:    #727079; /* nudged from #86848d — was 3.4:1 on surface-1, fails AA for the small badge/meta text it's used for; now 4.50:1 */
 
   /* Light UI chrome */
@@ -976,6 +980,128 @@ a:focus-visible,
   color: var(--ink);
 }
 .project-insight > :last-child { margin-bottom: 0; }
+
+/* Linear Docs collapsible (docs/mcp "Common use cases") — measured 1:1.
+   Dividers sit only between rows (no top/bottom rule) in a translucent tone. */
+.project-accordion-list {
+  margin-top: 16px;
+  isolation: isolate; /* keeps the row highlight's z-index:-1 inside the list */
+}
+.project-accordion-item {
+  position: relative;
+}
+.project-accordion-item + .project-accordion-item {
+  border-top: 1px solid var(--hairline-translucent);
+}
+/* Permalink highlight — Linear's :target flash */
+.project-accordion-item::before {
+  content: '';
+  position: absolute;
+  inset: 4px -12px;
+  z-index: -1;
+  border: 1px solid transparent;
+  border-radius: var(--r-lg);
+  pointer-events: none;
+}
+.project-accordion-item.is-targeted::before {
+  animation: project-accordion-highlight 3s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+@keyframes project-accordion-highlight {
+  20%, 80% { background-color: var(--hairline); border-color: var(--hairline-strong); }
+}
+.project-accordion-header {
+  display: flex;
+  align-items: baseline;
+}
+.project-accordion-heading {
+  flex: 1;
+  margin: 0;
+  font: inherit;
+}
+.project-accordion-trigger {
+  display: flex;
+  width: 100%;
+  padding: 16px 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 24px;
+  font-weight: 510;
+  letter-spacing: -0.011em;
+  text-align: start;
+  cursor: pointer;
+}
+.project-accordion-trigger:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.project-accordion-chevron {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 24px;
+  margin-right: 8px;
+  color: var(--ink-quaternary);
+  transition: transform 0.12s;
+}
+.project-accordion-trigger[aria-expanded="true"] .project-accordion-chevron {
+  transform: rotate(90deg);
+}
+.project-accordion-permalink {
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  color: var(--ink-subtle);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+@media (any-hover: hover) {
+  .project-accordion-permalink:hover { color: var(--ink); }
+  .project-accordion-item:hover .project-accordion-permalink { opacity: 1; }
+}
+@media (any-hover: none) {
+  .project-accordion-permalink[data-open="true"] { opacity: 1; }
+}
+.project-accordion-permalink:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+.project-accordion-panel {
+  overflow: hidden;
+}
+.project-accordion-content {
+  display: flow-root;
+  padding: 0 0 16px 24px;
+  color: var(--ink-muted);
+}
+.project-accordion-content .section-body,
+.project-accordion-content .section-bullets,
+.project-accordion-content .section-numbered {
+  font-size: 0.9375rem;
+  line-height: 24px;
+  letter-spacing: -0.011em;
+}
+.project-accordion-content > :last-child { margin-bottom: 0; }
+.project-accordion-value {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.1;
+  font-weight: 590;
+  letter-spacing: -0.03em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-accordion-chevron,
+  .project-accordion-permalink { transition: none; }
+  .project-accordion-item.is-targeted::before { animation: none; }
+}
 @media (max-width: 768px) {
   .section-columns { grid-template-columns: 1fr; gap: 32px; }
   .section-column { height: auto; }
@@ -1794,6 +1920,26 @@ a:focus-visible,
 .page-overlay--lightbox .lb-nav,
 .page-overlay--lightbox .lb-dots {
   animation: lightbox-chrome-in 0.32s 0.18s both cubic-bezier(0.32, 0.72, 0, 1);
+}
+.page-overlay--closing .lightbox-dismiss,
+.page-overlay--closing .lb-nav,
+.page-overlay--closing .lb-dots,
+.page-overlay--closing .img-page-caption-bar {
+  animation: none;
+  opacity: 0 !important;
+  pointer-events: none;
+  transition: opacity 0.14s ease-out;
+}
+.lightbox-return-source {
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transform-origin: center center !important;
+}
+/* Measurable but unseen while the zoom-out is still travelling to it —
+   otherwise a duplicate thumbnail sits in place before the image lands. */
+.lightbox-return-source.lightbox-return-source--pending {
+  visibility: hidden !important;
 }
 @keyframes lightbox-chrome-in {
   from { opacity: 0; }

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { T, EASE, SPRING_SLOW } from '../transitions';
+import { T, LIGHTBOX_ZOOM, SPRING_SLOW } from '../transitions';
 import { asset } from '../utils/asset';
 import { BuildIllustration } from './illustrations/BuildIllustration';
 import { ContactIllustration } from './illustrations/ContactIllustration';
@@ -15,8 +15,6 @@ const ILLUSTRATIONS = {
   process: ProcessIllustration,
   projects: ProjectsIllustration,
 };
-
-const IMAGE_ZOOM = { duration: 0.56, ease: EASE };
 
 export function GridItem({ item, onItemClick }) {
   const [col, row] = item.span || [1, 1];
@@ -73,8 +71,9 @@ export function GridItem({ item, onItemClick }) {
           aria-hidden="true"
           className={`grid-item-media${item.previewFit === 'cover' ? ' grid-item-media--cover' : ''}`}
           layoutId={isImageTile ? `item-img-${item.id}` : undefined}
+          data-lightbox-source={isImageTile ? item.id : undefined}
           layoutCrossfade={false}
-          transition={{ layout: IMAGE_ZOOM }}
+          transition={{ layout: LIGHTBOX_ZOOM }}
           draggable={false}
           decoding="async"
           loading={isAnimatedImage ? 'lazy' : undefined}

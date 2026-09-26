@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react
 import { motion, useReducedMotion } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import lottie from 'lottie-web/build/player/lottie_light.js';
-import { T, fadeUp, EASE, EASE_HERO } from '../transitions';
+import { T, fadeUp, EASE, EASE_HERO, LIGHTBOX_ZOOM, LIGHTBOX_CLOSE, LIGHTBOX_FADE, LIGHTBOX_CLOSE_MS, ACCORDION_HEIGHT, ACCORDION_FADE } from '../transitions';
 import { asset } from '../utils/asset';
 import ResumeGlobe from './ResumeGlobe';
 import ScrollCue from './ScrollCue';
@@ -12,9 +12,6 @@ import contactIllustration from '../../assets/contact-envelope-paper-airplane.sv
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-const LIGHTBOX_ZOOM = { duration: 0.56, ease: EASE };
-const LIGHTBOX_FADE = { duration: 0.38, ease: EASE };
 
 const HEADING_TERMS = new Map([
   ['account', 'Account'],
@@ -489,6 +486,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false 
                   alt={offset === 0 ? slide.caption || '' : ''}
                   className="img-carousel-img"
                   layoutId={offset === 0 && onImageClick && slide.id ? `carousel-img-${slide.id}` : undefined}
+                  data-lightbox-source={offset === 0 && onImageClick ? slide.id : undefined}
                   layoutCrossfade={false}
                   transition={{ layout: LIGHTBOX_ZOOM }}
                   loading="eager"
@@ -785,7 +783,7 @@ function OnThisPageMobile({ h2s }) {
 }
 
 /* ─── PageView ────────────────────────────────────────────────────────────── */
-export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, zIndex, skipLayoutTransition, isActive = true }) {
+export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, isClosing = false, zIndex, skipLayoutTransition, isActive = true }) {
   const { content } = node;
   const tone            = node.tone || 'base';
   const isImagePage     = content.type === 'image';
@@ -853,6 +851,63 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   });
   const activeCaption = lbImages ? lbImages[lbIdx].caption : content.caption;
   useAdjacentImagePreload(lbImages, lbIdx);
+
+  useLayoutEffect(() => {
+    if (!isClosing || reduceMotion || (!isImagePage && !isComparisonPage)) return undefined;
+
+    const media = isComparisonPage
+      ? shellRef.current?.querySelector('.cs-lb-wrap')
+      : activeLightboxImageRef.current;
+    const sourceId = isLightbox ? node.sourceId : node.id;
+    const source = sourceId
+      ? document.querySelector(`[data-lightbox-source="${CSS.escape(sourceId)}"]`)
+      : null;
+    if (!media || !source || typeof media.animate !== 'function') return undefined;
+
+    const from = media.getBoundingClientRect();
+
+    // Framer may leave a projection transform on the persistent thumbnail
+    // while the overlay owns the shared layout. Neutralize that projection
+    // before measuring the destination, otherwise the last frame hands off to
+    // a differently sized source and appears to jump.
+    source.classList.add('lightbox-return-source', 'lightbox-return-source--pending');
+    const revealSource = () => source.classList.remove('lightbox-return-source--pending');
+    const to = source.getBoundingClientRect();
+    if (!from.width || !from.height || !to.width || !to.height) {
+      revealSource();
+      return undefined;
+    }
+
+    // Framer hides the persistent source while its shared counterpart is the
+    // lead. Reveal it before the manual return so the final handoff has no
+    // empty frame after the top-layer image reaches the thumbnail.
+    media.style.visibility = 'visible';
+    media.style.transformOrigin = 'top left';
+    media.style.willChange = 'transform, border-radius';
+    const animation = media.animate([
+      { transform: 'translate3d(0, 0, 0) scale(1, 1)', borderRadius: getComputedStyle(media).borderRadius },
+      {
+        transform: `translate3d(${to.left - from.left}px, ${to.top - from.top}px, 0) scale(${to.width / from.width}, ${to.height / from.height})`,
+        borderRadius: getComputedStyle(source).borderRadius,
+      },
+    ], {
+      duration: LIGHTBOX_CLOSE_MS,
+      easing: 'ease-out',
+      fill: 'forwards',
+    });
+    // The thumbnail only appears once the zoom-out lands on it. The cleanup
+    // also reveals it, since unmount can beat the finished promise by a frame.
+    animation.finished.then(revealSource, () => {});
+
+    return () => {
+      revealSource();
+      animation.cancel();
+      // Keep the guard until the next lightbox opens. Framer can continue a
+      // hidden source projection for over a second after the overlay leaves;
+      // revealing that tail is the exact late "flash" this handoff prevents.
+      // App removes the class before establishing the next shared layout.
+    };
+  }, [isClosing, isComparisonPage, isImagePage, isLightbox, node.id, node.sourceId, reduceMotion]);
 
   const measureLightboxImage = useCallback(() => {
     const scroller = lightboxScrollRef.current;
@@ -928,6 +983,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
     `card-${overlayTone}`,
     hasHero                         ? 'page-overlay--hero'     : '',
     isLightbox                      ? 'page-overlay--lightbox' : '',
+    isClosing                       ? 'page-overlay--closing'  : '',
     (isImagePage || isComparisonPage) ? 'page-overlay--img'    : '',
     isEmbedPage                     ? 'page-overlay--embed'    : '',
   ].filter(Boolean).join(' ');
@@ -942,14 +998,19 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       inert={!isActive || undefined}
       onClickCapture={isLightbox ? handleLightboxClickCapture : undefined}
       {...motionShell}
-      exit={isLightbox
-        ? { opacity: [1, 1, 0], transition: reduceMotion ? { duration: 0.01 } : { ...LIGHTBOX_ZOOM, times: [0, 0.92, 1] } }
+      exit={isClosing
+        ? { opacity: 0, transition: { duration: 0.01 } }
+        : isLightbox
+        // Linear Docs keeps the media fully opaque and reverses the same
+        // geometry animation on close. The shell only unmounts after the
+        // shared element has returned to its source card.
+        ? { opacity: 1, transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_CLOSE }
         : isImagePage
           // Keep the route-backed Craft image page mounted for the complete
-          // shared-image return animation. Ending the shell at T (0.38s)
-          // clipped the final 0.18s of LIGHTBOX_ZOOM and caused a visible
+          // shared-image return animation. Ending the shell before the media
+          // transition completes clips the final projected frames and causes a
           // hitch as the thumbnail reclaimed the image.
-          ? { opacity: 1, transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM }
+          ? { opacity: 1, transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_CLOSE }
           : skipLayoutTransition
             ? { opacity: 0, transition: T }
             : { opacity: 1, transition: reduceMotion ? { duration: 0.01 } : T }}
@@ -960,12 +1021,14 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           className="lightbox-scrim"
           style={imageBackdropStyle}
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: isClosing ? 0 : 1 }}
           exit={{
             opacity: 0,
-            transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM,
+            transition: reduceMotion ? { duration: 0.01 } : LIGHTBOX_FADE,
           }}
-          transition={reduceMotion ? { duration: 0.01 } : LIGHTBOX_FADE}
+          transition={reduceMotion
+            ? { duration: 0.01 }
+            : LIGHTBOX_FADE}
           aria-hidden="true"
         />
       )}
@@ -1002,7 +1065,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           <div className="img-page-scroll">
             <motion.div
               className="cs-lb-wrap"
-              layoutId={node.sourceId ? `comparison-${node.sourceId}` : undefined}
+              layoutId={!isClosing && node.sourceId ? `comparison-${node.sourceId}` : undefined}
               layoutCrossfade={false}
               transition={{ layout: reduceMotion ? { duration: 0.01 } : LIGHTBOX_ZOOM }}
             >
@@ -1043,7 +1106,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                           src={asset(slide.src)}
                           alt={offset === 0 ? slide.caption || '' : ''}
                           className={`img-page-img${forceImageContain ? ' img-page-img--contain' : ''}`}
-                          layoutId={offset === 0
+                          layoutId={!isClosing && offset === 0
                             ? (isLightbox && slide.id === node.sourceId
                                 ? (lbImages ? `carousel-img-${node.sourceId}` : `item-img-${node.sourceId}`)
                                 : (!isLightbox ? `item-img-${node.id}` : undefined))
@@ -1310,11 +1373,140 @@ function DesignGoalCard({ s, cls, mp, isH2, onImageClick }) {
       {s.body && <div className="project-design-goal-copy"><BodyText text={s.body} /></div>}
       {s.src && (
         <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
-          <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || goalLabel} className="section-image" loading="lazy" />
+          <motion.img layoutId={`item-img-${s.id}`} data-lightbox-source={s.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || goalLabel} className="section-image" loading="lazy" />
         </ProjectImageWrap>
       )}
       {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
     </ProjectFeatureCard>
+  );
+}
+
+function ProjectAccordion({ s, cls, mp, heading }) {
+  const reduceMotion = useReducedMotion();
+  const [openItems, setOpenItems] = useState(() => new Set());
+  const [targetedItem, setTargetedItem] = useState(null);
+  const itemRefs = useRef(new Map());
+  const items = s.items.map((item) => ({
+    ...item,
+    id: item.id || `${slugify(s.heading || 'accordion')}-${slugify(item.heading)}`,
+  }));
+
+  const toggleItem = (itemId) => {
+    setOpenItems((current) => {
+      const next = new Set(current);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
+  // Linear's permalink opens the row, puts it in the URL hash, copies the
+  // link, and flashes the row the way :target does on a fresh load.
+  const targetItem = useCallback((itemId) => {
+    setOpenItems((current) => new Set(current).add(itemId));
+    setTargetedItem(null);
+    requestAnimationFrame(() => setTargetedItem(itemId));
+  }, []);
+
+  const copyPermalink = (event, itemId) => {
+    event.preventDefault();
+    // replaceState keeps the router's history entry (and its state) intact.
+    window.history.replaceState(window.history.state, '', `#${itemId}`);
+    navigator.clipboard?.writeText(window.location.href).catch(() => {});
+    targetItem(itemId);
+  };
+
+  useEffect(() => {
+    const hashId = decodeURIComponent(window.location.hash.slice(1));
+    const element = hashId && itemRefs.current.get(hashId);
+    if (!element) return;
+    targetItem(hashId);
+    element.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+  }, [reduceMotion, targetItem]);
+
+  return (
+    <motion.section className={`${cls} project-accordion`} {...mp}>
+      {heading}
+      {s.body && <BodyText text={s.body} />}
+      <div className="project-accordion-list">
+        {items.map((item) => {
+          const panelId = `${item.id}-panel`;
+          const triggerId = `${item.id}-trigger`;
+          const isOpen = openItems.has(item.id);
+          const panelTransition = reduceMotion
+            ? { duration: 0 }
+            : { height: ACCORDION_HEIGHT, opacity: { ...ACCORDION_FADE, delay: isOpen ? 0.1 : 0 } };
+
+          return (
+            <article
+              id={item.id}
+              ref={(element) => {
+                if (element) itemRefs.current.set(item.id, element);
+                else itemRefs.current.delete(item.id);
+              }}
+              className={`project-accordion-item${isOpen ? ' is-open' : ''}${targetedItem === item.id ? ' is-targeted' : ''}`}
+              key={item.id}
+              onAnimationEnd={(event) => {
+                if (event.animationName === 'project-accordion-highlight') setTargetedItem(null);
+              }}
+            >
+              <div className="project-accordion-header">
+                <h3 className="project-accordion-heading">
+                  <button
+                    id={triggerId}
+                    className="project-accordion-trigger"
+                    type="button"
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => toggleItem(item.id)}
+                  >
+                    <span className="project-accordion-chevron" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M5.47 11.47a.75.75 0 1 0 1.06 1.06l4-4a.75.75 0 0 0 .007-1.054l-3.903-4a.75.75 0 1 0-1.073 1.048l3.385 3.47-3.476 3.476Z" />
+                      </svg>
+                    </span>
+                    {sentenceCaseHeading(item.heading)}
+                  </button>
+                </h3>
+                <a
+                  className="project-accordion-permalink"
+                  href={`#${item.id}`}
+                  aria-label={`Copy link to “${sentenceCaseHeading(item.heading)}”`}
+                  title="Copy link"
+                  data-open={isOpen}
+                  onClick={(event) => copyPermalink(event, item.id)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                    <path d="M9.306 10.206a.75.75 0 0 1 0 1.053l-2.458 2.459a3.232 3.232 0 0 1-4.565-4.565l2.458-2.459a.75.75 0 0 1 1.053 1.053L3.336 10.206a1.732 1.732 0 0 0 2.458 2.458l2.458-2.458a.75.75 0 0 1 1.054 0Zm.524-4.036a.75.75 0 0 1 0 1.054L7.35 9.704a.75.75 0 0 1-1.054-1.053L8.776 6.17a.75.75 0 0 1 1.054 0Zm3.888-3.888a3.232 3.232 0 0 1 0 4.565l-2.459 2.458a.75.75 0 0 1-1.053-1.053l2.458-2.458a1.732 1.732 0 0 0-2.458-2.458L7.748 5.794a.75.75 0 0 1-1.053-1.053l2.458-2.459a3.232 3.232 0 0 1 4.565 0Z" />
+                  </svg>
+                </a>
+              </div>
+              <motion.div
+                id={panelId}
+                className="project-accordion-panel"
+                role="region"
+                aria-labelledby={triggerId}
+                aria-hidden={!isOpen}
+                inert={!isOpen || undefined}
+                initial={false}
+                animate={{ height: isOpen ? 'auto' : 0 }}
+                transition={panelTransition}
+              >
+                <motion.div
+                  className="project-accordion-content"
+                  initial={false}
+                  animate={{ opacity: isOpen ? 1 : 0 }}
+                  transition={panelTransition}
+                >
+                  {item.value && <strong className="project-accordion-value">{item.value}</strong>}
+                  <BodyText text={item.body} />
+                </motion.div>
+              </motion.div>
+            </article>
+          );
+        })}
+      </div>
+    </motion.section>
   );
 }
 
@@ -1339,6 +1531,10 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
 
   if (s.type === 'design-goal') {
     return <DesignGoalCard s={s} cls={cls} mp={mp} isH2={isH2} onImageClick={onImageClick} />;
+  }
+
+  if (s.type === 'accordion') {
+    return <ProjectAccordion s={s} cls={cls} mp={mp} heading={heading} />;
   }
 
   if (s.type === 'message-bubbles') {
@@ -1393,7 +1589,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
       ? <ProjectLottie src={s.src} label={s.caption || s.heading} />
       : (
         <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
-          <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
+          <motion.img layoutId={`item-img-${s.id}`} data-lightbox-source={s.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
         </ProjectImageWrap>
       );
 
@@ -1493,7 +1689,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
         {heading}
         {s.body && <BodyText text={s.body} />}
         <ProjectImageWrap id={s.id} src={s.src} caption={s.caption} onImageClick={onImageClick}>
-          <motion.img layoutId={`item-img-${s.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
+          <motion.img layoutId={`item-img-${s.id}`} data-lightbox-source={s.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(s.src)} alt={s.caption || s.heading || ''} className="section-image" loading="lazy" />
         </ProjectImageWrap>
         {s.showCaption && s.caption && <p className="section-caption">{s.caption}</p>}
       </motion.div>
@@ -1513,7 +1709,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
           <div className={`section-gallery section-gallery--${count <= 2 ? '2up' : count === 3 ? '3up' : '4up'}`}>
             {s.images.map((img) => (
               <ProjectImageWrap key={img.id} id={img.id} src={img.src} caption={img.caption} onImageClick={onImageClick}>
-                <motion.img layoutId={`item-img-${img.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(img.src)} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
+                <motion.img layoutId={`item-img-${img.id}`} data-lightbox-source={img.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(img.src)} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
               </ProjectImageWrap>
             ))}
           </div>
@@ -1535,7 +1731,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
               {item.body && <BodyText text={item.body} />}
               {item.image && (
                 <ProjectImageWrap id={item.id} src={item.image} caption={item.caption} onImageClick={onImageClick}>
-                  <motion.img layoutId={`item-img-${item.id}`} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(item.image)} alt={item.caption || item.heading || ''} className="section-image" loading="lazy" />
+                  <motion.img layoutId={`item-img-${item.id}`} data-lightbox-source={item.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(item.image)} alt={item.caption || item.heading || ''} className="section-image" loading="lazy" />
                 </ProjectImageWrap>
               )}
             </div>
@@ -1554,6 +1750,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
         <motion.div
           className="cs-outer"
           layoutId={`comparison-${s.before.id || s.before.src}`}
+          data-lightbox-source={s.before.id || s.before.src}
           layoutCrossfade={false}
           transition={{ layout: LIGHTBOX_ZOOM }}
         >
