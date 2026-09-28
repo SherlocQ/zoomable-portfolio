@@ -511,6 +511,10 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Use the theme-aware translucent `{colors.surface}` glass treatment (`rgba(20,21,22,0.80)` dark / `rgba(255,255,255,0.84)` light) with 18px backdrop blur, 120% saturation, and a restrained downward shadow. The outer shell has no border or radius.
 - Keep the control hidden from pointer and keyboard interaction before reveal. The current section label truncates to one line; the chevron points down while closed and up while open.
 
+### Favicon
+
+**`favicon`** — White triangle mark on `#050506`: a circle for browser and Android icons, a full-bleed square for Apple (the OS rounds it). The mark is optically centered — its triangle's centroid on the icon center, corners equidistant from the edge — at every size. Tab sizes (16–32px) use slightly thicker lines.
+
 ### Preloader
 
 **`preloader`** — First full page load only: a `--canvas` screen with the centered line "Chengchang Qian - AI Native Product Designer" (16px, 500, -0.01em, `--ink`). Timeline from the Framer preloader it ports: 0.2s delay, blur 10px → 0 and opacity 0 → 1 over 1.5s ease-out, hold 2s, back out over 0.5s ease-in, then the whole overlay dissolves to opacity 0 and blur 20px over 1s ease-in-out onto the landing page. No image card. Reduced motion: opacity only.
