@@ -128,7 +128,7 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 
 ## Favicon & app icons
 - Chengchang's triangle mark, white on #050506. Every size is optically centered: the mark's triangle centroid (≈ its circumcenter; mark coords ≈ 255.5, 325) sits on the icon center, so all three corners are equidistant from the circle — never center its bounding box (that reads low). `favicon.svg` holds the geometry (`translate(77.15 28.5) scale(0.7)` on a 512 canvas).
-- Tab sizes (`favicon.svg`, 16/32 PNGs, `favicon.ico` with 16+32) add a 14-unit white stroke so the lines survive at 16px. Android 192/512 use the plain mark on a circle with transparent corners. `apple-touch-icon.png` is a full-bleed opaque black square (iOS rounds it) with the same centered white mark.
+- Tab sizes (`favicon.svg`, 16/32 PNGs, `favicon.ico` with 16+32) add a 14-unit white stroke so the lines survive at 16px. Android 192/512 use the plain mark on a circle with transparent corners. `apple-touch-icon.png` is a full-bleed opaque black square (iOS rounds it). In a square the eye compares top and bottom margins, so centroid-centering reads high there: the Apple mark is centered at mark y ≈ 280, between its bounding-box center (256) and centroid (325) — `translate(77.15 60) scale(0.7)` — giving ~34/46px top/bottom margins at 180px.
 
 ## Images
 All project/craft images are in `public/images/`. Referenced via `asset()` helper. Keep production media local; do not introduce Webflow CDN dependencies.

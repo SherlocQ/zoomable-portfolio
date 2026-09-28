@@ -513,7 +513,7 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 ### Favicon
 
-**`favicon`** — White triangle mark on `#050506`: a circle for browser and Android icons, a full-bleed square for Apple (the OS rounds it). The mark is optically centered — its triangle's centroid on the icon center, corners equidistant from the edge — at every size. Tab sizes (16–32px) use slightly thicker lines.
+**`favicon`** — White triangle mark on `#050506`: a circle for browser and Android icons, a full-bleed square for Apple (the OS rounds it). The mark is optically centered at every size: in the circles, its triangle's centroid sits on the center so the corners are equidistant from the edge; in the Apple square, where top and bottom margins are compared instead, it sits between its bounding-box center and centroid (bottom margin slightly larger than top). Tab sizes (16–32px) use slightly thicker lines.
 
 ### Preloader
 
