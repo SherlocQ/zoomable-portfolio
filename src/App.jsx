@@ -11,6 +11,8 @@ import './App.css';
 
 const BASE = import.meta.env.BASE_URL; // '/zoomable-portfolio/' in prod, '/' in dev
 const BASE_STRIPPED = BASE.endsWith('/') ? BASE.slice(0, -1) : BASE; // '/zoomable-portfolio'
+// Safety net if a zoom-out never reports completion (e.g. background tab).
+const LIGHTBOX_CLOSE_FALLBACK_MS = 250;
 const getLightboxCloseDuration = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : LIGHTBOX_CLOSE_MS;
 const clearLightboxReturnSources = () => {
@@ -43,6 +45,7 @@ export default function App() {
   const [closingRouteMedia, setClosingRouteMedia] = useState(false);
   const [skipTransition, setSkipTransition] = useState(false);
   const closeTimerRef = useRef(null);
+  const finishCloseRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -72,6 +75,7 @@ export default function App() {
     const onPopState = (e) => {
       if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
+      finishCloseRef.current = null;
       setSkipTransition(false);
       setPath(e.state?.path ?? urlToPath());
       setLightbox(null);
@@ -127,16 +131,34 @@ export default function App() {
 
   const isNotFound = path.length > 0 && overlayStack.length < path.length;
 
+  // A closing media page unmounts when its zoom-out reports that the source
+  // has been painted underneath (onCloseComplete), not on a fixed timer: a
+  // timer racing the last animation frames re-renders the app mid-motion
+  // (a visible hitch) and can remove the overlay before the source paints
+  // (a one-frame flash). The timer is only a fallback, e.g. no source found.
+  const scheduleClose = useCallback((finish) => {
+    let done = false;
+    const run = () => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+      finishCloseRef.current = null;
+      finish();
+    };
+    finishCloseRef.current = run;
+    const duration = getLightboxCloseDuration();
+    closeTimerRef.current = window.setTimeout(run, duration ? duration + LIGHTBOX_CLOSE_FALLBACK_MS : 0);
+  }, []);
+  const handleCloseComplete = useCallback(() => finishCloseRef.current?.(), []);
+
   // Back: close lightbox first (no URL change), otherwise use browser history
   const navigateBack = useCallback(() => {
     if (closeTimerRef.current) return;
 
     if (lightboxNode) {
       setLightbox((current) => current ? { ...current, isClosing: true } : current);
-      closeTimerRef.current = window.setTimeout(() => {
-        closeTimerRef.current = null;
-        setLightbox(null);
-      }, getLightboxCloseDuration());
+      scheduleClose(() => setLightbox(null));
       return;
     }
 
@@ -144,15 +166,12 @@ export default function App() {
     const isRouteMedia = activeNode?.content?.type === 'image' || activeNode?.content?.type === 'comparison';
     if (isRouteMedia && !closingRouteMedia) {
       setClosingRouteMedia(true);
-      closeTimerRef.current = window.setTimeout(() => {
-        closeTimerRef.current = null;
-        window.history.back();
-      }, getLightboxCloseDuration());
+      scheduleClose(() => window.history.back());
       return;
     }
 
     window.history.back();
-  }, [closingRouteMedia, lightboxNode, path]);
+  }, [closingRouteMedia, lightboxNode, path, scheduleClose]);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') navigateBack(); };
@@ -211,7 +230,22 @@ export default function App() {
             {!isNotFound && overlayStack.map(({ node, zIndex }, idx) => {
               const isTop = idx === overlayStack.length - 1;
               if (node.type === 'grid') {
-                return <GridOverlay key={node.id} node={node} onItemClick={navigateTo} zIndex={zIndex} isActive={isTop} />;
+                // A grid directly under a route-backed image/comparison page stays
+                // painted: that page's scrim covers it, and the shared image must
+                // zoom back onto a visible tile rather than an invisible grid.
+                const coveringType = overlayStack[idx + 1]?.node?.content?.type;
+                const isUnderMedia = idx === overlayStack.length - 2
+                  && (coveringType === 'image' || coveringType === 'comparison');
+                return (
+                  <GridOverlay
+                    key={node.id}
+                    node={node}
+                    onItemClick={navigateTo}
+                    zIndex={zIndex}
+                    isActive={isTop}
+                    isVisible={isTop || isUnderMedia}
+                  />
+                );
               }
               const parentNode = idx > 0 ? overlayStack[idx - 1]?.node : null;
               const siblings = parentNode?.type === 'grid'
@@ -230,6 +264,7 @@ export default function App() {
                   skipLayoutTransition={isTop && skipTransition}
                   isActive={isTop && !lightboxNode}
                   isClosing={isTop && closingRouteMedia}
+                  onCloseComplete={handleCloseComplete}
                 />
               );
             })}
@@ -241,6 +276,7 @@ export default function App() {
                 onBack={navigateBack}
                 isLightbox
                 isClosing={Boolean(lightboxNode.isClosing)}
+                onCloseComplete={handleCloseComplete}
                 zIndex={topZ}
               />
             )}

@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom';
 import lottie from 'lottie-web/build/player/lottie_light.js';
 import { T, fadeUp, EASE, EASE_HERO, LIGHTBOX_ZOOM, LIGHTBOX_CLOSE, LIGHTBOX_FADE, LIGHTBOX_CLOSE_MS, ACCORDION_HEIGHT, ACCORDION_FADE } from '../transitions';
 import { asset } from '../utils/asset';
+import ProcessStory from './ProcessStory';
 import ResumeGlobe from './ResumeGlobe';
 import ScrollCue from './ScrollCue';
 import ProgressiveBlur from './ProgressiveBlur';
@@ -783,7 +784,7 @@ function OnThisPageMobile({ h2s }) {
 }
 
 /* ─── PageView ────────────────────────────────────────────────────────────── */
-export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, isClosing = false, zIndex, skipLayoutTransition, isActive = true }) {
+export default function PageView({ node, onBack, onImageClick, onComparisonClick, onNavigate, siblings, isLightbox, isClosing = false, onCloseComplete, zIndex, skipLayoutTransition, isActive = true }) {
   const { content } = node;
   const tone            = node.tone || 'base';
   const isImagePage     = content.type === 'image';
@@ -853,7 +854,11 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   useAdjacentImagePreload(lbImages, lbIdx);
 
   useLayoutEffect(() => {
-    if (!isClosing || reduceMotion || (!isImagePage && !isComparisonPage)) return undefined;
+    if (!isClosing) return undefined;
+    if (reduceMotion || (!isImagePage && !isComparisonPage)) {
+      onCloseComplete?.();
+      return undefined;
+    }
 
     const media = isComparisonPage
       ? shellRef.current?.querySelector('.cs-lb-wrap')
@@ -862,7 +867,10 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
     const source = sourceId
       ? document.querySelector(`[data-lightbox-source="${CSS.escape(sourceId)}"]`)
       : null;
-    if (!media || !source || typeof media.animate !== 'function') return undefined;
+    if (!media || !source || typeof media.animate !== 'function') {
+      onCloseComplete?.();
+      return undefined;
+    }
 
     const from = media.getBoundingClientRect();
 
@@ -875,6 +883,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
     const to = source.getBoundingClientRect();
     if (!from.width || !from.height || !to.width || !to.height) {
       revealSource();
+      onCloseComplete?.();
       return undefined;
     }
 
@@ -895,11 +904,22 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       easing: 'ease-out',
       fill: 'forwards',
     });
-    // The thumbnail only appears once the zoom-out lands on it. The cleanup
-    // also reveals it, since unmount can beat the finished promise by a frame.
-    animation.finished.then(revealSource, () => {});
+    // The thumbnail only appears once the zoom-out lands on it. The overlay
+    // then stays, pixel-identical on top, until the thumbnail is decoded and
+    // has painted two frames — only then may App remove the overlay, so the
+    // handoff has neither a blank frame nor a re-render inside the motion.
+    let cancelled = false;
+    animation.finished.then(() => {
+      if (cancelled) return;
+      revealSource();
+      const decoded = typeof source.decode === 'function' ? source.decode().catch(() => {}) : Promise.resolve();
+      decoded.then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (!cancelled) onCloseComplete?.();
+      })));
+    }, () => {});
 
     return () => {
+      cancelled = true;
       revealSource();
       animation.cancel();
       // Keep the guard until the next lightbox opens. Framer can continue a
@@ -907,7 +927,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
       // revealing that tail is the exact late "flash" this handoff prevents.
       // App removes the class before establishing the next shared layout.
     };
-  }, [isClosing, isComparisonPage, isImagePage, isLightbox, node.id, node.sourceId, reduceMotion]);
+  }, [isClosing, isComparisonPage, isImagePage, isLightbox, node.id, node.sourceId, onCloseComplete, reduceMotion]);
 
   const measureLightboxImage = useCallback(() => {
     const scroller = lightboxScrollRef.current;
@@ -1228,11 +1248,11 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
             </div>
           )}
 
-          <div className={`page-content${isProject ? ' page-content--project' : ''}${content.type === 'contact' ? ' page-content--contact' : ''}${content.type === 'about' ? ' page-content--about' : ''}`}>
+          <div className={`page-content${isProject ? ' page-content--project' : ''}${content.type === 'contact' ? ' page-content--contact' : ''}${content.type === 'about' ? ' page-content--about' : ''}${content.type === 'process' ? ' page-content--process' : ''}`}>
             {content.type === 'hero'    && <HeroContent    node={node} content={content} />}
             {isProject                  && <ProjectContent node={node} content={content} hasHero={hasHero} onImageClick={onImageClick} onComparisonClick={onComparisonClick} siblings={siblings} onNavigate={onNavigate} />}
             {content.type === 'about'   && <AboutContent   node={node} content={content} />}
-            {content.type === 'process' && <ProcessContent node={node} content={content} />}
+            {content.type === 'process' && <ProcessStory content={content} />}
             {content.type === 'contact' && <ContactContent node={node} content={content} />}
             {content.type === 'craft'   && <CraftContent   node={node} content={content} />}
           </div>
@@ -1932,20 +1952,6 @@ function HeroContent({ node, content }) {
 
 function AboutContent({ node, content }) {
   return <ResumeGlobe node={node} content={content} />;
-}
-
-function ProcessContent({ content }) {
-  return (
-    <div className="process-content">
-      <motion.h1 custom={0} variants={fadeUp} initial="hidden" animate="show">Process</motion.h1>
-      {content.steps.map((step, i) => (
-        <motion.div key={step.number} className="process-step" custom={i + 1} variants={fadeUp} initial="hidden" animate="show">
-          <span className="step-number">{step.number}</span>
-          <div><h3>{sentenceCaseHeading(step.label)}</h3><p>{step.body}</p></div>
-        </motion.div>
-      ))}
-    </div>
-  );
 }
 
 function ContactContent({ content }) {

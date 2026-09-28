@@ -1305,14 +1305,27 @@ export const portfolioData = {
       illustration: 'process',
       span: [1, 1],
       tone: 'base',
+      // Scroll-driven "Double Diamond → Bet · Loop · Settle" story. Copy was
+      // agreed with Chengchang from the AI-Native Design Process write-up;
+      // ProcessStory renders it with the pinned ProcessDiagram.
       content: {
         type: 'process',
+        eyebrow: 'Process',
+        headline: "Making got cheaper. Judgment didn't.",
+        subline: "I don't think AI makes the Double Diamond obsolete. It changes the premise, so I've reshaped my process around what stays human: judgment.",
         steps: [
-          { number: '01', label: 'Discover', body: 'User interviews, session analysis, competitive audit. I want to understand the real problem — and who actually has it — before touching Figma.' },
-          { number: '02', label: 'Define',   body: 'Journey maps, problem framing, success metrics. Alignment with stakeholders before any solutions reach the screen.' },
-          { number: '03', label: 'Design',   body: 'Rapid iteration from rough flows to high-fidelity. I prototype to test and persuade, not to document.' },
-          { number: '04', label: 'Deliver',  body: "Handoff specs, design QA, and staying involved through launch. The work isn't done until real users are using it." },
+          { id: 'classic',    title: 'The classic way', body: 'The Double Diamond assumes making is expensive. So teams understand and define the problem before building anything, then narrow down twice, at Define and at Deliver, handing deliverables from phase to phase.' },
+          { id: 'changed',    title: 'What changed',    body: "AI changes that. Divergence, going wide (research, options, variants, prototypes), is now nearly free. Convergence, narrowing down (deciding what's worth solving and what's right), is not. So the process reshapes around what's still hard: deciding." },
+          { id: 'bet',        title: 'Bet',             body: "My process still starts by defining the problem, but as a bet: a hypothesis, not a conclusion. It states what I believe the problem is, why, and what evidence would change my mind. The first diamond still exists; it's just shorter. Skipping it is the AI-era trap: when making is cheap, it's tempting to start generating options immediately, and iterate very fast in the wrong direction." },
+          { id: 'loop',       title: 'Loop',            body: "Then I iterate in small, fast loops. Each loop is an asymmetric diamond: divergence is wide and nearly free; convergence is narrow and takes judgment. Early loops build to learn: prototypes test the bet itself, asking whether this is the right problem. Later loops build to ship: once the bet holds up, prototypes refine how the solution works. That's why each loop is narrower than the last." },
+          { id: 'route',      title: 'Route',           body: "Each loop produces a lot of feedback, and most of it is noise. This is where AI helps convergence: it doesn't decide, it routes. Every piece goes to one of three places: noise fades out, execution issues (how it's built) go back into the next loop, and direction signals (whether it's the right problem) come down to me." },
+          { id: 'settle',     title: 'Settle',          body: "I decide which direction signals to keep; only those settle into direction. What settles is what holds up: patterns that repeat across loops, and findings that user research confirms. Once settled, direction guides the loops that follow, so moving fast doesn't mean drifting." },
+          { id: 'difference', title: 'The difference',  body: "In the Double Diamond, convergence is an event: it happens at Define and at Deliver. In an AI-native process, it's continuous: a little settles in every loop, and direction builds up over time." },
         ],
+        closing: {
+          line: 'AI makes divergence nearly free, and convergence better informed. The decision stays human.',
+          tagline: 'Start with a bet. Loop fast. Let direction settle.',
+        },
       },
     },
     {

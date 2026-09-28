@@ -22,6 +22,21 @@
   --ink-muted:       #d0d6e0;
   --ink-subtle:      #8a8f98;
   --ink-quaternary:  #62666d; /* decorative icons only, never text */
+
+  /* Process diagram only — semantic, never UI accents. Cool is lighter than
+     warm in both themes so the meaning survives without hue. */
+  --diagram-neutral: #8a8f98;
+  --diagram-wide:    #9cc3ff; /* going wide: cheap */
+  --diagram-decide:  #d4913f; /* narrowing down, deciding, direction */
+  --diagram-noise:   #62666d; /* noise: darker than both, so it reads without hue */
+
+  /* Ripple grid — the Framer preview's greys, mirrored for dark: shadow and
+     border sit the same lightness steps above the page as they sit below it
+     in light mode. The fill is the page surface itself, so the grid never
+     tints the background — no band where it fades out. */
+  --ripple-fill:   var(--surface-1);
+  --ripple-shadow: #2b2c2f;
+  --ripple-border: rgba(255, 255, 255, 0.14);
   --ink-tertiary:    #777c84; /* nudged from #62666d — was 3.3:1 on surface-1, fails AA for the small badge/meta text it's used for; now 4.54:1 */
 
   /* Accent card color */
@@ -102,6 +117,15 @@
   --ink-muted:       #3c4149;
   --ink-subtle:      #6f6e77;
   --ink-quaternary:  #86848d;
+
+  --diagram-neutral: #6f6e77;
+  --diagram-wide:    #4f86e0;
+  --diagram-decide:  #93570f;
+  --diagram-noise:   #b3b2ba;
+
+  --ripple-fill:   var(--surface-1);
+  --ripple-shadow: rgb(217, 217, 217);
+  --ripple-border: rgba(191, 191, 191, 0.62);
   --ink-tertiary:    #727079; /* nudged from #86848d — was 3.4:1 on surface-1, fails AA for the small badge/meta text it's used for; now 4.50:1 */
 
   /* Light UI chrome */
@@ -1465,11 +1489,228 @@ a:focus-visible,
   font-family: var(--font-sans); font-size: 14px; line-height: 1.70; color: var(--ink-subtle);
 }
 
-.process-content h1 { font-family:var(--font-sans); font-size:clamp(22px,2.5vw,32px); font-weight:590; letter-spacing:-0.022em; line-height:1.125; margin-bottom:32px; }
-.process-step { display:flex; gap:22px; padding:22px 0; border-bottom:1px solid var(--hairline); align-items:flex-start; }
-.step-number { font-family:var(--font-sans); font-size:11px; font-weight:600; color: var(--ink-tertiary); padding-top:3px; flex-shrink:0; width:20px; }
-.process-step h3 { font-family:var(--font-sans); font-size:1.0625rem; font-weight:590; letter-spacing:-0.012em; margin-bottom:5px; line-height:1.4; }
-.process-step p  { font-family:var(--font-sans); font-size:14px; line-height:1.65; color: var(--ink-subtle); }
+/* ─── Process page — scroll-driven Double Diamond → AI-native design process ─
+   Docs typography and surfaces; the diagram alone adds two semantic colors
+   (--diagram-wide: going wide is cheap, --diagram-decide: narrowing down /
+   deciding). They differ in lightness as well as hue for color-blind readers. */
+.page-content--process { max-width: 1200px; padding-bottom: 0; }
+.process-story { --pd-viewport: 100vh; --ps-ease: cubic-bezier(0.23, 1, 0.32, 1); }
+
+/* Cover: exactly one scroller-height, like a project hero, with its scroll cue. */
+.ps-intro {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: var(--pd-viewport);
+  margin-top: -32px; /* cancel .page-content's top padding */
+}
+.ps-intro-copy { position: relative; z-index: 1; width: fit-content; max-width: 720px; pointer-events: none; }
+.ps-intro .scroll-cue { pointer-events: none; }
+
+/* Ripple grid (RippleGrid.jsx) behind the cover and the closing: full-bleed
+   across the page, grid centered, fading out toward the bottom exactly like
+   the Framer original (container opacity 90%, mask transparent → black at
+   64% from the bottom). Copy sits above it and lets pointer events through,
+   so hover and click reach the cells. */
+.ripple-grid {
+  position: absolute; top: 0; bottom: 0;
+  left: calc(50% - 50vw); width: 100vw;
+  z-index: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  opacity: 0.9;
+  -webkit-mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, #000 64%);
+  mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, #000 64%);
+}
+/* The closing is reached by scrolling down into it, so its grid also fades
+   in from the top — no hard edge where the section begins. */
+.ps-closing .ripple-grid {
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 36%, #000 50%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 36%, #000 50%, rgba(0, 0, 0, 0) 100%);
+}
+.ripple-grid-cells { display: grid; flex: none; transform: translate3d(0, 0, 0); }
+.ripple-cell {
+  position: relative;
+  box-sizing: border-box;
+  width: 54px; height: 54px;
+  background-color: var(--ripple-fill);
+  border: 0.5px solid var(--ripple-border);
+  box-shadow: 0 0 40px 1px var(--ripple-shadow) inset;
+  cursor: pointer;
+  transform: translate3d(0, 0, 0);
+  /* Follow the page's 300ms theme cross-fade instead of snapping. */
+  transition: background-color 0.3s cubic-bezier(0.32, 0.72, 0, 1), border-color 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Type scale matches the About page (resume-eyebrow / h1 / h2 / description). */
+.ps-eyebrow {
+  margin: 0 0 16px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 500; line-height: 1.3;
+  letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-tertiary);
+}
+.ps-headline {
+  max-width: 620px; margin: 0 0 24px;
+  font-family: var(--font-sans); font-size: clamp(40px, 4vw, 56px); font-weight: 590;
+  line-height: 1.1; letter-spacing: -1.8px; color: var(--ink); text-wrap: balance;
+}
+.ps-subline {
+  /* Exactly as wide as the headline above it: zero intrinsic width so it never
+     widens the (fit-content) copy block, then fills it. */
+  width: 0; min-width: 100%; margin: 0;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.5; letter-spacing: -0.05px;
+  color: var(--ink-muted);
+  /* Short two-line copy: balance the lines so no one- or two-word widow. */
+  text-wrap: balance;
+}
+
+/* Scrollytelling: a panel pinned for the whole section while an invisible
+   track scrolls past (1.4 scroller heights per step). Per step: its text
+   scrolls in from below as the previous one scrolls out the top, 1:1 with
+   the scroll and fading with distance from the center (0.5); then it holds
+   while the drawing plays (0.6) and the finished state rests (0.3). */
+.ps-scrolly { position: relative; }
+.ps-pin {
+  position: sticky; top: 0;
+  height: var(--pd-viewport);
+  display: grid;
+  grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
+  column-gap: 56px;
+  align-items: center;
+}
+.ps-track { height: calc(var(--pd-viewport) * var(--ps-steps) * var(--ps-step-length)); }
+.ps-steps {
+  display: grid;
+  margin: 0; padding: 0;
+  list-style: none;
+}
+/* Step text scrolls in and out 1:1 with the scroll (position and fade are
+   written per frame by ProcessStory). With reduced motion it stays put and
+   cross-fades instead. */
+.ps-step {
+  grid-area: 1 / 1;
+  align-self: center;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.process-story--static .ps-step { transition: opacity 180ms ease; will-change: auto; }
+.process-story--static .ps-step.is-active { opacity: 1; }
+.ps-step-title {
+  margin: 0 0 24px;
+  font-family: var(--font-sans); font-size: clamp(32px, 3vw, 40px); font-weight: 590;
+  line-height: 1.15; letter-spacing: -1px; color: var(--ink); text-wrap: balance;
+}
+.ps-step-body {
+  max-width: 570px; margin: 0;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.5; letter-spacing: -0.05px;
+  color: var(--ink-muted); text-wrap: pretty;
+}
+.ps-stage { min-width: 0; }
+
+/* Diagram: two scenes stacked in one stage, one visible at a time.
+   --pd-u = viewBox units per screen px (set from JS per scene), so strokes and
+   labels keep a fixed on-screen size at every diagram width. */
+/* Scene titles: centered above the art, cross-fading with their scene. */
+.pd-titles { display: grid; margin: 0 0 32px; text-align: center; }
+.pd-title {
+  grid-area: 1 / 1;
+  margin: 0;
+  font-family: var(--font-sans); font-size: 17px; font-weight: 590; line-height: 24px;
+  letter-spacing: -0.012em; color: var(--ink);
+}
+.pd-scenes { position: relative; width: 100%; aspect-ratio: 1000 / 384; }
+/* Scene and title visibility is scrubbed by scroll (the hand-over in
+   applyDiagramState), not toggled. Reduced motion swaps with a 180ms fade. */
+.pd-scene { position: absolute; inset: 0; }
+.pd-scenes--swap .pd-scene { opacity: 0; }
+.pd-svg { --pd-u: 1; display: block; width: 100%; height: 100%; overflow: visible; }
+.pd-label {
+  font-family: var(--font-sans); font-size: calc(var(--pd-u) * 12px); font-weight: 500;
+  fill: var(--ink-subtle);
+}
+.pd-label--wide { fill: var(--diagram-wide); }
+.pd-label--decide { fill: var(--diagram-decide); }
+.pd-label--noise { fill: var(--diagram-noise); }
+/* Routing legend (HTML over the AI-native scene). */
+.pd-legend {
+  position: absolute; left: 0; right: 0;
+  display: flex; justify-content: center; align-items: center; gap: 20px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.pd-legend-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-sans); font-size: 12px; font-weight: 500; line-height: 16px;
+  color: var(--ink-muted); white-space: nowrap;
+}
+.pd-legend-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.pd-legend-dot--noise { background: var(--diagram-noise); }
+.pd-legend-dot--execution { background: var(--diagram-wide); }
+.pd-legend-dot--direction { background: var(--diagram-decide); }
+.pd-stroke {
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+  stroke-width: calc(var(--pd-u) * 1.75px);
+}
+.pd-thin { stroke-width: calc(var(--pd-u) * 1.1px); }
+.pd-thick { stroke-width: calc(var(--pd-u) * 2.75px); }
+.pd-neutral { stroke: var(--diagram-neutral); }
+.pd-ink-stroke { stroke: var(--ink); }
+.pd-wide { stroke: var(--diagram-wide); }
+.pd-decide { stroke: var(--diagram-decide); }
+.pd-fill-neutral { fill: var(--diagram-neutral); }
+.pd-fill-wide { fill: var(--diagram-wide); }
+.pd-fill-decide { fill: var(--diagram-decide); }
+.pd-fill-noise { fill: var(--diagram-noise); }
+.pd-direction-fill { fill: url(#pd-direction-gradient); }
+.pd-direction-stop { stop-color: var(--diagram-decide); }
+.pd-dashed { stroke-dasharray: calc(var(--pd-u) * 4px) calc(var(--pd-u) * 5px); }
+.pd-ink [pathLength] { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+.pd-origin-left { transform-box: fill-box; transform-origin: left center; }
+.pd-origin-bottom { transform-box: fill-box; transform-origin: center bottom; }
+.pd-pulse { transform-box: fill-box; transform-origin: center; opacity: 0; }
+
+/* Ghost: the whole scene, faint and neutral, so the full picture is always there. */
+.pd-ghost { opacity: 0.16; }
+.pd-ghost .pd-stroke { stroke: var(--diagram-neutral); }
+.pd-ghost .pd-fill-neutral,
+.pd-ghost .pd-fill-decide { fill: var(--diagram-neutral); }
+.pd-ghost .pd-label { fill: var(--diagram-neutral); }
+.pd-ink [data-group] { opacity: 0.2; transition: opacity 300ms var(--ps-ease); }
+.pd-ink [data-group][data-active] { opacity: 1; }
+
+/* Closing: a full screen of its own, copy vertically centered over the ripple. */
+.ps-closing {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: var(--pd-viewport);
+}
+.ps-closing-copy { position: relative; z-index: 1; max-width: 760px; pointer-events: none; }
+.ps-closing-line {
+  margin: 0 0 20px;
+  font-family: var(--font-sans); font-size: clamp(40px, 4vw, 56px); font-weight: 590;
+  line-height: 1.1; letter-spacing: -1.8px; color: var(--ink); text-wrap: balance;
+}
+.ps-closing-words { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.4; color: var(--ink-subtle); }
+
+@media (max-width: 1023px) {
+  .ps-headline, .ps-closing-line { font-size: clamp(32px, 8vw, 40px); }
+  .ps-step-title { margin-bottom: 16px; font-size: clamp(28px, 7vw, 32px); }
+  /* Mobile mirrors desktop, stacked: diagram in the top half, text in the
+     bottom half, both on the page surface (no card). */
+  .ps-pin {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr;
+    align-items: stretch;
+  }
+  .ps-stage { grid-row: 1; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 24px; }
+  /* Text scrolls under the diagram's edge rather than over it. */
+  .ps-steps { grid-row: 2; align-content: start; padding-top: 24px; overflow: hidden; }
+  .ps-step { align-self: start; }
+  .pd-titles { margin-bottom: 16px; }
+  .pd-title { font-size: 15px; line-height: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-ink [data-group] { transition: none; }
+  .pd-scene { transition: opacity 180ms ease; }
+}
 
 /* ─── Contact page — two-column, Linear-inspired ─────────────────────────── */
 .page-content--contact { max-width: 920px; }

@@ -40,7 +40,7 @@ function computeRows(items, cols = 4) {
   return maxRow || 1;
 }
 
-export default function GridOverlay({ node, onItemClick, zIndex, isActive = true }) {
+export default function GridOverlay({ node, onItemClick, zIndex, isActive = true, isVisible = isActive }) {
   const isGallery = node.gallery === true;
   const rows = isGallery ? computeRows(node.items) : null;
 
@@ -65,7 +65,7 @@ export default function GridOverlay({ node, onItemClick, zIndex, isActive = true
       style={{ zIndex, pointerEvents: isActive ? undefined : 'none' }}
       tabIndex={-1}
       layoutId={`item-${node.id}`}
-      animate={{ opacity: isActive ? 1 : 0 }}
+      animate={{ opacity: isVisible ? 1 : 0 }}
       exit={{ opacity: 1, transition: T }}
       transition={{ ...T, opacity: { duration: 0.2 } }}
       aria-hidden={!isActive || undefined}
