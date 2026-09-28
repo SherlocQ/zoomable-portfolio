@@ -19,6 +19,7 @@ const REDUCED_FADE_MS = 180;
 const DIAGRAM_LABEL = "Two diagrams, shown one after the other. First, the Double Diamond: Discover and Define, then Develop and Deliver, each diamond going wide and converging at a fixed point. Then the AI-native design process: the first diamond shrinks into a Bet; five loops go wide quickly and narrow down slowly; AI routes each loop's feedback three ways — noise fades out, execution issues go back into the next loop, direction signals go down to a decision; only matching signals from consecutive loops settle, growing a Direction triangle across the width, taller and deeper to the right.";
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
 export default function ProcessStory({ content }) {
   const { steps } = content;
@@ -47,7 +48,18 @@ export default function ProcessStory({ content }) {
     // Index the whole diagram (titles live outside the scenes container).
     const index = indexDiagram(diagram.parentElement);
     const scenes = [...diagram.querySelectorAll('.pd-svg')];
+    const block = diagram.parentElement;
     let unit = 1;
+    // Both scenes are top-aligned in one stage sized for the taller AI-native
+    // scene (so the first diamond can morph into the Bet in place). While the
+    // shorter Double Diamond shows, the whole diagram is lowered by half the
+    // height difference so it reads centered, then rises back during the
+    // hand-over, carrying both scenes together.
+    let ddLift = 0;
+    const setLift = (handover) => {
+      const y = ddLift * (1 - easeInOut(clamp01(handover)));
+      block.style.transform = y ? `translate3d(0, ${y}px, 0)` : '';
+    };
     let frame = 0;
     let fadeTimer = 0;
 
@@ -88,6 +100,7 @@ export default function ProcessStory({ content }) {
         window.clearTimeout(fadeTimer);
         fadeTimer = window.setTimeout(() => {
           applyDiagramState(index, settledState(active), unit, active >= AI_SCENE_FROM_STEP ? 1 : 0);
+          setLift(active >= AI_SCENE_FROM_STEP ? 1 : 0);
           diagram.classList.remove('pd-scenes--swap');
         }, REDUCED_FADE_MS);
         return;
@@ -97,6 +110,7 @@ export default function ProcessStory({ content }) {
       // text scrolls in, so the first diamond's shrink into the Bet scrubs too.
       const handover = clamp01((travelled - AI_SCENE_FROM_STEP * stepLength) / transition);
       applyDiagramState(index, P, unit, handover);
+      setLift(handover);
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(render); };
 
@@ -111,7 +125,12 @@ export default function ProcessStory({ content }) {
         svg.style.setProperty('--pd-u', String(u));
         unit = u; // the last scene (AI-native) carries the particles
       });
-      if (reduceMotion) applyDiagramState(index, settledState(activeRef.current), unit, activeRef.current >= AI_SCENE_FROM_STEP ? 1 : 0);
+      const [ddHeight, aiHeight] = scenes.map((svg) => Number(svg.getAttribute('viewBox').split(' ')[3]));
+      ddLift = (aiHeight - ddHeight) / 2 / unit;
+      if (reduceMotion) {
+        applyDiagramState(index, settledState(activeRef.current), unit, activeRef.current >= AI_SCENE_FROM_STEP ? 1 : 0);
+        setLift(activeRef.current >= AI_SCENE_FROM_STEP ? 1 : 0);
+      }
       schedule();
     };
     const resize = new ResizeObserver(measure);

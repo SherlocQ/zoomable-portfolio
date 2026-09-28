@@ -1786,7 +1786,8 @@ a:focus-visible,
     grid-template-rows: 1fr 1fr;
     align-items: stretch;
   }
-  .ps-stage { grid-row: 1; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 24px; }
+  /* The diagram (title + scenes) is vertically centered in the top half. */
+  .ps-stage { grid-row: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
   /* Text scrolls under the diagram's edge rather than over it. */
   .ps-steps { grid-row: 2; align-content: start; padding-top: 24px; overflow: hidden; }
   .ps-step { align-self: start; }
