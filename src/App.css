@@ -1848,18 +1848,42 @@ a:focus-visible,
   border-radius: 50%; background: currentColor; opacity: 0.6; flex-shrink: 0;
 }
 .contact-direct {
-  display: flex; flex-direction: column; gap: 11px;
+  display: flex; flex-direction: row; gap: 8px;
 }
-.contact-direct-item {
-  display: flex; align-items: center; gap: 9px;
-  min-width: 0;
-  font-family: var(--font-sans); font-size: 14px; font-weight: 500;
-  color: var(--ink-muted); text-decoration: none;
-  overflow-wrap: anywhere;
-  transition: color 0.14s;
+/* Icon buttons: the About "Download Résumé" button (.resume-step-actions
+   .about-resume-btn), squared to 40×40 with an icon instead of a label;
+   the label appears above on hover / keyboard focus. */
+.contact-icon-btn {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.14s, background 0.14s, border-color 0.14s;
 }
-.contact-direct-item svg { flex: 0 0 auto; }
-.contact-direct-item:hover { color: var(--ink); text-decoration: underline; }
+.contact-icon-btn svg { display: block; }
+.contact-icon-btn::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  padding: 4px 8px; border-radius: 6px;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  color: var(--ink);
+  font-family: var(--font-sans); font-size: 12px; font-weight: 500; line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition: opacity 125ms ease-out, transform 125ms ease-out;
+}
+.contact-icon-btn:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+@media (hover: hover) {
+  .contact-icon-btn:hover { color: var(--ink); background: var(--toggle-hover); border-color: var(--hairline-3); }
+  .contact-icon-btn:hover::after { opacity: 1; transform: translate(-50%, 0); }
+}
 
 /* Right column — form card */
 .contact-right {

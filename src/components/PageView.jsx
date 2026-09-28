@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { EnvelopeSimple, LinkedinLogo } from '@phosphor-icons/react';
 import { flushSync } from 'react-dom';
 import lottie from 'lottie-web/build/player/lottie_light.js';
 import { T, fadeUp, EASE, EASE_HERO, LIGHTBOX_ZOOM, LIGHTBOX_CLOSE, LIGHTBOX_FADE, LIGHTBOX_CLOSE_MS, ACCORDION_HEIGHT, ACCORDION_FADE } from '../transitions';
@@ -1988,23 +1989,25 @@ function ContactContent({ content }) {
             <li>Design mentorship and collaboration</li>
           </ul>
 
-          <div className="contact-direct">
-            <a href={`mailto:${content.email}`} className="contact-direct-item">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                <rect x="1" y="3" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-                <path d="M1 4.5l6.5 4.5L14 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              {content.email}
+          {/* Icon buttons (Phosphor social icons); the label shows on hover/focus. */}
+          <div className="contact-direct contact-direct--icons">
+            <a
+              href={`mailto:${content.email}`}
+              className="contact-icon-btn"
+              aria-label={`Email ${content.email}`}
+              data-tooltip={content.email}
+            >
+              <EnvelopeSimple size={20} aria-hidden="true" />
             </a>
-            <a href={content.linkedin} target="_blank" rel="noreferrer" className="contact-direct-item">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                <rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.4"/>
-                <path d="M4 6v5M4 4v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M7.5 11V8.5c0-1.38.5-2.5 2-2.5s2 1.12 2 2.5V11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M7.5 6v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-              LinkedIn
-              <span className="sr-only"> (opens in a new tab)</span>
+            <a
+              href={content.linkedin}
+              target="_blank"
+              rel="noreferrer"
+              className="contact-icon-btn"
+              aria-label="LinkedIn (opens in a new tab)"
+              data-tooltip="LinkedIn"
+            >
+              <LinkedinLogo size={20} aria-hidden="true" />
             </a>
           </div>
         </div>
