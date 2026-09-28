@@ -511,12 +511,18 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 - Use the theme-aware translucent `{colors.surface}` glass treatment (`rgba(20,21,22,0.80)` dark / `rgba(255,255,255,0.84)` light) with 18px backdrop blur, 120% saturation, and a restrained downward shadow. The outer shell has no border or radius.
 - Keep the control hidden from pointer and keyboard interaction before reveal. The current section label truncates to one line; the chevron points down while closed and up while open.
 
+### Preloader
+
+**`preloader`** — First full page load only: a `--canvas` screen with the centered line "Chengchang Qian - AI Native Product Designer" (16px, 500, -0.01em, `--ink`). Timeline from the Framer preloader it ports: 0.2s delay, blur 10px → 0 and opacity 0 → 1 over 1.5s ease-out, hold 2s, back out over 0.5s ease-in, then the whole overlay dissolves to opacity 0 and blur 20px over 1s ease-in-out onto the landing page. No image card. Reduced motion: opacity only.
+
 ### Resume Globe
 
 **`resume-globe`** — The `/hero` page presents the résumé as a geographic, scroll-driven narrative rather than a linear timeline.
 - Desktop: copy occupies the left column and a sticky, unclipped globe occupies the right column.
 - Intro: no eyebrow or location marker; the globe is larger than in subsequent scenes and the shared animated mouse scroll cue appears centered at the viewport bottom only while the page is at the top.
-- Journey scenes use geographically accurate markers and great-circle route animation for Beijing, Ann Arbor, Los Angeles, Sunnyvale, and Santa Clara. Repeated Sunnyvale chapters change content without inventing a new location.
+- Journey scenes use geographically accurate markers and great-circle route animation for Beijing, Ann Arbor, Los Angeles, Sunnyvale, and Santa Clara. Repeated Sunnyvale chapters change content without inventing a new location, and a chapter that stays in the previous place shows no route. The two Santa Clara chapters (ServiceNow, Beyond work) clear every route; Beyond work, the closing "home" scene, zooms 1.3× closer.
+- In each chapter, the marker and its optional photo stack are centered in the globe stage as one group (desktop and mobile); the globe eases its center there rather than jumping.
+- Photo stack: up to three 132×164px cards (104×128px on phones), 12px radius, `surface-2` fill, strong hairline plus a soft theme shadow; side cards tucked behind at ±18px / ±6°. The stack emerges from the marker after the globe arrives (from 16px lower and 0.92 scale, 360ms, `cubic-bezier(0.23, 1, 0.32, 1)`) and slips back in 160ms when leaving; between two chapters that both have photos it stays put and the photos cross-fade (220ms). Hover (tap on touch) fans the side cards to ±120px / ±12° on a spring (stiffness 320, damping 26). Only chapters with real moments get photos.
 - The globe is rendered at device pixel ratio for crisp output and redraws correctly after route entry, resize, and theme changes.
 - Light and dark modes use the same hierarchy and geometry; only tokenized colors change.
 - Descriptions use `{typography.body}` at 16px; journey tags are intentionally hidden.

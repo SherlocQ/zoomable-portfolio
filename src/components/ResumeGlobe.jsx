@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   geoContains,
   geoDistance,
@@ -11,6 +11,7 @@ import { feature } from 'topojson-client';
 import landTopology from 'world-atlas/land-110m.json';
 import { fadeUp } from '../transitions';
 import ScrollCue from './ScrollCue';
+import { asset } from '../utils/asset';
 
 const land = feature(landTopology, landTopology.objects.land);
 const sphere = { type: 'Sphere' };
@@ -118,8 +119,109 @@ function drawConnection(ctx, projection, from, to, palette, progress, isCurrent)
   ctx.restore();
 }
 
-function GlobeCanvas({ activeIndex, chapters }) {
+// Space between the marker and the photo stack (clears the marker's pulse).
+const PHOTO_GAP = 28;
+// The stack emerges from the marker once the globe has arrived: a short
+// slide up out of the dot with a fade; it slips back quickly on leaving.
+const PHOTO_ENTER = { duration: 0.36, ease: [0.23, 1, 0.32, 1] };
+const PHOTO_EXIT = { duration: 0.16, ease: 'easeIn' };
+// Between two chapters that both have photos the stack stays; only the
+// photos cross-fade.
+const PHOTO_SWAP = { duration: 0.22, ease: 'easeInOut' };
+// "Arrived" = the place is within ~2° of the view center and the zoom is
+// within 4% of its target, so photos appear as the globe settles.
+const ARRIVE_ANGLE = 0.04;
+const ARRIVE_SCALE = 0.04;
+const PHOTO_FAN = { type: 'spring', stiffness: 320, damping: 26, mass: 0.7 };
+// Card poses for [left, center, right]: tucked behind the center card at
+// rest, fanned out on hover (tap on touch), like a hand of cards.
+const PHOTO_POSES = {
+  rest: [
+    { x: -18, y: 4, rotate: -6, scale: 0.92 },
+    { x: 0, y: 0, rotate: 0, scale: 1 },
+    { x: 18, y: 4, rotate: 6, scale: 0.92 },
+  ],
+  // Spread wide enough that the side photos are mostly uncovered.
+  fan: [
+    { x: -120, y: 14, rotate: -12, scale: 0.96 },
+    { x: 0, y: -4, rotate: 0, scale: 1.04 },
+    { x: 120, y: 14, rotate: 12, scale: 0.96 },
+  ],
+};
+
+function PhotoCard({ photo }) {
+  if (photo.src) {
+    return <img src={asset(photo.src)} alt={photo.alt || ''} draggable={false} />;
+  }
+  return (
+    <div className="resume-photo-placeholder" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="2.5" y="4" width="15" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" />
+        <circle cx="7.5" cy="8.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
+        <path d="M3 14.5l4.5-4 3.5 3 2.5-2 3.5 3" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      </svg>
+      <span>{photo.caption}</span>
+    </div>
+  );
+}
+
+// Up to three photos for the active chapter, stacked above its marker.
+const SLOT_PHOTO = [1, 0, 2]; // left, center, right → index into photos
+
+function PhotoStack({ photos, photosKey }) {
+  const reduceMotion = useReducedMotion();
+  const [hovered, setHovered] = useState(false);
+  const [tapped, setTapped] = useState(false);
+  const pose = hovered || tapped ? 'fan' : 'rest';
+  // Smaller cards on phones spread proportionally less.
+  const spread = window.matchMedia('(max-width: 768px)').matches ? 0.8 : 1;
+  return (
+    <motion.div
+      className="resume-photo-stack"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1, transition: reduceMotion ? { duration: 0.18 } : PHOTO_ENTER }}
+      exit={reduceMotion ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: 8, scale: 0.96, transition: PHOTO_EXIT }}
+      onPointerEnter={(event) => { if (event.pointerType === 'mouse') setHovered(true); }}
+      onPointerLeave={() => setHovered(false)}
+      onClick={() => { if (!hovered) setTapped((t) => !t); }}
+    >
+      {SLOT_PHOTO.map((photoIndex, slot) => {
+        const photo = photos[photoIndex];
+        return (
+          <motion.figure
+            key={slot}
+            className="resume-photo-card"
+            style={{ zIndex: slot === 1 ? 3 : 1 }}
+            initial={false}
+            animate={{ ...PHOTO_POSES[pose][slot], x: PHOTO_POSES[pose][slot].x * spread, opacity: photo ? 1 : 0 }}
+            transition={reduceMotion ? { duration: 0 } : { ...PHOTO_FAN, opacity: PHOTO_SWAP }}
+          >
+            <AnimatePresence initial={false}>
+              {photo && (
+                <motion.div
+                  key={`${photosKey}-${photoIndex}`}
+                  className="resume-photo-layer"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={reduceMotion ? { duration: 0 } : PHOTO_SWAP}
+                >
+                  <PhotoCard photo={photo} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.figure>
+        );
+      })}
+    </motion.div>
+  );
+}
+
+function GlobeCanvas({ activeIndex, chapters, showPhotos, onArrive, children }) {
   const canvasRef = useRef(null);
+  const anchorRef = useRef(null);
+  const onArriveRef = useRef(onArrive);
+  useEffect(() => { onArriveRef.current = onArrive; }, [onArrive]);
   const wrapRef = useRef(null);
   const stateRef = useRef({
     rotation: [-102, -27, 0],
@@ -127,6 +229,8 @@ function GlobeCanvas({ activeIndex, chapters }) {
     size: [0, 0],
     activeIndex: 0,
     routeProgress: 1,
+    center: null,
+    arrivedIndex: -1,
     palette: null,
   });
 
@@ -134,6 +238,8 @@ function GlobeCanvas({ activeIndex, chapters }) {
     if (stateRef.current.activeIndex !== activeIndex) {
       stateRef.current.activeIndex = activeIndex;
       stateRef.current.routeProgress = activeIndex > 1 ? 0 : 1;
+      // Leaving a chapter clears its arrival.
+      stateRef.current.arrivedIndex = -1;
     }
   }, [activeIndex]);
 
@@ -209,24 +315,44 @@ function GlobeCanvas({ activeIndex, chapters }) {
             ? (stacked ? 0.72 : 0.74)
             : 0.66
       );
+      // A chapter can ask for a closer view (Beyond work zooms in on home).
+      const targetZoomedScale = targetScale * (activeChapter?.zoom || 1);
       const ease = reducedMotion ? 1 : Math.min(1, dt * 0.0038);
 
       targetRotation[0] = shortestTarget(state.rotation[0], targetRotation[0]);
       state.rotation = state.rotation.map((value, index) => value + (targetRotation[index] - value) * ease);
-      state.scale += (targetScale - state.scale) * ease;
+      state.scale += (targetZoomedScale - state.scale) * ease;
       state.routeProgress = reducedMotion ? 1 : Math.min(1, state.routeProgress + dt / 1100);
 
+      // The globe rotates the active place to the sphere's center, so placing
+      // the sphere's center places the marker. In a chapter, the marker and
+      // its photo stack are centered together in the stage as one group.
+      const anchorEl = anchorRef.current;
+      const stackHeight = anchorEl?.dataset.visible === 'true' ? anchorEl.offsetHeight : 0;
+      const groupOffset = stackHeight ? (stackHeight + PHOTO_GAP) / 2 : 0;
+      const targetCenter = isOverview
+        ? [
+          stacked ? width * 0.5 : width - state.scale,
+          stacked ? Math.max(height * 0.55, state.scale * 0.96) : height * 0.5,
+        ]
+        : [width * 0.5, height * 0.5 + groupOffset];
+      state.center = state.center
+        ? state.center.map((value, index) => value + (targetCenter[index] - value) * ease)
+        : targetCenter;
+
       projection
-        .translate([
-          stacked
-            ? width * 0.5
-            : isCaliforniaView
-              ? width * 0.54
-              : width - state.scale,
-          stacked && isOverview ? Math.max(height * 0.55, state.scale * 0.96) : height * 0.5,
-        ])
+        .translate(state.center)
         .scale(state.scale)
         .rotate(state.rotation);
+
+      if (activeChapter && state.arrivedIndex !== state.activeIndex) {
+        const settled = geoDistance(activeChapter.coordinates, [-state.rotation[0], -state.rotation[1]]) < ARRIVE_ANGLE
+          && Math.abs(state.scale - targetZoomedScale) < targetZoomedScale * ARRIVE_SCALE;
+        if (settled) {
+          state.arrivedIndex = state.activeIndex;
+          onArriveRef.current?.(state.activeIndex);
+        }
+      }
 
       ctx.clearRect(0, 0, width, height);
 
@@ -272,9 +398,14 @@ function GlobeCanvas({ activeIndex, chapters }) {
       });
       ctx.restore();
 
-      // In California, keep only the in-state route; the final chapter intentionally
-      // clears every route so Santa Clara reads as one focused destination.
-      if (state.activeIndex < chapters.length) {
+      // In California, keep only the in-state route. A chapter that stays in
+      // the previous chapter's place (LinkedIn Sales Solutions) has no journey
+      // to show, and the Santa Clara chapters (ServiceNow, then Beyond work)
+      // clear every route so home reads as one focused destination.
+      const previousChapter = chapters[state.activeIndex - 2];
+      const stayedPut = activeChapter && previousChapter
+        && geoDistance(activeChapter.coordinates, previousChapter.coordinates) < 0.00001;
+      if (state.activeIndex < chapters.length - 1 && !stayedPut) {
         const firstVisibleSegment = state.activeIndex >= 4 ? 3 : 1;
         for (let segment = firstVisibleSegment; segment < state.activeIndex; segment += 1) {
           const isCurrent = segment === state.activeIndex - 1;
@@ -302,6 +433,7 @@ function GlobeCanvas({ activeIndex, chapters }) {
         );
       }
 
+
       raf = requestAnimationFrame(render);
     };
 
@@ -320,6 +452,12 @@ function GlobeCanvas({ activeIndex, chapters }) {
     <div className="resume-globe-canvas-wrap" ref={wrapRef}>
       <canvas ref={canvasRef} className="resume-globe-canvas" aria-hidden="true" />
       <div className="resume-globe-vignette" aria-hidden="true" />
+      {/* Sits where the marker comes to rest (see groupOffset), so the stack
+          never has to chase the marker while the globe turns. Always sized
+          to the stack, so the offset is known before the photos appear. */}
+      <div className="resume-photo-anchor" ref={anchorRef} data-visible={showPhotos ? 'true' : 'false'}>
+        <AnimatePresence>{children}</AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -330,6 +468,20 @@ export default function ResumeGlobe({ content }) {
   const rootRef = useRef(null);
   const stepsRef = useRef([]);
   const chapters = content.journey || [];
+  const activeChapter = activeIndex > 0 ? chapters[activeIndex - 1] : null;
+  const activePhotos = activeChapter?.photos || [];
+  // The chapter whose photos are showing. A chapter's photos emerge once
+  // the globe arrives there, unless the previous chapter's stack is still
+  // showing: then the stack stays and only its photos change.
+  const [shownIndex, setShownIndex] = useState(-1);
+  const [previousIndex, setPreviousIndex] = useState(activeIndex);
+  if (previousIndex !== activeIndex) {
+    setPreviousIndex(activeIndex);
+    setShownIndex(shownIndex !== -1 && activePhotos.length > 0 ? activeIndex : -1);
+  }
+  const handleArrive = useCallback((index) => {
+    if (content.journey?.[index - 1]?.photos?.length) setShownIndex(index);
+  }, [content.journey]);
 
   useEffect(() => {
     const component = rootRef.current;
@@ -427,7 +579,16 @@ export default function ResumeGlobe({ content }) {
   return (
     <div className="resume-globe" ref={rootRef}>
       <aside className="resume-globe-stage" aria-label="Career locations on an interactive globe">
-        <GlobeCanvas activeIndex={activeIndex} chapters={chapters} />
+        <GlobeCanvas
+          activeIndex={activeIndex}
+          chapters={chapters}
+          showPhotos={activePhotos.length > 0}
+          onArrive={handleArrive}
+        >
+          {activePhotos.length > 0 && shownIndex === activeIndex && (
+            <PhotoStack key="photos" photos={activePhotos} photosKey={activeChapter.id} />
+          )}
+        </GlobeCanvas>
       </aside>
 
       <div className="resume-globe-copy">

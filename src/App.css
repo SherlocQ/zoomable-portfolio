@@ -51,6 +51,7 @@
   --otp-tooltip-text:#f7f8f8;
   --otp-tooltip-border: rgba(247,248,248,0.10);
   --otp-tooltip-shadow: rgba(0,0,0,0.28);
+  --photo-card-shadow: 0 8px 24px rgba(0,0,0,0.45);
   --otp-mobile-shadow: rgba(0,0,0,0.24);
 
   /* Typography */
@@ -147,6 +148,7 @@
   --otp-tooltip-text:#282a30;
   --otp-tooltip-border: rgba(40,42,48,0.12);
   --otp-tooltip-shadow: rgba(40,42,48,0.14);
+  --photo-card-shadow: 0 8px 24px rgba(40,42,48,0.16);
   --otp-mobile-shadow: rgba(40,42,48,0.12);
 
   /* Lightbox / carousel chrome — dismiss button, nav arrows, footnote bar */
@@ -169,6 +171,28 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: va
 
 /* ─── Background — dot grid, cursor spotlight fades in/out ──────────────────── */
 /* Background is now a canvas-based interactive grid (BackgroundGrid.jsx) */
+
+/* ─── Preloader — first full page load only (Preloader.jsx) ──────────────────── */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  background: var(--canvas);
+}
+
+.preloader-text {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-align: center;
+  opacity: 0;
+  filter: blur(10px);
+}
 
 /* ─── App shell ──────────────────────────────────────────────────────────────── */
 /* `position: fixed; inset: 0` instead of width/height: 100vw/100vh — a
@@ -1246,6 +1270,69 @@ a:focus-visible,
 
 .resume-globe-vignette {
   display: none;
+}
+
+/* Photo stack: the box above the spot where the active marker comes to
+   rest (stack + gap + marker are centered in the stage together). It stays
+   put; each chapter's stack emerges from the marker once the globe arrives
+   (ResumeGlobe). The box is always sized so the marker offset is known. */
+.resume-photo-anchor {
+  --photo-w: 132px;
+  --photo-h: 164px;
+  --photo-gap: 28px;
+  position: absolute;
+  top: calc(50% - (var(--photo-h) + var(--photo-gap)) / 2);
+  left: calc(50% - var(--photo-w) / 2);
+  z-index: 3;
+  width: var(--photo-w);
+  height: var(--photo-h);
+  pointer-events: none;
+}
+
+.resume-photo-stack {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% calc(100% + var(--photo-gap));
+  pointer-events: auto;
+  cursor: default;
+}
+
+.resume-photo-card {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong), var(--photo-card-shadow);
+  will-change: transform;
+}
+
+.resume-photo-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.resume-photo-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.resume-photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  padding: 12px;
+  color: var(--ink-tertiary);
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .resume-globe-copy {
@@ -2998,6 +3085,11 @@ a:focus-visible,
 }
 
 @media (max-width: 768px) {
+  .resume-photo-anchor {
+    --photo-w: 104px;
+    --photo-h: 128px;
+  }
+
   .page-content--about {
     height: 100%;
     padding: 0;

@@ -5,6 +5,8 @@ import GridOverlay    from './components/GridOverlay';
 import PageView       from './components/PageView';
 import AppHeader      from './components/AppHeader';
 import NotFoundPage   from './components/NotFoundPage';
+import Preloader      from './components/Preloader';
+import { shouldShowPreloader } from './utils/preloader';
 import { portfolioData, getNodeByPath, getBreadcrumbs } from './data/portfolio';
 import { LIGHTBOX_CLOSE_MS } from './transitions';
 import './App.css';
@@ -44,6 +46,8 @@ export default function App() {
   const [lightboxNode, setLightbox] = useState(null);
   const [closingRouteMedia, setClosingRouteMedia] = useState(false);
   const [skipTransition, setSkipTransition] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(shouldShowPreloader);
+  const hidePreloader = useCallback(() => setShowPreloader(false), []);
   const closeTimerRef = useRef(null);
   const finishCloseRef = useRef(null);
 
@@ -208,6 +212,7 @@ export default function App() {
   return (
     <div className="app">
       <a className="skip-link" href="#main-content">Skip to content</a>
+      {showPreloader && <Preloader onDone={hidePreloader} />}
 
       <AppHeader
         breadcrumbs={getBreadcrumbs(portfolioData, path)}
