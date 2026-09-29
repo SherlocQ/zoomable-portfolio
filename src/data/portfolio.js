@@ -47,7 +47,12 @@ export const portfolioData = {
             title: 'I built a foundation in both design and engineering',
             body: 'While earning my master’s in HCI at the University of Michigan, I built a foundation in both design and engineering, and grew especially interested in data visualization. At Deepfield, as a UX Engineer, I designed, developed, and evaluated data visualizations for real-time network performance and security monitoring.',
             tags: ['MS in HCI', 'Front-end Development', 'Data Visualization'],
-            photos: [{ caption: 'Michigan campus' }, { caption: 'Graduation' }, { caption: 'Deepfield' }],
+            // First = center card. The logo is letterboxed on white (fit: 'contain').
+            photos: [
+              { src: '/images/about/michigan-campus.jpg', alt: 'University of Michigan campus building' },
+              { src: '/images/about/deepfield-dashboard.jpg', alt: 'Deepfield network traffic dashboard' },
+              { src: '/images/about/deepfield-logo.png', alt: 'Deepfield logo', fit: 'contain' },
+            ],
           },
           {
             id: 'journey-los-angeles',
@@ -77,7 +82,11 @@ export const portfolioData = {
             title: 'Generative AI turned account research into clear insight',
             body: 'On LinkedIn Sales Solutions, I designed Account IQ, an AI-assisted sales intelligence experience that synthesizes company information, business signals, and relationship context into a concise account summary that helps sellers prepare. Across both teams, I also mentored summer interns and designers.',
             tags: ['LSS', 'Account IQ', 'Generative AI'],
-            photos: [{ caption: 'Account IQ launch' }, { caption: 'Interns' }, { caption: 'Team' }],
+            photos: [
+              { src: '/images/about/linkedin-sign.jpg', alt: 'Chengchang at the LinkedIn logo sign in Sunnyvale' },
+              { src: '/images/about/linkedin-office.jpg', alt: 'LinkedIn campus building at dusk' },
+              { src: '/images/about/account-iq-1.jpg', alt: 'Account IQ in LinkedIn Sales Navigator: get an account overview using AI' },
+            ],
             group: 'bay-area',
             phase: 2,
           },
@@ -91,7 +100,6 @@ export const portfolioData = {
             tags: ['ServiceNow', 'Conversational AI', 'Agentic UX'],
             group: 'bay-area',
             phase: 3,
-            photos: [{ caption: 'ServiceNow office' }, { caption: 'Team' }, { caption: 'Knowledge' }],
           },
           {
             id: 'journey-beyond-work',
@@ -104,7 +112,11 @@ export const portfolioData = {
             group: 'bay-area',
             phase: 4,
             zoom: 1.3,
-            photos: [{ caption: 'Board game night' }, { caption: 'Travel video' }, { caption: 'Eevee' }],
+            photos: [
+              { src: '/images/about/eevee.jpg', alt: 'Eevee, a ragdoll cat, resting in a cat-tree hammock' },
+              { src: '/images/about/board-games.jpg', alt: 'Board games: Flamecraft, Camel Up, and Secret Hitler' },
+              { src: '/images/about/lego.jpg', alt: 'LEGO Friends Central Perk set' },
+            ],
           },
         ],
         experience: [

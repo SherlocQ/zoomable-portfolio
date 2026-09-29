@@ -135,23 +135,37 @@ const ARRIVE_SCALE = 0.04;
 const PHOTO_FAN = { type: 'spring', stiffness: 320, damping: 26, mass: 0.7 };
 // Card poses for [left, center, right]: tucked behind the center card at
 // rest, fanned out on hover (tap on touch), like a hand of cards.
+// Up to five cards: [far left, left, center, right, far right].
 const PHOTO_POSES = {
   rest: [
+    { x: -26, y: 7, rotate: -9, scale: 0.86 },
     { x: -18, y: 4, rotate: -6, scale: 0.92 },
     { x: 0, y: 0, rotate: 0, scale: 1 },
     { x: 18, y: 4, rotate: 6, scale: 0.92 },
+    { x: 26, y: 7, rotate: 9, scale: 0.86 },
   ],
   // Spread wide enough that the side photos are mostly uncovered.
   fan: [
+    { x: -212, y: 34, rotate: -18, scale: 0.9 },
     { x: -120, y: 14, rotate: -12, scale: 0.96 },
     { x: 0, y: -4, rotate: 0, scale: 1.04 },
     { x: 120, y: 14, rotate: 12, scale: 0.96 },
+    { x: 212, y: 34, rotate: 18, scale: 0.9 },
   ],
 };
+const SLOT_Z = [1, 2, 3, 2, 1];
 
 function PhotoCard({ photo }) {
   if (photo.src) {
-    return <img src={asset(photo.src)} alt={photo.alt || ''} draggable={false} />;
+    return (
+      <img
+        src={asset(photo.src)}
+        alt={photo.alt || ''}
+        draggable={false}
+        className={photo.fit === 'contain' ? 'resume-photo-contain' : undefined}
+        style={photo.pad !== undefined ? { padding: photo.pad } : undefined}
+      />
+    );
   }
   return (
     <div className="resume-photo-placeholder" aria-hidden="true">
@@ -166,7 +180,9 @@ function PhotoCard({ photo }) {
 }
 
 // Up to three photos for the active chapter, stacked above its marker.
-const SLOT_PHOTO = [1, 0, 2]; // left, center, right → index into photos
+// Slot → index into photos: the first photo is the center card, then
+// left, right, far left, far right.
+const SLOT_PHOTO = [3, 1, 0, 2, 4];
 
 function PhotoStack({ photos, photosKey }) {
   const reduceMotion = useReducedMotion();
@@ -191,7 +207,7 @@ function PhotoStack({ photos, photosKey }) {
           <motion.figure
             key={slot}
             className="resume-photo-card"
-            style={{ zIndex: slot === 1 ? 3 : 1 }}
+            style={{ zIndex: SLOT_Z[slot] }}
             initial={false}
             animate={{ ...PHOTO_POSES[pose][slot], x: PHOTO_POSES[pose][slot].x * spread, opacity: photo ? 1 : 0 }}
             transition={reduceMotion ? { duration: 0 } : { ...PHOTO_FAN, opacity: PHOTO_SWAP }}
@@ -255,7 +271,10 @@ function GlobeCanvas({ activeIndex, chapters, showPhotos, onArrive, children }) 
     let reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const resize = () => {
-      const rect = wrap.getBoundingClientRect();
+      // Layout size, not getBoundingClientRect: the page opens under a
+      // Framer scale transform, and measuring the scaled box made the globe
+      // start small and then slide / grow into place.
+      const rect = { width: wrap.clientWidth, height: wrap.clientHeight };
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = Math.max(1, Math.round(rect.width * pixelRatio));
       canvas.height = Math.max(1, Math.round(rect.height * pixelRatio));
@@ -317,7 +336,9 @@ function GlobeCanvas({ activeIndex, chapters, showPhotos, onArrive, children }) 
       );
       // A chapter can ask for a closer view (Beyond work zooms in on home).
       const targetZoomedScale = targetScale * (activeChapter?.zoom || 1);
-      const ease = reducedMotion ? 1 : Math.min(1, dt * 0.0038);
+      // The first frame lands the globe already in place (no settle-in).
+      const ease = reducedMotion || !state.placed ? 1 : Math.min(1, dt * 0.0038);
+      state.placed = true;
 
       targetRotation[0] = shortestTarget(state.rotation[0], targetRotation[0]);
       state.rotation = state.rotation.map((value, index) => value + (targetRotation[index] - value) * ease);
@@ -600,7 +621,7 @@ export default function ResumeGlobe({ content }) {
             Designing AI-native products and complex platform ecosystems
           </motion.h1>
           <motion.p className="resume-description" custom={1} variants={fadeUp} initial="hidden" animate="show">
-            With over 10 years of experience across enterprise and consumer platforms, I specialize in systematic thinking—transforming fragmented systems into cohesive, scalable experiences that help people accomplish meaningful work.
+            With over 10 years of experience across enterprise and consumer platforms, I specialize in systematic thinking, transforming fragmented systems into cohesive, scalable experiences that help people accomplish meaningful work.
           </motion.p>
           <motion.div className="resume-step-actions" custom={2} variants={fadeUp} initial="hidden" animate="show">
             <a href={content.resumeUrl} download className="about-resume-btn">Download Résumé</a>

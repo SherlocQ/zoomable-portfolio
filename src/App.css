@@ -1305,7 +1305,8 @@ a:focus-visible,
   border-radius: 12px;
   background: var(--surface-2);
   box-shadow: inset 0 0 0 1px var(--hairline-strong), var(--photo-card-shadow);
-  will-change: transform;
+  /* No will-change: a promoted layer is rasterized at its first scale
+     (0.92), so the photos looked soft once they settled or fanned out. */
 }
 
 .resume-photo-layer {
@@ -1320,6 +1321,8 @@ a:focus-visible,
   object-fit: cover;
   user-select: none;
 }
+/* Logos and other artwork that must not be cropped: letterboxed on white. */
+.resume-photo-card img.resume-photo-contain { object-fit: contain; padding: 16px; background: #fff; }
 
 .resume-photo-placeholder {
   display: flex;
@@ -1423,17 +1426,19 @@ a:focus-visible,
   gap: 18px;
 }
 
+/* Primary accent button, same as the Contact "Send message" button. */
 .resume-step-actions .about-resume-btn {
   margin: 0;
   min-height: 40px;
   padding: 8px 14px;
-  border-color: var(--hairline);
+  border-color: transparent;
   border-radius: var(--r-md);
-  background: var(--surface-1);
-  color: var(--ink);
+  background: var(--accent);
+  color: #fff;
   font-size: 14px;
   line-height: 1.2;
 }
+.resume-step-actions .about-resume-btn:hover { color: #fff; background: var(--accent-hover); border-color: transparent; }
 
 .scroll-cue {
   position: absolute;
@@ -1615,6 +1620,9 @@ a:focus-visible,
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, #000 36%, #000 50%, rgba(0, 0, 0, 0) 100%);
 }
 .ripple-grid-cells { display: grid; flex: none; transform: translate3d(0, 0, 0); }
+/* Not painted while the page zooms (see RippleGrid): fades in after. */
+.ripple-grid-cells { transition: opacity 300ms ease-out; }
+.ripple-grid--hidden .ripple-grid-cells { visibility: hidden; opacity: 0; transition: none; }
 .ripple-cell {
   position: relative;
   box-sizing: border-box;
@@ -1623,9 +1631,15 @@ a:focus-visible,
   border: 0.5px solid var(--ripple-border);
   box-shadow: 0 0 40px 1px var(--ripple-shadow) inset;
   cursor: pointer;
+  opacity: 0.3;
   transform: translate3d(0, 0, 0);
-  /* Follow the page's 300ms theme cross-fade instead of snapping. */
-  transition: background-color 0.3s cubic-bezier(0.32, 0.72, 0, 1), border-color 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  /* Follow the page's 300ms theme cross-fade instead of snapping; hover
+     fades back out over Framer's default 300ms. */
+  transition: opacity 0.3s cubic-bezier(0.25, 0.1, 0.35, 1), background-color 0.3s cubic-bezier(0.32, 0.72, 0, 1), border-color 0.3s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Hover: 100% in 150ms, only while the grid is live (in view, motion allowed). */
+@media (hover: hover) {
+  .ripple-grid--live .ripple-cell:hover { opacity: 1; transition-duration: 0.15s, 0.3s, 0.3s, 0.3s; }
 }
 /* Type scale matches the About page (resume-eyebrow / h1 / h2 / description). */
 .ps-eyebrow {
