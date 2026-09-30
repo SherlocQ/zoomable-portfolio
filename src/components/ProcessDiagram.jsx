@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import {
   AI_VIEWBOX, BET_PATH, DD_LABELS, DD_VIEWBOX, DIAMONDS, DIRECTION,
   DIRECTION_PATH, FAN_LEN, FIRST_DIAMOND_PATH, GATE_Y, LOOP_SPREAD, LOOP_X, PARTICLES,
-  LEGEND, LEGEND_Y, ROUTE_Y, isGroupActive, loopEnd,
+  LEGEND, LEGEND_Y, ROUTE_Y, SETTLE_CALLS, SETTLE_CALL_Y, isGroupActive, loopEnd,
 } from './processDiagramModel';
 
 // SVG markup for the Process page diagram — two scenes, one visible at a
@@ -96,7 +96,8 @@ function AINative({ ghost = false, gs = () => ({}) }) {
       </g>
 
       <g data-group="route" {...gs('route')}>
-        <path data-k={k('route-line')} className="pd-stroke pd-neutral pd-dashed pd-origin-left" d={`M60 ${ROUTE_Y} L940 ${ROUTE_Y}`} />
+        {/* The dashes stay put; a mask drawn left to right lights them up. */}
+        <path data-k={k('route-line')} className={`pd-stroke pd-dashed ${ghost ? 'pd-neutral' : 'pd-ink-stroke'}`} d={`M60 ${ROUTE_Y} L940 ${ROUTE_Y}`} mask={ghost ? undefined : 'url(#pd-route-mask)'} />
         <text data-k={k('route-label')} x={940} y={ROUTE_Y - 12} textAnchor="end" className="pd-label">AI routes feedback</text>
       </g>
 
@@ -105,10 +106,13 @@ function AINative({ ghost = false, gs = () => ({}) }) {
           <g key={i}>
             <rect data-k={k(`gate-${i}`)} x={loopEnd(i) - 10} y={GATE_Y} width={20} height={5} rx={1.5} className="pd-fill-neutral" />
             {!ghost && <rect data-k={`gate-${i}-hot`} x={loopEnd(i) - 10} y={GATE_Y} width={20} height={5} rx={1.5} className="pd-fill-decide" />}
-            {!ghost && <rect data-k="pulse" x={loopEnd(i) - 10} y={GATE_Y} width={20} height={5} rx={1.5} className="pd-fill-decide pd-pulse" />}
           </g>
         ))}
         <text data-k={k('gate-label')} x={60} y={GATE_Y + 16} className="pd-label">I decide</text>
+        {/* The call being made, named beside the signal while it plays. */}
+        {!ghost && SETTLE_CALLS.map((call) => (
+          <text key={call.key} data-k={call.key} x={call.x} y={SETTLE_CALL_Y} textAnchor="middle" className="pd-label pd-label--decide" style={{ opacity: 0 }}>{call.label}</text>
+        ))}
       </g>
 
       <g data-group="direction" {...gs('direction')}>
@@ -159,6 +163,10 @@ const ProcessDiagram = forwardRef(function ProcessDiagram({ activeStep, label },
               <rect data-k="direction-reveal" x={DIRECTION.x0} y={DIRECTION.top - 2} width={DIRECTION.x1 - DIRECTION.x0} height={DIRECTION.base - DIRECTION.top + 4} transform="scale(0 1)" />
             </clipPath>
             {/* Deepens left to right: early evidence is faint, settled direction is solid. */}
+            {/* Explicit bounds: the default region is measured from y 0, above this viewBox. */}
+            <mask id="pd-route-mask" maskUnits="userSpaceOnUse" x={0} y={ROUTE_Y - 20} width={1000} height={40}>
+              <path data-k="route-mask" d={`M60 ${ROUTE_Y} L940 ${ROUTE_Y}`} pathLength="1" stroke="#fff" strokeWidth={12} fill="none" strokeDasharray="1" style={{ strokeDashoffset: 1 }} />
+            </mask>
             <linearGradient id="pd-direction-gradient" gradientUnits="userSpaceOnUse" x1={DIRECTION.x0} y1={0} x2={DIRECTION.x1} y2={0}>
               <stop offset="0" className="pd-direction-stop" style={{ stopOpacity: 0.12 }} />
               <stop offset="1" className="pd-direction-stop" style={{ stopOpacity: 1 }} />
@@ -171,7 +179,13 @@ const ProcessDiagram = forwardRef(function ProcessDiagram({ activeStep, label },
               <circle data-k="bet-drop" r={1} className="pd-fill-decide" style={{ opacity: 0 }} />
             <g data-group="particles" {...gs('particles')}>
               {PARTICLES.map((pt, n) => (
-                <circle key={n} data-particle={n} r={1} className={PARTICLE_CLASS[pt.kind]} style={{ opacity: 0 }} />
+                // Kind fill, a grey "unsorted" cover until routed, and for
+                // direction signals a hollow ring while they wait for my call.
+                <g key={n} data-particle={n} style={{ opacity: 0 }}>
+                  <circle data-part="fill" r={1} className={PARTICLE_CLASS[pt.kind]} />
+                  {pt.kind !== 'noise' && <circle data-part="raw" r={1} className="pd-fill-noise" />}
+                  {pt.kind === 'direction' && <circle data-part="ring" r={0.78} className="pd-ring" style={{ opacity: 0 }} />}
+                </g>
               ))}
               </g>
             </g>

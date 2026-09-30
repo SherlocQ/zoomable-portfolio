@@ -15,11 +15,53 @@ const DRAW_LENGTH = 0.6;
 const HOLD_LENGTH = 0.3;
 const STEP_LENGTH = TRANSITION_LENGTH + DRAW_LENGTH + HOLD_LENGTH;
 const REDUCED_FADE_MS = 180;
+// The drawing plays on its own clock after the scroll, like the About page,
+// so a snap or a fast flick never rushes it. It is a sequence of segments —
+// each step's drawing, plus the Double Diamond → AI-native hand-over — played
+// in order, each over its own duration at an even pace, with a gentle ease
+// in and out. Scroll only sets how far each segment should get.
+const DRAW_S = [2.0, 1.6, 2.0, 2.6, 6.0, 8.0, 1.0];
+const HANDOVER_S = 2.0;
+// Scrolling back rewinds quickly — the slow pace is for watching forward.
+const REWIND_FACTOR = 4;
+// Only the step being arrived at plays at its pace; any earlier unfinished
+// segments (after a jump of several steps) rush through first.
+const CATCH_UP_AFTER = 1;
+const CATCH_UP_FACTOR = 5;
+// Half linear, half smoothstep: nearly even, a touch slower at both ends.
+const gentle = (u) => 0.5 * u + 0.5 * u * u * (3 - 2 * u);
 
-const DIAGRAM_LABEL = "Two diagrams, shown one after the other. First, the Double Diamond: Discover and Define, then Develop and Deliver, each diamond going wide and converging at a fixed point. Then the AI-native design process: the first diamond shrinks into a Bet; five loops go wide quickly and narrow down slowly; AI routes each loop's feedback three ways — noise fades out, execution issues go back into the next loop, direction signals go down to a decision; only matching signals from consecutive loops settle, growing a Direction triangle across the width, taller and deeper to the right.";
+const DIAGRAM_LABEL = "Two diagrams, shown one after the other. First, the Double Diamond: Discover and Define, then Develop and Deliver, each diamond going wide and converging at a fixed point. Then the AI-native design process: the first diamond shrinks into a Bet; five loops go wide quickly and narrow down slowly; AI routes each loop's feedback three ways — noise fades out, how-it's-built issues go back into the next loop, right-problem signals come down to a decision; there, each signal is settled, tested in the next loop, or dropped, and only settled signals grow a Direction triangle across the width, taller and deeper to the right.";
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+
+// Step copy: paragraphs split by a blank line; "• Label: text" lines become
+// a list whose label (the call's name on the diagram) is bold.
+function StepBody({ text }) {
+  return text.split('\n\n').map((block, i) => {
+    const lines = block.split('\n');
+    const intro = lines.filter((line) => !line.startsWith('• '));
+    const items = lines.filter((line) => line.startsWith('• ')).map((line) => line.slice(2));
+    return (
+      <div key={i} className="ps-step-block">
+        {intro.length > 0 && <p className="ps-step-body">{intro.join(' ')}</p>}
+        {items.length > 0 && (
+          <ul className="ps-step-list">
+            {items.map((item) => {
+              const cut = item.indexOf(': ');
+              return (
+                <li key={item}>
+                  {cut > 0 ? <><strong>{item.slice(0, cut)}:</strong>{item.slice(cut + 1)}</> : item}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    );
+  });
+}
 
 export default function ProcessStory({ content }) {
   const { steps } = content;
@@ -31,6 +73,7 @@ export default function ProcessStory({ content }) {
   const [activeStep, setActiveStep] = useState(-1);
   const [showCue, setShowCue] = useState(true);
   const activeRef = useRef(-1);
+  const cueRef = useRef(true);
 
   const commitActive = useCallback((step) => {
     if (activeRef.current === step) return false;
@@ -50,6 +93,17 @@ export default function ProcessStory({ content }) {
     const scenes = [...diagram.querySelectorAll('.pd-svg')];
     const block = diagram.parentElement;
     let unit = 1;
+    // Step opacity is CSS-driven (.is-active); clear any inline value left
+    // by an earlier scrubbed version so it can never hide a step.
+    stepRefs.current.forEach((el) => { if (el) el.style.opacity = ''; });
+    // Playback segments in order: draws 0–1, the hand-over, draws 2–6.
+    const segments = [
+      ...[0, 1].map((k) => ({ step: k, seconds: DRAW_S[k] })),
+      { handover: true, seconds: HANDOVER_S },
+      ...steps.slice(2).map((_, j) => ({ step: j + 2, seconds: DRAW_S[j + 2] })),
+    ].map((seg) => ({ ...seg, u: 0 }));
+    let started = false;
+    let lastTime = 0;
     // Both scenes are top-aligned in one stage sized for the taller AI-native
     // scene (so the first diamond can morph into the Bet in place). While the
     // shorter Double Diamond shows, the whole diagram is lowered by half the
@@ -65,31 +119,63 @@ export default function ProcessStory({ content }) {
 
     const settledState = (active) => steps.map((_, k) => (k <= active ? 1 : 0));
 
-    const render = () => {
+    const render = (now = performance.now()) => {
       frame = 0;
-      setShowCue(scroller.scrollTop <= 2);
+      const atTop = scroller.scrollTop <= 2;
+      if (atTop !== cueRef.current) { cueRef.current = atTop; setShowCue(atTop); }
       // How far the pinned panel has travelled into the track.
       const viewport = scroller.clientHeight;
-      const travelled = scroller.getBoundingClientRect().top - section.getBoundingClientRect().top;
+      const target = scroller.getBoundingClientRect().top - section.getBoundingClientRect().top;
+      const dt = Math.min(64, lastTime ? now - lastTime : 16) / 1000;
+      lastTime = now;
+      const stepPxFull = viewport * STEP_LENGTH;
+      const transitionPx = viewport * TRANSITION_LENGTH;
+      // Where scroll says each segment should be (0–1).
+      segments.forEach((seg) => {
+        seg.goal = seg.handover
+          ? clamp01((target - AI_SCENE_FROM_STEP * stepPxFull) / transitionPx)
+          : clamp01((target - seg.step * stepPxFull - transitionPx) / (viewport * DRAW_LENGTH));
+      });
+      if (!started || reduceMotion) {
+        segments.forEach((seg) => { seg.u = seg.goal; });
+        started = true;
+      } else {
+        const behind = segments.filter((seg) => seg.u < seg.goal).length;
+        const forward = segments.find((seg) => seg.u < seg.goal);
+        if (forward) {
+          // Forward: only the earliest unfinished segment plays.
+          const boost = behind > CATCH_UP_AFTER ? CATCH_UP_FACTOR : 1;
+          forward.u = Math.min(forward.goal, forward.u + (dt * boost) / forward.seconds);
+        } else {
+          // Back: the latest segment past its goal rewinds, quickly.
+          const back = [...segments].reverse().find((seg) => seg.u > seg.goal);
+          if (back) back.u = Math.max(back.goal, back.u - (dt * REWIND_FACTOR) / back.seconds);
+        }
+      }
+      if (segments.some((seg) => Math.abs(seg.u - seg.goal) > 0.0005)) frame = requestAnimationFrame(render);
+      // Text follows the scroll itself (like the About page: it arrives with
+      // the scroll/snap and fades on its own clock); only the drawing plays
+      // after it, at its own pace (`shown`).
+      const travelled = target;
       const stepLength = viewport * STEP_LENGTH;
       const transition = viewport * TRANSITION_LENGTH;
-      const pinned = viewport * (DRAW_LENGTH + HOLD_LENGTH);
-      // Each text reaches the center when its transition ends, holds there for
-      // the draw + hold, then leaves upward; offsets are 1:1 with the scroll.
-      const offsets = steps.map((_, k) => {
-        const arrive = k * stepLength + transition;
-        if (travelled < arrive) return arrive - travelled;
-        if (travelled > arrive + pinned) return arrive + pinned - travelled;
-        return 0;
-      });
+      // Each text sits at the center at its step's resting point (where the
+      // scroll snaps) and moves across the whole scroll to the next rest —
+      // the next text rising in as this one leaves upward — so the move is
+      // spread over the full snap, paced like the About page's text.
+      const rests = steps.map((_, k) => k * stepLength + transition + viewport * DRAW_LENGTH);
+      const offsets = rests.map((rest) => (travelled < rest
+        ? transition * clamp01((rest - travelled) / stepLength)
+        : -transition * clamp01((travelled - rest) / stepLength)));
       let active = 0;
       offsets.forEach((y, k) => { if (Math.abs(y) < Math.abs(offsets[active])) active = k; });
-      const P = steps.map((_, k) => clamp01((travelled - k * stepLength - transition) / (viewport * DRAW_LENGTH)));
+      const P = steps.map((_, k) => gentle(segments.find((seg) => seg.step === k).u));
       if (!reduceMotion) {
         stepRefs.current.forEach((el, k) => {
           if (!el) return;
           el.style.transform = `translate3d(0, ${offsets[k]}px, 0)`;
-          el.style.opacity = String(clamp01(1 - Math.abs(offsets[k]) / transition));
+          // Opacity is not scrubbed: like the About page, the active step
+          // fades in on its own clock (CSS, .ps-step.is-active).
         });
       }
 
@@ -108,11 +194,15 @@ export default function ProcessStory({ content }) {
       commitActive(active);
       // The Double Diamond hands over to the AI-native scene while step 3's
       // text scrolls in, so the first diamond's shrink into the Bet scrubs too.
-      const handover = clamp01((travelled - AI_SCENE_FROM_STEP * stepLength) / transition);
+      const handover = gentle(segments.find((seg) => seg.handover).u);
       applyDiagramState(index, P, unit, handover);
       setLift(handover);
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(render); };
+    const schedule = () => {
+      if (frame) return;
+      lastTime = performance.now();
+      frame = requestAnimationFrame(render);
+    };
 
     const measure = () => {
       root.style.setProperty('--pd-viewport', `${scroller.clientHeight}px`);
@@ -177,7 +267,7 @@ export default function ProcessStory({ content }) {
                 aria-current={activeStep === k ? 'step' : undefined}
               >
                 <h2 className="ps-step-title">{step.title}</h2>
-                <p className="ps-step-body">{step.body}</p>
+                <StepBody text={step.body} />
               </li>
             ))}
           </ol>
@@ -186,6 +276,17 @@ export default function ProcessStory({ content }) {
           </div>
         </div>
         <div className="ps-track" aria-hidden="true" />
+        {/* Snap stops, like the About page: scrolling settles where a step's
+            drawing has just finished, never mid-animation. Plain markers —
+            the sticky panel itself is never a snap target. */}
+        {steps.map((step, k) => (
+          <div
+            key={step.id}
+            className="ps-snap"
+            aria-hidden="true"
+            style={{ top: `calc(var(--pd-viewport) * ${k * STEP_LENGTH + TRANSITION_LENGTH + DRAW_LENGTH})` }}
+          />
+        ))}
       </section>
 
       <footer className="ps-closing">

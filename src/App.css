@@ -408,6 +408,21 @@ a:focus-visible,
   scroll-snap-type: y mandatory;
   scroll-padding: 0;
 }
+/* Process snaps like About: to the cover, each step's finished drawing
+   (.ps-snap markers) and the closing. */
+.page-body--process {
+  overscroll-behavior-y: contain;
+  scroll-snap-type: y mandatory;
+  scroll-padding: 0;
+}
+.page-body--process .ps-intro,
+.page-body--process .ps-closing { scroll-snap-align: start; scroll-snap-stop: normal; }
+.ps-snap {
+  position: absolute; left: 0; width: 1px; height: 1px;
+  pointer-events: none;
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
 .page-body::-webkit-scrollbar { width: 3px; }
 .page-body::-webkit-scrollbar-track { background: transparent; }
 .page-body::-webkit-scrollbar-thumb { background: var(--hairline-strong); border-radius: 2px; }
@@ -1690,7 +1705,10 @@ a:focus-visible,
   align-self: center;
   opacity: 0;
   will-change: transform, opacity;
+  /* Same as the About page's step fade: 0.42s, same curve. */
+  transition: opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1);
 }
+.ps-step.is-active { opacity: 1; }
 .process-story--static .ps-step { transition: opacity 180ms ease; will-change: auto; }
 .process-story--static .ps-step.is-active { opacity: 1; }
 .ps-step-title {
@@ -1698,6 +1716,15 @@ a:focus-visible,
   font-family: var(--font-sans); font-size: clamp(32px, 3vw, 40px); font-weight: 590;
   line-height: 1.15; letter-spacing: -1px; color: var(--ink); text-wrap: balance;
 }
+.ps-step-block + .ps-step-block { margin-top: 12px; }
+.ps-step-list {
+  max-width: 570px; margin: 8px 0 0; padding-left: 20px;
+  list-style: disc;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.5; letter-spacing: -0.05px;
+  color: var(--ink-muted);
+}
+.ps-step-list li + li { margin-top: 4px; }
+.ps-step-list strong { font-weight: 590; color: var(--ink); }
 .ps-step-body {
   max-width: 570px; margin: 0;
   font-family: var(--font-sans); font-size: 16px; line-height: 1.5; letter-spacing: -0.05px;
@@ -1759,13 +1786,13 @@ a:focus-visible,
 .pd-fill-wide { fill: var(--diagram-wide); }
 .pd-fill-decide { fill: var(--diagram-decide); }
 .pd-fill-noise { fill: var(--diagram-noise); }
+/* A direction signal waiting for my call: hollow until it settles. */
+.pd-ring { fill: none; stroke: var(--diagram-decide); stroke-width: 0.44; }
 .pd-direction-fill { fill: url(#pd-direction-gradient); }
 .pd-direction-stop { stop-color: var(--diagram-decide); }
 .pd-dashed { stroke-dasharray: calc(var(--pd-u) * 4px) calc(var(--pd-u) * 5px); }
 .pd-ink [pathLength] { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
-.pd-origin-left { transform-box: fill-box; transform-origin: left center; }
 .pd-origin-bottom { transform-box: fill-box; transform-origin: center bottom; }
-.pd-pulse { transform-box: fill-box; transform-origin: center; opacity: 0; }
 
 /* Ghost: the whole scene, faint and neutral, so the full picture is always there. */
 .pd-ghost { opacity: 0.16; }
@@ -1803,7 +1830,11 @@ a:focus-visible,
   /* The diagram (title + scenes) is vertically centered in the top half. */
   .ps-stage { grid-row: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px 0; }
   /* Text scrolls under the diagram's edge rather than over it. */
-  .ps-steps { grid-row: 2; align-content: start; padding-top: 24px; overflow: hidden; }
+  .ps-steps { grid-row: 2; align-content: start; padding-top: 16px; overflow: hidden; }
+  /* Route and Settle carry a list; tighter spacing keeps them in the half. */
+  .ps-step-block + .ps-step-block { margin-top: 8px; }
+  .ps-step-list { margin-top: 6px; }
+  .ps-step-list li + li { margin-top: 2px; }
   .ps-step { align-self: start; }
   .pd-titles { margin-bottom: 16px; }
   .pd-title { font-size: 15px; line-height: 20px; }

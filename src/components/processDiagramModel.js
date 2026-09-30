@@ -71,19 +71,29 @@ const BET_X = 95;
 const directionHeight = (x) => ((x - DIRECTION.x0) / (DIRECTION.x1 - DIRECTION.x0)) * (DIRECTION.base - DIRECTION.top);
 const intoDirection = (x) => ({ x, y: DIRECTION.base - Math.max(3, directionHeight(x) * 0.4) });
 
-// Settle: which direction signals form a pattern. A pair of matching signals
-// from consecutive loops falls into Direction together; a lone signal is
-// not kept.
-export const PATTERNS = [
-  { loops: [0, 1], window: [0.12, 0.45], reach: 460 },
-  { loops: [3, 4], window: [0.6, 0.95], reach: 940 },
+// Settle: I make one call per waiting signal, left to right, one at a time
+// so each reads on its own, its name centered under the signal.
+// Drop — doesn't hold up: fades at the gate.
+// Test next — lacks evidence: rises back into the next loop to be tested.
+// Settle — repeats across loops (the tested one is confirmed in the very
+// next loop): turns solid and falls straight down into Direction, moving
+// it in one large step.
+const CALLS = [
+  { loop: 0, call: 'drop', label: 'Drop', window: [0.04, 0.2] },
+  { loop: 1, call: 'test', label: 'Test next', window: [0.22, 0.44] },
+  { loop: 2, call: 'settle', label: 'Settle', window: [0.46, 0.64], reach: 640 },
+  { loop: 3, call: 'settle', label: 'Settle', window: [0.64, 0.82], reach: 790 },
+  { loop: 4, call: 'settle', label: 'Settle', window: [0.82, 0.98], reach: 940 },
 ];
-const LONE_SIGNAL = { loop: 2, window: [0.46, 0.6] };
+const callFor = (loop) => CALLS.find((c) => c.loop === loop);
+export const SETTLE_CALLS = CALLS.map((c) => ({ key: `settle-call-${c.loop}`, label: c.label, call: c.call, x: loopEnd(c.loop), window: c.window }));
+export const SETTLE_CALL_Y = 532;
 
-// Routing: every loop sends back a shower of mixed feedback — mostly noise,
-// a few execution issues (back into the next loop; the last loop has none)
-// and two direction signals (the first one is what Settle judges; the second
-// merges into it at the gate). Order and landing spots are deterministic
+// Routing: every loop sends back a shower of unsorted feedback (grey) —
+// mostly noise, a few execution issues (back into the next loop; the last
+// loop has none) and two direction signals (the first one is what Settle
+// judges; the second merges into it at the gate). Kinds only take their
+// color as AI routes them on the line. Order and landing spots are deterministic
 // pseudo-random so the shower looks natural but replays identically.
 const hash = (n) => { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s); };
 const SHOWER_SPREAD = 54;
@@ -108,8 +118,8 @@ export const PARTICLES = LOOP_X.flatMap((_, loop) => {
 const ROUTE_WINDOWS = [[0.06, 0.56], [0.16, 0.66], [0.26, 0.76], [0.36, 0.86], [0.46, 0.96]];
 export const LEGEND = [
   { kind: 'noise', label: 'Noise' },
-  { kind: 'execution', label: 'Execution issue' },
-  { kind: 'direction', label: 'Direction signal' },
+  { kind: 'execution', label: 'How it\'s built' },
+  { kind: 'direction', label: 'Right problem?' },
 ];
 
 // Which groups are highlighted at each step (everything else dims).
@@ -148,20 +158,47 @@ export function indexDiagram(root) {
     keyed.get(key).push(el);
   });
   const all = (key) => keyed.get(key) || [];
-  return { all, particles: [...root.querySelectorAll('[data-particle]')] };
+  // Each particle is a group: its kind's fill, a grey "unsorted" cover
+  // (execution and direction) and a hollow ring (direction, while waiting).
+  const particles = [...root.querySelectorAll('[data-particle]')].map((el) => ({
+    el,
+    fill: el.querySelector('[data-part="fill"]'),
+    raw: el.querySelector('[data-part="raw"]'),
+    ring: el.querySelector('[data-part="ring"]'),
+  }));
+  return { all, particles };
 }
 
+// Every write goes through a per-element cache and is skipped when the value
+// hasn't changed: most of the ~100 particles and lines are still in any given
+// frame, and rewriting them anyway made the browser restyle and repaint the
+// whole diagram every frame (visible as stutter during playback).
+const rounded = (v) => (typeof v === 'number' ? String(Math.round(v * 1000) / 1000) : v);
+const setStyle = (el, prop, value) => {
+  const v = rounded(value);
+  const cache = el.__pd || (el.__pd = {});
+  if (cache[prop] === v) return;
+  cache[prop] = v;
+  el.style[prop] = v;
+};
+const setAttr = (el, name, value) => {
+  const cache = el.__pd || (el.__pd = {});
+  if (cache[name] === value) return;
+  cache[name] = value;
+  el.setAttribute(name, value);
+};
 // Opacity-gated stroke reveal (pathLength="1"): a zero-length dash with a
 // round cap would otherwise leave a dot before the stroke starts.
 const draw = (els, t, alpha = 1) => els.forEach((el) => {
-  el.style.strokeDashoffset = String(1 - t);
-  el.style.opacity = t > 0.001 ? String(alpha) : '0';
+  setStyle(el, 'strokeDashoffset', 1 - t);
+  setStyle(el, 'opacity', t > 0.001 ? alpha : 0);
 });
-const fade = (els, o) => els.forEach((el) => { el.style.opacity = String(o); });
-const transform = (els, value) => els.forEach((el) => { el.style.transform = value; });
+const fade = (els, o) => els.forEach((el) => { setStyle(el, 'opacity', o); });
+const r2 = (v) => Math.round(v * 100) / 100;
 const place = (el, x, y, scale, opacity) => {
-  el.setAttribute('transform', `translate(${x} ${y}) scale(${scale})`);
-  el.style.opacity = String(opacity);
+  setStyle(el, 'opacity', opacity);
+  // Invisible particles keep their last transform untouched.
+  if (opacity > 0) setAttr(el, 'transform', `translate(${r2(x)} ${r2(y)}) scale(${r2(scale * 100) / 100})`);
 };
 
 /**
@@ -174,26 +211,27 @@ const place = (el, x, y, scale, opacity) => {
  */
 export function applyDiagramState(index, P, unit, handover = 0) {
   const { all } = index;
-  const [p1, p2, p3, p4, p5, p6, p7] = P;
+  const [p1, p2, p3, p4, p5, p6] = P;
   const dot = unit * 3.2;
 
   // 1 · The classic way — diamonds draw left to right, each label follows its half.
-  const recolor = easeInOut(seg(p2, 0, 0.7));
-  const windows = [[0, 0.22], [0.22, 0.45], [0.5, 0.72], [0.72, 0.95]];
+  const recolor = seg(p2, 0, 0.7);
+  // Even pace: each quarter of the drawing gets a quarter of the step.
+  const windows = [[0, 0.25], [0.25, 0.5], [0.5, 0.75], [0.75, 1]];
   DIAMONDS.forEach((_, d) => {
-    const div = easeOut(seg(p1, ...windows[d * 2]));
-    const conv = easeOut(seg(p1, ...windows[d * 2 + 1]));
+    const div = seg(p1, ...windows[d * 2]);
+    const conv = seg(p1, ...windows[d * 2 + 1]);
     draw(all(`dd-${d}-div`), div, 1 - recolor);
     draw(all(`dd-${d}-conv`), conv, 1 - recolor);
     // 2 · What changed — diverge crossfades to thin cool, converge to thick warm.
     fade(all(`dd-${d}-div-wide`), div >= 1 ? recolor : 0);
     fade(all(`dd-${d}-conv-hard`), conv >= 1 ? recolor : 0);
   });
-  [[0.2, 0.28], [0.43, 0.51], [0.7, 0.78], [0.93, 1]].forEach(([a, b], i) => {
+  [[0.17, 0.27], [0.42, 0.52], [0.67, 0.77], [0.9, 1]].forEach(([a, b], i) => {
     fade(all(`dd-label-${i}`), seg(p1, a, b));
   });
-  fade(all('dd-annot-easy'), seg(p2, 0.45, 0.8));
-  fade(all('dd-annot-hard'), seg(p2, 0.55, 0.9));
+  fade(all('dd-annot-easy'), seg(p2, 0.5, 0.8));
+  fade(all('dd-annot-hard'), seg(p2, 0.7, 1));
 
   // Hand-over — as step 3's text scrolls in, a copy of the first diamond
   // appears exactly over the Double Diamond's, that scene fades out, and the
@@ -206,14 +244,16 @@ export function applyDiagramState(index, P, unit, handover = 0) {
 
   // 3 · Bet — the first diamond shrinks into the Bet, then drops its first
   // thin edge into Direction.
-  const shrink = easeInOut(seg(h, 0.15, 1));
+  // Even pace (the hand-over's own gentle ease covers the ends); a strong
+  // ease-in-out here made the middle of the shrink rush.
+  const shrink = seg(h, 0.15, 1);
   const bet = FIRST_DIAMOND.map(([x, y], i) => [lerp(x, BET_DIAMOND[i][0], shrink), lerp(y, BET_DIAMOND[i][1], shrink)]);
   all('bet-shape').forEach((el) => {
-    el.setAttribute('d', diamondPath(bet));
-    el.style.opacity = String(seg(h, 0, 0.25));
+    setAttr(el, 'd', diamondPath(bet.map(([x, y]) => [r2(x), r2(y)])));
+    setStyle(el, 'opacity', seg(h, 0, 0.25));
   });
   fade(all('bet-label'), seg(p3, 0, 0.2));
-  const drop = easeInOut(seg(p3, 0.15, 0.6));
+  const drop = seg(p3, 0.15, 0.55);
   // Falls straight down from the Bet into Direction's thin first edge.
   const betTarget = intoDirection(BET_X);
   all('bet-drop').forEach((el) => place(
@@ -223,49 +263,65 @@ export function applyDiagramState(index, P, unit, handover = 0) {
     dot,
     drop > 0 && drop < 1 ? 1 : 0,
   ));
-  const betLaid = easeOut(seg(p3, 0.55, 0.85));
+  const betLaid = seg(p3, 0.55, 1);
 
   // 4 · Loop — one by one: the short fan snaps open, the long converge is slow.
   LOOP_X.forEach((_, i) => {
     const lp = seg(p4, i * 0.2, i * 0.2 + 0.2);
     draw(all(`loop-${i}-conn`), easeOut(seg(lp, 0, 0.1)));
     draw(all(`loop-${i}-fan`), easeOut(seg(lp, 0.08, 0.2)));
-    draw(all(`loop-${i}-conv`), easeInOut(seg(lp, 0.22, 1)));
+    draw(all(`loop-${i}-conv`), seg(lp, 0.22, 1));
   });
 
   // 5 · Route — AI routes each loop's feedback three ways. A legend names the
   // kinds while the particles play and clears once routing is done.
-  const route = easeOut(seg(p5, 0, 0.12));
-  transform(all('route-line'), `scaleX(${route})`);
+  // The dashes turn white left to right with the feedback: each loop's
+  // stretch lights up as that loop's shower lands on it.
+  let lit = DIRECTION.x0;
+  LOOP_X.forEach((_, i) => {
+    const lp = seg(p5, ...ROUTE_WINDOWS[i]);
+    const from = i === 0 ? DIRECTION.x0 : loopEnd(i - 1) + SHOWER_SPREAD;
+    const to = i === LOOP_X.length - 1 ? DIRECTION.x1 : loopEnd(i) + SHOWER_SPREAD;
+    const t = seg(lp, 0.1, 0.6);
+    if (t > 0) lit = Math.max(lit, lerp(from, to, t));
+  });
+  const route = (lit - DIRECTION.x0) / (DIRECTION.x1 - DIRECTION.x0);
+  all('route-mask').forEach((el) => setStyle(el, 'strokeDashoffset', 1 - route));
   fade(all('route-line'), route > 0.001 ? 1 : 0);
   fade(all('route-label'), seg(p5, 0.05, 0.15));
   LOOP_X.forEach((_, i) => fade(all(`gate-${i}`), seg(p5, 0.05, 0.15)));
   fade(all('gate-label'), seg(p5, 0.05, 0.15));
   fade(all('route-legend'), seg(p5, 0.04, 0.12) * (1 - seg(p5, 0.94, 1)));
 
-  // 6 · Settle — gates warm; waiting signals dim. A matching pair across loops
-  // falls into Direction together and moves it in one large step; the lone
-  // signal is not kept.
+  // 6 · Settle — gates warm, then one call at a time (see SETTLE_CALLS).
   const warm = easeOut(seg(p6, 0, 0.1));
+  SETTLE_CALLS.forEach(({ key, call, window }) => {
+    const w = seg(p6, ...window);
+    // A settling signal falls through where its name sits, so the name
+    // clears as the fall starts.
+    const out = call === 'settle' ? seg(w, 0.5, 0.6) : seg(w, 0.88, 1);
+    fade(all(key), seg(w, 0, 0.12) * (1 - out));
+  });
   LOOP_X.forEach((_, i) => fade(all(`gate-${i}-hot`), warm));
   let reach = DIRECTION.x0 + (BET_EDGE - DIRECTION.x0) * betLaid;
-  PATTERNS.forEach((pattern) => {
-    const w = seg(p6, ...pattern.window);
-    reach = lerp(reach, pattern.reach, easeOut(seg(w, 0.45, 1)));
+  CALLS.filter((c) => c.call === 'settle').forEach((c) => {
+    const w = seg(p6, ...c.window);
+    reach = lerp(reach, c.reach, seg(w, 0.75, 1));
   });
   const reveal = (reach - DIRECTION.x0) / (DIRECTION.x1 - DIRECTION.x0);
-  all('direction-reveal').forEach((el) => el.setAttribute('transform', `translate(${DIRECTION.x0} 0) scale(${reveal} 1) translate(${-DIRECTION.x0} 0)`));
+  all('direction-reveal').forEach((el) => setAttr(el, 'transform', `translate(${DIRECTION.x0} 0) scale(${Math.round(reveal * 1000) / 1000} 1) translate(${-DIRECTION.x0} 0)`));
   fade(all('direction-fill'), reach > DIRECTION.x0 + 1 ? 1 : 0);
-  fade(all('direction-label'), seg(p3, 0.7, 0.9));
+  fade(all('direction-label'), seg(p3, 0.8, 1));
   const grown = (reach - DIRECTION.x0) / (DIRECTION.x1 - DIRECTION.x0);
   fade(all('direction-outline'), betLaid > 0 ? 0.25 + 0.75 * grown : 0);
 
-  index.particles.forEach((el, n) => {
+  index.particles.forEach(({ el, fill, raw, ring }, n) => {
     const { loop, kind, dx, emit, primary } = PARTICLES[n];
     const xe = loopEnd(loop);
     const lp = seg(p5, ...ROUTE_WINDOWS[loop]);
     // Each particle leaves the loop's tip in turn (a shower, not a clump),
-    // falls onto the routing line, and only there is sent on its way.
+    // falls onto the routing line grey, and only there is sorted: it takes
+    // its kind's color and is sent on its way.
     const start = emit * 0.5;
     const fall = seg(lp, start, start + 0.25);
     const route = seg(lp, start + 0.25, start + 0.5);
@@ -274,6 +330,9 @@ export function applyDiagramState(index, P, unit, handover = 0) {
     let y = lerp(380, ROUTE_Y, easeIn(fall));
     let opacity = fall > 0 ? 1 : 0;
     let scale = 1;
+    const sorted = seg(route, 0, 0.3);
+    if (raw) setStyle(raw, 'opacity', 1 - sorted);
+    let hollow = 0; // direction only: 1 = waiting for my call (ring)
 
     if (kind === 'noise') {
       // Goes nowhere: rests on the line a moment, then dissolves.
@@ -288,35 +347,41 @@ export function applyDiagramState(index, P, unit, handover = 0) {
       y = cubic(ROUTE_Y, ROUTE_Y - 60, 350, 380, t);
       opacity *= 1 - seg(route, 0.85, 1);
     } else {
-      // Down to me: gathers at the loop's gate and waits for judgment.
+      // Down to me: gathers at the loop's gate and waits, hollow, for my call.
       const t = easeOut(route);
       x = lerp(landX, xe, t);
       y = lerp(ROUTE_Y, GATE_Y - 7, t);
+      hollow = seg(route, 0.7, 1);
+      const call = callFor(loop);
+      const w = seg(p6, ...call.window);
       if (!primary) {
         // The second signal merges into the first at the gate.
         opacity *= 1 - seg(route, 0.8, 1);
+      } else if (call.call === 'drop') {
+        const gone = seg(w, 0.3, 1);
+        opacity *= 1 - gone;
+        scale = 1 - 0.6 * gone;
+      } else if (call.call === 'test') {
+        // Rises back into the next loop, still hollow.
+        const t2 = easeInOut(seg(w, 0.15, 0.9));
+        const nx = LOOP_X[loop + 1];
+        const gy = y;
+        x = cubic(xe, xe + 10, nx - 20, nx, t2);
+        y = cubic(gy, gy - 70, 360, 380, t2);
+        opacity *= 1 - seg(t2, 0.85, 1);
       } else {
-        opacity *= 1 - 0.4 * warm; // waiting, not yet kept
-        const pattern = PATTERNS.find((pt) => pt.loops.includes(loop));
-        if (pattern) {
-          const w = seg(p6, ...pattern.window);
-          // Settles straight down from its own gate into Direction.
-          const pass = easeIn(seg(w, 0, 0.6));
-          y = lerp(y, intoDirection(xe).y, pass);
-          if (w > 0) opacity = (fall > 0 ? 1 : 0) * (1 - seg(w, 0.55, 0.7));
-        } else if (loop === LONE_SIGNAL.loop) {
-          // A lone signal is not kept: it fades at the gate.
-          const gone = seg(p6, ...LONE_SIGNAL.window);
-          opacity *= 1 - gone;
-          scale = 1 - 0.6 * gone;
-        }
+        // Settle: turns solid, rests while its name reads, then falls
+        // straight down into Direction (the name clears as it falls).
+        hollow *= 1 - seg(w, 0.08, 0.25);
+        y = lerp(y, intoDirection(xe).y, easeIn(seg(w, 0.55, 0.88)));
+        if (w > 0) opacity = (fall > 0 ? 1 : 0) * (1 - seg(w, 0.86, 0.96));
       }
     }
+    if (fill) setStyle(fill, 'opacity', 1 - hollow);
+    if (ring) setStyle(ring, 'opacity', hollow);
     place(el, x, y, dot * scale, opacity);
   });
 
-  // 7 · The difference — a decision point under every loop pulses together.
-  const beat = Math.sin(Math.PI * seg(p7, 0.15, 0.6));
-  transform(all('pulse'), `scale(${1 + 0.45 * beat})`);
-  fade(all('pulse'), beat);
+  // 7 · The difference — no extra motion: the finished picture (a decision
+  // under every loop, direction built up across the width) makes the point.
 }

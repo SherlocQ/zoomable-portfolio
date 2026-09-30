@@ -1200,7 +1200,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           )}
         </>
       ) : (
-        <div ref={pageBodyRef} className={`page-body${content.type === 'about' ? ' page-body--about' : ''}`}>
+        <div ref={pageBodyRef} className={`page-body${content.type === 'about' ? ' page-body--about' : ''}${content.type === 'process' ? ' page-body--process' : ''}`}>
           {hasHero && (
             <div className={`project-hero-section${content.heroImage ? '' : ' project-hero-section--empty'}`}>
               {content.heroImage && (
