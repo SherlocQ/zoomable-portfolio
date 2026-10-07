@@ -217,12 +217,9 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: va
 
 .preloader-text {
   color: var(--ink);
-  /* The opening line is set like the titles: Timeless Serif, Text style. */
-  font-family: var(--font-serif);
-  font-variation-settings: "STYL" 100;
   font-size: 16px;
   font-weight: 500;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
   text-align: center;
   opacity: 0;
   filter: blur(10px);
@@ -604,7 +601,7 @@ a:focus-visible,
 }
 .project-header h1 {
   font-family: var(--font-sans); font-size: clamp(32px, 3.5vw, 40px);
-  font-weight: 590; letter-spacing: -0.022em; line-height: 1.125; margin-bottom: 14px;
+  font-weight: 600; letter-spacing: -1px; line-height: 1.15; margin-bottom: 16px;
 }
 .project-tagline {
   font-family: var(--font-sans); font-size: 1.125rem;
@@ -620,15 +617,17 @@ a:focus-visible,
   grid-column: 1; min-width: 0;
 }
 .meta-item  { display: flex; flex-direction: column; gap: 5px; }
-.meta-label { font-family: var(--font-sans); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-tertiary); }
-.meta-value { font-family: var(--font-sans); font-size: 14px; font-weight: 500; color: var(--ink-muted); }
+/* Linear eyebrow/caption scale: taxonomy label 12px / 500 / +0.4px over a
+   14px / 400 value in ink, so the value — not the label — carries the weight. */
+.meta-label { font-family: var(--font-sans); font-size: 12px; font-weight: 500; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink-tertiary); }
+.meta-value { font-family: var(--font-sans); font-size: 14px; font-weight: 400; line-height: 1.5; color: var(--ink); }
 
 /* Overview paragraph — prominent intro text */
 .project-overview {
   font-family: var(--font-sans);
-  font-size: 1.0625rem;
-  line-height: 1.6; color: var(--ink-muted);
-  margin: 0 0 48px; letter-spacing: -0.012em;
+  font-size: 1.125rem;
+  line-height: 1.5; color: var(--ink-muted);
+  margin: 0 0 48px; letter-spacing: -0.1px;
   grid-column: 1; min-width: 0;
 }
 
@@ -641,15 +640,15 @@ a:focus-visible,
 .section-h2 {
   font-family: var(--font-sans);
   font-size: 1.5rem;
-  font-weight: 590; letter-spacing: -0.012em; line-height: 1.33;
-  margin-bottom: 12px;
+  font-weight: 600; letter-spacing: -0.4px; line-height: 1.3;
+  margin-bottom: 16px;
   scroll-margin-top: 64px;
 }
 
 /* H3 — sub-section heading, Linear docs Prose h3 scale */
 .section-h3 {
-  font-family: var(--font-sans); font-size: 1.25rem; font-weight: 590;
-  letter-spacing: -0.006em; line-height: 1.4;
+  font-family: var(--font-sans); font-size: 1.25rem; font-weight: 600;
+  letter-spacing: -0.2px; line-height: 1.4;
   margin-bottom: 8px; color: var(--ink);
 }
 
@@ -993,9 +992,9 @@ a:focus-visible,
   margin: 0 0 12px;
   font-family: var(--font-sans);
   font-size: clamp(1.375rem, 3vw, 1.75rem);
-  line-height: 1.3;
-  font-weight: 590;
-  letter-spacing: -0.018em;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.6px;
   color: var(--ink);
   scroll-margin-top: 64px;
 }
@@ -1412,6 +1411,9 @@ a:focus-visible,
 .resume-step--intro {
   min-height: calc(100vh - var(--header-h));
 }
+/* The intro paragraph is a lead (Linear body-lg 18px), one step above the
+   16px chapter descriptions. */
+.resume-step--intro .resume-description { font-size: 18px; letter-spacing: -0.1px; }
 
 .resume-step.is-active {
   opacity: 1;
@@ -1436,7 +1438,7 @@ a:focus-visible,
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: clamp(40px, 4vw, 56px);
-  font-weight: 590;
+  font-weight: 600;
   letter-spacing: -1.8px;
   line-height: 1.1;
   text-wrap: balance;
@@ -1698,14 +1700,14 @@ a:focus-visible,
 }
 .ps-headline {
   max-width: 620px; margin: 0 0 24px;
-  font-family: var(--font-sans); font-size: clamp(40px, 4vw, 56px); font-weight: 590;
+  font-family: var(--font-sans); font-size: clamp(40px, 4vw, 56px); font-weight: 600;
   line-height: 1.1; letter-spacing: -1.8px; color: var(--ink); text-wrap: balance;
 }
 .ps-subline {
   /* Exactly as wide as the headline above it: zero intrinsic width so it never
      widens the (fit-content) copy block, then fills it. */
   width: 0; min-width: 100%; margin: 0;
-  font-family: var(--font-sans); font-size: 16px; line-height: 1.5; letter-spacing: -0.05px;
+  font-family: var(--font-sans); font-size: 18px; line-height: 1.5; letter-spacing: -0.1px;
   color: var(--ink-muted);
   /* Short two-line copy: balance the lines so no one- or two-word widow. */
   text-wrap: balance;
@@ -1747,7 +1749,7 @@ a:focus-visible,
 .process-story--static .ps-step.is-active { opacity: 1; }
 .ps-step-title {
   margin: 0 0 24px;
-  font-family: var(--font-sans); font-size: clamp(32px, 3vw, 40px); font-weight: 590;
+  font-family: var(--font-sans); font-size: clamp(32px, 3vw, 40px); font-weight: 600;
   line-height: 1.15; letter-spacing: -1px; color: var(--ink); text-wrap: balance;
 }
 .ps-step-block + .ps-step-block { margin-top: 12px; }
@@ -1846,10 +1848,10 @@ a:focus-visible,
 .ps-closing-copy { position: relative; z-index: 1; max-width: 760px; pointer-events: none; }
 .ps-closing-line {
   margin: 0 0 20px;
-  font-family: var(--font-sans); font-size: clamp(40px, 4vw, 56px); font-weight: 590;
+  font-family: var(--font-sans); font-size: clamp(40px, 4vw, 56px); font-weight: 600;
   line-height: 1.1; letter-spacing: -1.8px; color: var(--ink); text-wrap: balance;
 }
-.ps-closing-words { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.4; color: var(--ink-subtle); }
+.ps-closing-words { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.5; letter-spacing: -0.05px; color: var(--ink-subtle); }
 
 @media (max-width: 1023px) {
   .ps-headline, .ps-closing-line { font-size: clamp(32px, 8vw, 40px); }
@@ -1903,16 +1905,16 @@ a:focus-visible,
 [data-theme="light"] .contact-illustration { filter: none; }
 .contact-heading {
   font-family: var(--font-sans);
-  font-size: clamp(36px, 4vw, 48px);
-  font-weight: 590;
-  letter-spacing: -1.6px;
-  line-height: 1.1;
+  font-size: clamp(32px, 3.5vw, 40px);
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.15;
   margin-bottom: 24px;
   text-wrap: balance;
 }
 .contact-desc {
-  font-family: var(--font-sans); font-size: 15px;
-  line-height: 1.72; color: var(--ink-muted); margin-bottom: 28px;
+  font-family: var(--font-sans); font-size: 16px;
+  line-height: 1.5; letter-spacing: -0.05px; color: var(--ink-muted); margin-bottom: 28px;
 }
 .contact-bullets {
   list-style: none; margin: 0 0 36px; padding: 0;
@@ -2187,12 +2189,12 @@ a:focus-visible,
 .project-hero-title {
   font-family: var(--font-sans);
   font-size: clamp(32px, 3.5vw, 40px);
-  font-weight: 590; letter-spacing: -0.022em; line-height: 1.1;
-  color: #fff; margin-bottom: 10px;
+  font-weight: 600; letter-spacing: -1px; line-height: 1.15;
+  color: #fff; margin-bottom: 12px;
 }
 .project-hero-tagline {
   font-family: var(--font-sans); font-size: 1.125rem;
-  color: rgba(255,255,255,0.86); line-height: 1.55; letter-spacing: -0.012em;
+  color: rgba(255,255,255,0.86); line-height: 1.5; letter-spacing: -0.1px;
 }
 /* ─── Video embed ─────────────────────────────────────────────────────────────── */
 .section-video-wrap {
@@ -3344,63 +3346,3 @@ a:focus-visible,
     scroll-behavior: auto !important;
   }
 }
-
-/* ─── All titles in Timeless Serif (trial) ──────────────────────────────────
-   Every title — page and step titles, section headings, row headings —
-   uses the serif (grid card titles stay sans: tried, didn't suit); sizes and the hierarchy stay as they are. Body,
-   UI, labels/eyebrows, numbers and in-diagram text stay in Timeless Sans.
-   Serifs read better a touch lighter and less tightly tracked than the sans
-   at 590. Kept last so it wins over breakpoint rules. */
-:root { --font-display: var(--font-serif); }
-/* Display titles (≈28px and up): the serif's display style (STYL 0). */
-.resume-step h1,
-.resume-step h2,
-.ps-headline,
-.ps-step-title,
-.ps-closing-line,
-.project-hero-title,
-.project-header h1,
-.about-content h1,
-.hero-content h1,
-.contact-heading,
-.notfound-title,
-/* Smaller titles (15–24px): the serif's Text style (STYL 100), drawn for
-   reading sizes. */
-.section-h2,
-.section-h3,
-.project-case-study-title,
-.project-insight h3,
-.project-accordion-heading,
-.pd-title,
-.contact-sent-title,
-.img-page-caption-title,
-.craft-content h1 {
-  font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.012em;
-}
-.section-h2,
-.section-h3,
-.project-case-study-title,
-.project-insight h3,
-.project-accordion-heading,
-.pd-title,
-.contact-sent-title,
-.img-page-caption-title,
-.craft-content h1 {
-  font-variation-settings: "STYL" 100;
-  /* Thin serif strokes at 15–24px need a little more weight to hold their
-     own beside the sans body (400) and sans UI (590). */
-  font-weight: 560;
-  letter-spacing: -0.005em;
-}
-
-/* Quotations (a participant's own words) in project copy and in the
-   message-bubble component (user feedback quotes). */
-.project-message-bubble p,
-.section-quote {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-}
-.section-quote { color: var(--ink); }

@@ -1284,10 +1284,7 @@ function BodyText({ text }) {
         </ol>
       );
     }
-    // A paragraph that is entirely a quotation (a participant's own words)
-    // is set as a quote: Timeless Serif italic.
-    const isQuote = /^\s*["“][\s\S]*["”]\s*$/.test(p);
-    return <p key={i} className={`section-body${isQuote ? ' section-quote' : ''}`}>{p}</p>;
+    return <p key={i} className="section-body">{p}</p>;
   });
 }
 
@@ -1405,7 +1402,7 @@ function DesignGoalCard({ s, cls, mp, isH2, onImageClick }) {
   );
 }
 
-function ProjectAccordion({ s, cls, mp, heading }) {
+function ProjectAccordion({ s, cls, mp, heading, onImageClick }) {
   const reduceMotion = useReducedMotion();
   const [openItems, setOpenItems] = useState(() => new Set());
   const [targetedItem, setTargetedItem] = useState(null);
@@ -1524,6 +1521,13 @@ function ProjectAccordion({ s, cls, mp, heading }) {
                 >
                   {item.value && <strong className="project-accordion-value">{item.value}</strong>}
                   <BodyText text={item.body} />
+                  {/* A row can reveal an image (e.g. a survey chart); it zooms
+                      into the lightbox like any section image. */}
+                  {item.image && (
+                    <ProjectImageWrap id={item.image.id} src={item.image.src} caption={item.image.caption} onImageClick={onImageClick}>
+                      <motion.img layoutId={`item-img-${item.image.id}`} data-lightbox-source={item.image.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(item.image.src)} alt={item.image.caption || item.heading || ''} className="section-image" loading="lazy" />
+                    </ProjectImageWrap>
+                  )}
                 </motion.div>
               </motion.div>
             </article>
@@ -1558,7 +1562,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   }
 
   if (s.type === 'accordion') {
-    return <ProjectAccordion s={s} cls={cls} mp={mp} heading={heading} />;
+    return <ProjectAccordion s={s} cls={cls} mp={mp} heading={heading} onImageClick={onImageClick} />;
   }
 
   if (s.type === 'message-bubbles') {

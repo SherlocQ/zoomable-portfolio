@@ -194,11 +194,11 @@ export const portfolioData = {
       tone: 'base',
       items: [
 
-        // ── AI-Native Vision ─────────────────────────────────────────────────
+        // ── AI native vision ─────────────────────────────────────────────────
         {
           id: 'project-ai-vision',
           type: 'page',
-          label: 'AI-Native Vision',
+          label: 'AI native vision',
           span: [2, 1],
           tone: 'base',
           content: {
@@ -1275,25 +1275,24 @@ export const portfolioData = {
                 body: 'We created surveys at the end of our courses, so we can constantly getting feedback from our learners and keep improving our courses.\n\nFor MTA Essential course, we received 276 valid responses and for MMM Essential course, we received 122 valid responses.',
               },
               {
-                heading: 'How helpful was the course in getting you the information you need?',
-                type: 'image',
-                id: 'na-chart1',
-                src: '/images/projects/na-chart-1.jpg',
-                caption: 'Survey results — overall helpfulness',
-              },
-              {
-                heading: 'On a scale of 1 to 5,how much do the on-camera shots of the narrators?',
-                type: 'image',
-                id: 'na-chart2',
-                src: '/images/projects/na-chart-2.jpg',
-                caption: 'Survey results — on-camera narrators',
-              },
-              {
-                heading: 'On a scale of 1 to 5, where 1 is too short and 5 is too long,how would you rate the length of these tutorial videos?',
-                type: 'image',
-                id: 'na-chart3',
-                src: '/images/projects/na-chart-3.jpg',
-                caption: 'Survey results — video length',
+                // Survey questions as accordion rows; each opens to its chart.
+                id: 'na-survey',
+                heading: 'Survey results',
+                type: 'accordion',
+                items: [
+                  {
+                    heading: 'How helpful was the course in getting you the information you need?',
+                    image: { id: 'na-chart1', src: '/images/projects/na-chart-1.jpg', caption: 'Survey results — overall helpfulness' },
+                  },
+                  {
+                    heading: 'On a scale of 1 to 5, how much do the on-camera shots of the narrators?',
+                    image: { id: 'na-chart2', src: '/images/projects/na-chart-2.jpg', caption: 'Survey results — on-camera narrators' },
+                  },
+                  {
+                    heading: 'On a scale of 1 to 5, where 1 is too short and 5 is too long, how would you rate the length of these tutorial videos?',
+                    image: { id: 'na-chart3', src: '/images/projects/na-chart-3.jpg', caption: 'Survey results — video length' },
+                  },
+                ],
               },
               {
                 heading: 'What was your favorite part of the course?',
