@@ -318,6 +318,13 @@ The page rhythm is **dense product screenshots** — Linear's marketing leads wi
 
 ### Font Family
 
+**Site fonts (implemented): the Timeless type family** (timeless.co, variable WOFF2, self-hosted).
+- **Timeless Sans** (Grotesk style, `STYL` 0; wght 300–800) replaces the sans everywhere via `--font-sans`: body, UI, labels, eyebrows, numbers, grid card titles (serif was tried on cards and rejected), and in-diagram text. Sizes, weights and the hierarchy are unchanged.
+- **Timeless Serif** (`--font-display` → `--font-serif`) sets every title except grid cards. Display titles (≈28px+: About h1/h2, Process headline/step titles/closing, project hero and header titles, Contact heading, 404) use the display style (`STYL` 0) at weight 500, -0.012em. Smaller titles (15–24px: project section h2/h3, case-study and insight titles, accordion headings, diagram scene titles, lightbox caption titles) use the Text style (`STYL` 100) at 560, -0.005em. The first-load name line is serif Text 500. Participant quotes (message bubbles, and any project paragraph that is wholly a quotation → `.section-quote`) use Timeless Serif Italic 400.
+- License (Timeless Free Font License 1.2): free to embed, but the files may not sit in a public repository — they live in the private `SherlocQ/portfolio-fonts` repo and are copied in at deploy time (see CLAUDE.md). Without them the stacks fall back to Inter / SF Pro and Georgia.
+
+The Linear families below describe the reference system this design language came from.
+
 - **Linear Display** — Linear's custom display sans; fallback `SF Pro Display, -apple-system, system-ui, Segoe UI, Roboto`. Carries display-xl through subhead.
 - **Linear Text** — Linear's custom text sans (a slightly different cut tuned for body sizes); same fallback stack. Carries body sizes, button labels, captions.
 - **Linear Mono** — Linear's custom mono; fallback `ui-monospace, SF Mono, Menlo`. Used for code snippets in product screenshots and for status / ID tokens.

@@ -29,7 +29,32 @@ jobs:
 
       - run: npm ci
 
+      # Timeless fonts (Timeless Free Font License 1.2) may be embedded in the
+      # site but not kept in a public repository, so they live in the private
+      # SherlocQ/portfolio-fonts repo, read with a read-only deploy key.
+      - uses: actions/checkout@v4
+        with:
+          repository: SherlocQ/portfolio-fonts
+          ssh-key: ${{ secrets.FONTS_DEPLOY_KEY }}
+          path: .fonts-src
+          persist-credentials: false
+
+      - name: Add fonts to the site (fail if missing)
+        run: |
+          mkdir -p public/fonts/timeless
+          cp .fonts-src/*.woff2 public/fonts/timeless/
+          for f in TimelessSansVF TimelessSerifVF TimelessSerifItalicVF; do
+            test -s "public/fonts/timeless/$f.woff2" || { echo "::error::Missing $f.woff2"; exit 1; }
+          done
+
       - run: npm run build
+
+      - name: Check the built site carries the fonts
+        run: |
+          for f in TimelessSansVF TimelessSerifVF TimelessSerifItalicVF; do
+            test -s "dist/fonts/timeless/$f.woff2" || { echo "::error::$f.woff2 missing from dist"; exit 1; }
+          done
+          grep -q "fonts/timeless/TimelessSansVF.woff2" dist/assets/*.css || { echo "::error::CSS does not reference the fonts"; exit 1; }
 
       # Copy index.html as 404.html so SPA routes don't 404 on direct access
       - run: cp dist/index.html dist/404.html

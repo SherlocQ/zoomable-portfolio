@@ -39,8 +39,18 @@ export const DD_LABELS = [
   { x: 830, text: 'Deliver' },
 ];
 
-// The Bet is the first diamond, still there but much shorter.
-const FIRST_DIAMOND = [[60, 150], [280, 60], [500, 150], [280, 240]]
+// Step 2 skews both diamonds like the loops: going wide is short (easy
+// now), narrowing down is long (still hard). The apex moves from the middle
+// to 30% of each diamond's width; its halves stretch about their outer ends.
+const DD_WIDTH = 440;
+const SKEW_APEX = 0.3;
+const DIVERGE_SCALE = (SKEW_APEX * DD_WIDTH) / (DD_WIDTH / 2);
+const CONVERGE_SCALE = ((1 - SKEW_APEX) * DD_WIDTH) / (DD_WIDTH / 2);
+const LABEL_SHIFT = -(0.5 - SKEW_APEX) * (DD_WIDTH / 2);
+
+// The Bet is the first diamond (as skewed in step 2), still there but much shorter.
+const SKEWED_APEX_X = 60 + SKEW_APEX * DD_WIDTH;
+const FIRST_DIAMOND = [[60, 150], [SKEWED_APEX_X, 60], [500, 150], [SKEWED_APEX_X, 240]]
   .map(([x, y]) => [x, y + SCENE_Y_OFFSET]);
 const BET_DIAMOND = [[60, 380], [95, 350], [130, 380], [95, 410]];
 const diamondPath = (pts) => `M${pts.map(([x, y]) => `${x} ${y}`).join(' L')} Z`;
@@ -166,7 +176,10 @@ export function indexDiagram(root) {
     raw: el.querySelector('[data-part="raw"]'),
     ring: el.querySelector('[data-part="ring"]'),
   }));
-  return { all, particles };
+  const skews = [...root.querySelectorAll('[data-skew]')].map((el) => ({
+    el, part: el.getAttribute('data-skew'), diamond: Number(el.getAttribute('data-diamond') || 0),
+  }));
+  return { all, particles, skews };
 }
 
 // Every write goes through a per-element cache and is skipped when the value
@@ -230,8 +243,21 @@ export function applyDiagramState(index, P, unit, handover = 0) {
   [[0.17, 0.27], [0.42, 0.52], [0.67, 0.77], [0.9, 1]].forEach(([a, b], i) => {
     fade(all(`dd-label-${i}`), seg(p1, a, b));
   });
-  fade(all('dd-annot-easy'), seg(p2, 0.5, 0.8));
-  fade(all('dd-annot-hard'), seg(p2, 0.7, 1));
+  // …and the diamonds skew: short diverge, long converge.
+  const skew = seg(p2, 0.25, 0.85);
+  index.skews.forEach(({ el, part, diamond }) => {
+    const dx = diamond * 440;
+    if (part === 'labels') {
+      setAttr(el, 'transform', `translate(${r2(LABEL_SHIFT * skew)} 0)`);
+      return;
+    }
+    const scale = lerp(1, part === 'div' ? DIVERGE_SCALE : CONVERGE_SCALE, skew);
+    const ox = part === 'div' ? 60 + dx : 500 + dx;
+    setAttr(el, 'transform', `translate(${ox} 0) scale(${Math.round(scale * 1000) / 1000} 1) translate(${-ox} 0)`);
+  });
+  // The notes sit on the skewed edges, so they appear once the skew lands.
+  fade(all('dd-annot-easy'), seg(p2, 0.8, 0.92));
+  fade(all('dd-annot-hard'), seg(p2, 0.88, 1));
 
   // Hand-over — as step 3's text scrolls in, a copy of the first diamond
   // appears exactly over the Double Diamond's, that scene fades out, and the

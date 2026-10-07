@@ -1,3 +1,34 @@
+/* ─── Fonts — Timeless type family (timeless.co), variable WOFF2 ──────────────
+   Timeless Free Font License 1.2: free to embed on the site, but the files may
+   not be modified or placed in a public repository, so public/fonts/timeless/
+   is git-ignored (see LICENSE.pdf there). Sans axes: wght 300–800, STYL
+   0 = Grotesk (used) / 100 = Sans. Serif axes: wght 200–700, STYL 0 = display
+   / 100 = Text; italics are a separate file. */
+@font-face {
+  font-family: 'Timeless Sans';
+  src: url('/fonts/timeless/TimelessSansVF.woff2') format('woff2-variations'),
+       url('/fonts/timeless/TimelessSansVF.woff2') format('woff2');
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Timeless Serif';
+  src: url('/fonts/timeless/TimelessSerifVF.woff2') format('woff2-variations'),
+       url('/fonts/timeless/TimelessSerifVF.woff2') format('woff2');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Timeless Serif';
+  src: url('/fonts/timeless/TimelessSerifItalicVF.woff2') format('woff2-variations'),
+       url('/fonts/timeless/TimelessSerifItalicVF.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* ─── Design tokens — Linear design system (via getdesign) ───────────────────── */
 :root {
   /* Accent */
@@ -55,8 +86,8 @@
   --otp-mobile-shadow: rgba(0,0,0,0.24);
 
   /* Typography */
-  --font-serif: Georgia, 'Times New Roman', serif;
-  --font-sans:  'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: 'Timeless Serif', Georgia, 'Times New Roman', serif;
+  --font-sans:  'Timeless Sans', 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   /* Border radius — Linear scale */
   --r-xs:   4px;
@@ -186,9 +217,12 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: va
 
 .preloader-text {
   color: var(--ink);
+  /* The opening line is set like the titles: Timeless Serif, Text style. */
+  font-family: var(--font-serif);
+  font-variation-settings: "STYL" 100;
   font-size: 16px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
   text-align: center;
   opacity: 0;
   filter: blur(10px);
@@ -3310,3 +3344,63 @@ a:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── All titles in Timeless Serif (trial) ──────────────────────────────────
+   Every title — page and step titles, section headings, row headings —
+   uses the serif (grid card titles stay sans: tried, didn't suit); sizes and the hierarchy stay as they are. Body,
+   UI, labels/eyebrows, numbers and in-diagram text stay in Timeless Sans.
+   Serifs read better a touch lighter and less tightly tracked than the sans
+   at 590. Kept last so it wins over breakpoint rules. */
+:root { --font-display: var(--font-serif); }
+/* Display titles (≈28px and up): the serif's display style (STYL 0). */
+.resume-step h1,
+.resume-step h2,
+.ps-headline,
+.ps-step-title,
+.ps-closing-line,
+.project-hero-title,
+.project-header h1,
+.about-content h1,
+.hero-content h1,
+.contact-heading,
+.notfound-title,
+/* Smaller titles (15–24px): the serif's Text style (STYL 100), drawn for
+   reading sizes. */
+.section-h2,
+.section-h3,
+.project-case-study-title,
+.project-insight h3,
+.project-accordion-heading,
+.pd-title,
+.contact-sent-title,
+.img-page-caption-title,
+.craft-content h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+.section-h2,
+.section-h3,
+.project-case-study-title,
+.project-insight h3,
+.project-accordion-heading,
+.pd-title,
+.contact-sent-title,
+.img-page-caption-title,
+.craft-content h1 {
+  font-variation-settings: "STYL" 100;
+  /* Thin serif strokes at 15–24px need a little more weight to hold their
+     own beside the sans body (400) and sans UI (590). */
+  font-weight: 560;
+  letter-spacing: -0.005em;
+}
+
+/* Quotations (a participant's own words) in project copy and in the
+   message-bubble component (user feedback quotes). */
+.project-message-bubble p,
+.section-quote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+}
+.section-quote { color: var(--ink); }

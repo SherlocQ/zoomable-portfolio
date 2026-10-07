@@ -18,35 +18,40 @@ function DoubleDiamond({ ghost = false, gs = () => ({}) }) {
   const draw = ghost ? undefined : '1';
   return (
     <>
+      {/* Each half sits in a group the state writer stretches in step 2
+          (data-skew), so the diamonds become asymmetric like the loops. */}
       <g data-group="dd-diverge" {...gs('dd-diverge')}>
         {DIAMONDS.map((d, i) => (
-          <g key={i}>
-            <path data-k={k(`dd-${i}-div`)} pathLength={draw} className="pd-stroke pd-neutral" d={d.divergeUp} />
-            <path data-k={k(`dd-${i}-div`)} pathLength={draw} className="pd-stroke pd-neutral" d={d.divergeDown} />
-            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide pd-thin" d={d.divergeUp} />}
-            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide pd-thin" d={d.divergeDown} />}
+          <g key={i} data-skew="div" data-diamond={i}>
+            <path data-k={k(`dd-${i}-div`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.divergeUp} />
+            <path data-k={k(`dd-${i}-div`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.divergeDown} />
+            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide pd-thin" vectorEffect="non-scaling-stroke" d={d.divergeUp} />}
+            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide pd-thin" vectorEffect="non-scaling-stroke" d={d.divergeDown} />}
           </g>
         ))}
       </g>
       <g data-group="dd-converge" {...gs('dd-converge')}>
         {DIAMONDS.map((d, i) => (
-          <g key={i}>
-            <path data-k={k(`dd-${i}-conv`)} pathLength={draw} className="pd-stroke pd-neutral" d={d.convergeUp} />
-            <path data-k={k(`dd-${i}-conv`)} pathLength={draw} className="pd-stroke pd-neutral" d={d.convergeDown} />
-            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide pd-thick" d={d.convergeUp} />}
-            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide pd-thick" d={d.convergeDown} />}
+          <g key={i} data-skew="conv" data-diamond={i}>
+            <path data-k={k(`dd-${i}-conv`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.convergeUp} />
+            <path data-k={k(`dd-${i}-conv`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.convergeDown} />
+            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide pd-thick" vectorEffect="non-scaling-stroke" d={d.convergeUp} />}
+            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide pd-thick" vectorEffect="non-scaling-stroke" d={d.convergeDown} />}
           </g>
         ))}
       </g>
-      <g data-group="dd-labels" {...gs('dd-labels')}>
+      <g data-group="dd-labels" data-skew="labels" {...gs('dd-labels')}>
         {DD_LABELS.map((l, i) => (
           <text key={l.text} data-k={k(`dd-label-${i}`)} x={l.x} y={282} textAnchor="middle" className="pd-label">{l.text}</text>
         ))}
       </g>
       {!ghost && (
         <g data-group="dd-annot" {...gs('dd-annot')}>
-          <text data-k="dd-annot-easy" x={120} y={82} textAnchor="middle" className="pd-label pd-label--wide">easy now</text>
-          <text data-k="dd-annot-hard" x={440} y={82} textAnchor="middle" className="pd-label pd-label--decide">still hard</text>
+          {/* Beside the middle of the skewed first diamond's upper edges:
+              the short diverge edge (60,150)→(192,60) and the long converge
+              edge (192,60)→(500,150). */}
+          <text data-k="dd-annot-easy" x={116} y={94} textAnchor="end" className="pd-label pd-label--wide">easy now</text>
+          <text data-k="dd-annot-hard" x={354} y={85} textAnchor="middle" className="pd-label pd-label--decide">still hard</text>
         </g>
       )}
     </>
@@ -88,7 +93,7 @@ function AINative({ ghost = false, gs = () => ({}) }) {
                 <path key={f} data-k={k(`loop-${i}-fan`)} pathLength={draw} className="pd-stroke pd-wide pd-thin" d={`M${x0} 380 L${x0 + FAN_LEN} ${380 + f * spread}`} />
               ))}
               {[-1, 1].map((f) => (
-                <path key={f} data-k={k(`loop-${i}-conv`)} pathLength={draw} className="pd-stroke pd-decide pd-thick" d={`M${x0 + FAN_LEN} ${380 + f * spread} L${loopEnd(i)} 380`} />
+                <path key={f} data-k={k(`loop-${i}-conv`)} pathLength={draw} className="pd-stroke pd-decide pd-thin" d={`M${x0 + FAN_LEN} ${380 + f * spread} L${loopEnd(i)} 380`} />
               ))}
             </g>
           );

@@ -96,7 +96,9 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 - Local project Lottie files live under `public/animations/projects/` and render through `lottie-web`. Related Lighthouse pain-point illustrations share a consistent responsive stage height and replay according to viewport presence.
 - Across every project `metrics` section, labels use concise sentence-case noun phrases that name the measure directly. Do not use sentence-like labels ending in “is,” “reached,” or “spend,” and do not alter the underlying value or unit merely to restyle its label.
 
-## Current project status — 2026-09-29
+## Current project status — 2026-10-06
+- Site typography switched to the Timeless family (sans everywhere, serif titles except grid cards, serif italic quotes), deployed from the private fonts repo.
+- Process step 2 skews both Double Diamond diamonds like the loops (apex at 30%: short "easy now" diverge, long "still hard" converge; labels shift with their halves; the Bet hand-over starts from the skewed diamond); annotations sit off the skewed upper edges' midpoints. Loop converge strokes match the thin diverge strokes.
 - Process Route/Settle reworked with Chengchang (and synced into ~/Downloads/AI_Native_Design_Process.md): legend `Noise / How it's built / Right problem?`; grey unsorted feedback colored on routing; direction signals wait as hollow rings; Settle plays Drop → Test next → Settle ×3 with centered labels; Route and Settle copy use bullets; subline now starts "AI doesn't make the Double Diamond obsolete." The route mask needs explicit bounds (the AI viewBox starts at y 328). Page snaps like About; text paced like About; drawing on its own clock.
 - About: "Download Résumé" is the primary accent button (same as Contact "Send message"); the intro sentence uses a comma instead of an em dash; journey photo stacks are real photos (see Journey photos).
 - New favicon/app icon set from Chengchang, re-centered optically at every size (see "Favicon & app icons").
@@ -131,6 +133,11 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 ## Favicon & app icons
 - Chengchang's triangle mark, white on #050506. Every size is optically centered: the mark's triangle centroid (≈ its circumcenter; mark coords ≈ 255.5, 325) sits on the icon center, so all three corners are equidistant from the circle — never center its bounding box (that reads low). `favicon.svg` holds the geometry (`translate(77.15 28.5) scale(0.7)` on a 512 canvas).
 - Tab sizes (`favicon.svg`, 16/32 PNGs, `favicon.ico` with 16+32) add a 14-unit white stroke so the lines survive at 16px. Android 192/512 use the plain mark on a circle with transparent corners. `apple-touch-icon.png` is a full-bleed opaque black square (iOS rounds it). In a square the eye compares top and bottom margins, so centroid-centering reads high there: the Apple mark is centered at mark y ≈ 280, between its bounding-box center (256) and centroid (325) — `translate(77.15 60) scale(0.7)` — giving ~34/46px top/bottom margins at 180px.
+
+## Fonts (Timeless, licensed)
+- Timeless Sans / Serif / Serif Italic variable WOFF2 are declared at the top of `src/App.css` and preloaded in `index.html`. Usage rules are under "Font Family" in DESIGN.md.
+- The Timeless Free Font License forbids putting the font files in a public repository. Locally they live in `public/fonts/timeless/` (git-ignored, with LICENSE.pdf). For deploys they live in the private repo `SherlocQ/portfolio-fonts`; `.github/workflows/deploy.yml` checks it out with the read-only deploy key in the `FONTS_DEPLOY_KEY` Actions secret, copies the WOFF2s into `public/fonts/timeless/`, and fails the deploy if any font is missing from the input or from `dist` (the live site then keeps the previous version). Never commit the font files here. To update fonts, push new files to portfolio-fonts.
+- This repo pushes as SherlocQ through a repo-local credential helper (`gh auth token -u SherlocQ`), independent of the machine's global/keychain GitHub login.
 
 ## Images
 All project/craft images are in `public/images/`. Referenced via `asset()` helper. Keep production media local; do not introduce Webflow CDN dependencies.

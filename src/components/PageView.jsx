@@ -1284,7 +1284,10 @@ function BodyText({ text }) {
         </ol>
       );
     }
-    return <p key={i} className="section-body">{p}</p>;
+    // A paragraph that is entirely a quotation (a participant's own words)
+    // is set as a quote: Timeless Serif italic.
+    const isQuote = /^\s*["“][\s\S]*["”]\s*$/.test(p);
+    return <p key={i} className={`section-body${isQuote ? ' section-quote' : ''}`}>{p}</p>;
   });
 }
 

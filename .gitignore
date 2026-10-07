@@ -2,3 +2,7 @@ node_modules/
 dist/
 .DS_Store
 *.local
+
+# Timeless fonts: licensed for embedding on the site, but the license forbids
+# putting the font files in a public repository. Kept local only.
+public/fonts/timeless/
