@@ -2153,6 +2153,25 @@ a:focus-visible,
   mask-image: linear-gradient(to bottom, transparent 66%, rgba(0,0,0,0.28) 74%, rgba(0,0,0,0.72) 84%, #000 100%);
   pointer-events: none;
 }
+/* Entry-card hover (Projects and Craft), matched 1:1 to the Framer reference card
+   (flowing-audience-115502.framer.app): image scale 1 → 1.06 over 900ms,
+   text block up 4px over 500ms, both on cubic-bezier(0.23, 1, 0.32, 1).
+   The image and its blur bands share one layer so the bands stay aligned.
+   Image-less project cards get only the text lift; Lightbox-source artwork
+   tiles get neither. */
+.grid-item-zoom {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  transform: scale(1);
+  transition: transform 900ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.grid-item-inner--lift {
+  transform: translateY(0);
+  transition: transform 500ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .grid-item:hover .grid-item-zoom { transform: scale(1.06); }
+  .grid-item:hover .grid-item-inner--lift { transform: translateY(-4px); }
+}
 .grid-item-media {
   /* Show the complete artwork in gallery cards. Keeping this box at the
      intrinsic aspect ratio also lets the shared Lightbox transition use one

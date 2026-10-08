@@ -6,7 +6,9 @@ import bricks from '../hairline/bricks';
 import envelope from '../hairline/envelope';
 import folder from '../hairline/folder';
 import keys from '../hairline/keys';
+import layout from '../hairline/layout';
 import ruler from '../hairline/ruler';
+import tokens from '../hairline/tokens';
 import ProgressiveBlur from './ProgressiveBlur';
 
 const ILLUSTRATIONS = {
@@ -15,6 +17,9 @@ const ILLUSTRATIONS = {
   craft: ruler,
   process: keys,
   projects: folder,
+  // Build projects
+  'brand-tokens': tokens,
+  'layout-inspector': layout,
 };
 
 export function GridItem({ item, onItemClick }) {
@@ -24,6 +29,20 @@ export function GridItem({ item, onItemClick }) {
   const isImageTile = item.content?.type === 'image';
   const useProgressiveBlur = hasImage && !isAnimatedImage;
   const figure = ILLUSTRATIONS[item.illustration];
+  // Entry cards (Projects, Craft) zoom their image on hover, so the image and
+  // its blur copies move into one layer that scales together instead of the
+  // card background. Lightbox-source tiles keep their media untouched.
+  const zoomsOnHover = hasImage && !isImageTile;
+  // Project cards without an image (AI native vision) still get the text lift.
+  const liftsOnHover = zoomsOnHover || item.content?.type === 'project';
+  const imageBackground = hasImage && !isAnimatedImage && !isImageTile ? {
+    backgroundImage: item.bgImage
+      ? `url(${asset(item.image)}), url(${asset(item.bgImage)})`
+      : `url(${asset(item.image)})`,
+    backgroundSize: item.fit === 'contain' ? (item.bgImage ? 'contain, cover' : 'contain') : 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  } : null;
 
   return (
     <motion.div
@@ -34,22 +53,15 @@ export function GridItem({ item, onItemClick }) {
         '--rs': row,
         ...(hasImage ? {
           ...(item.previewBg || item.bg ? { backgroundColor: item.previewBg || item.bg } : {}),
-          ...(!isAnimatedImage && !isImageTile ? {
-            backgroundImage: item.bgImage
-              ? `url(${asset(item.image)}), url(${asset(item.bgImage)})`
-              : `url(${asset(item.image)})`,
-          } : {}),
           ...(isImageTile && item.bgImage ? { backgroundImage: `url(${asset(item.bgImage)})` } : {}),
           // Image-page thumbnails use a real intrinsic-ratio <img>; this only
           // controls the optional backdrop layer beneath transparent pixels.
           // Entry-card CSS backgrounds continue to respect their own `fit`.
-          backgroundSize: isImageTile
-            ? 'cover'
-            : item.fit === 'contain'
-              ? (item.bgImage ? 'contain, cover' : 'contain')
-              : 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
+          ...(isImageTile ? {
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          } : {}),
         } : {}),
       }}
       role="button"
@@ -65,14 +77,14 @@ export function GridItem({ item, onItemClick }) {
       }}
       transition={{ layout: T }}
     >
-      {(isImageTile || isAnimatedImage) && (
+      {isImageTile && (
         <motion.img
           src={asset(item.image)}
           alt=""
           aria-hidden="true"
           className={`grid-item-media${item.previewFit === 'cover' ? ' grid-item-media--cover' : ''}`}
-          layoutId={isImageTile ? `item-img-${item.id}` : undefined}
-          data-lightbox-source={isImageTile ? item.id : undefined}
+          layoutId={`item-img-${item.id}`}
+          data-lightbox-source={item.id}
           layoutCrossfade={false}
           transition={{ layout: LIGHTBOX_ZOOM }}
           draggable={false}
@@ -80,19 +92,42 @@ export function GridItem({ item, onItemClick }) {
           loading={isAnimatedImage ? 'lazy' : undefined}
         />
       )}
-      {useProgressiveBlur && (
+      {isImageTile && isAnimatedImage && <ProgressiveBlur variant="card" animated />}
+      {isImageTile && useProgressiveBlur && (
         <ProgressiveBlur
           src={asset(item.image)}
           variant="card"
           fit={item.fit === 'contain' ? 'contain' : 'cover'}
         />
       )}
-      {hasImage && isAnimatedImage && <ProgressiveBlur variant="card" animated />}
+      {zoomsOnHover && (
+        <div className="grid-item-zoom" style={imageBackground || undefined} aria-hidden="true">
+          {isAnimatedImage && (
+            <img
+              src={asset(item.image)}
+              alt=""
+              className={`grid-item-media${item.previewFit === 'cover' ? ' grid-item-media--cover' : ''}`}
+              draggable={false}
+              decoding="async"
+              loading="lazy"
+            />
+          )}
+          {isAnimatedImage ? (
+            <ProgressiveBlur variant="card" animated />
+          ) : (
+            <ProgressiveBlur
+              src={asset(item.image)}
+              variant="card"
+              fit={item.fit === 'contain' ? 'contain' : 'cover'}
+            />
+          )}
+        </div>
+      )}
       {hasImage && <div className="grid-item-img-gradient" aria-hidden="true" />}
       {figure && <HairlineFigure figure={figure} className="grid-item-illustration grid-item-illustration--hairline" />}
       {item.portrait && <img src={asset(item.portrait)} alt="" aria-hidden="true" className="grid-item-portrait" />}
 
-      <div className="grid-item-inner">
+      <div className={`grid-item-inner${liftsOnHover ? ' grid-item-inner--lift' : ''}`}>
         {isImageTile ? (
           item.label && <div className="grid-item-caption">{item.label}</div>
         ) : (
