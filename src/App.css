@@ -494,7 +494,7 @@ a:focus-visible,
   transition-duration: 0s;
 }
 [data-theme="light"] .grid-item:hover::after {
-  background: rgba(0,0,0,0.03);
+  background: rgba(0,0,0,0.02);
 }
 
 /* Zoom hint */
@@ -524,6 +524,33 @@ a:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .grid-item-illustration { transition: opacity 0.28s ease; }
   .grid-item:hover .grid-item-illustration { transform: none; }
+}
+
+/* Hairline figures (src/hairline): interactive line drawings. The whole card
+   drives the figure (HairlineFigure re-sends the card's pointer events to the
+   stage, which takes none itself). The figure answers the pointer itself, so
+   the card's hover lift is dropped (a moving stage would shift its hit areas).
+   Palette: line only, mapped from the Hairline kernel's own defaults to the
+   nearest tokens. Plates take the card surface, so they hide what is behind
+   them without reading as fill; outlines sit well below the highlight, so
+   the one bright line stands out by colour alone. */
+.grid-item-illustration--hairline {
+  opacity: 1;
+  --hairline-plate:  var(--surface-1);
+  --hairline-hi:     var(--ink-muted);
+  --hairline-edge:   var(--ink-tertiary);
+  --hairline-mid:    var(--hairline-3);
+  --hairline-lo:     var(--hairline-strong);
+  --hairline-stroke: 0.75;
+}
+[data-theme="light"] .grid-item-illustration--hairline { --hairline-hi: var(--ink); }
+.grid-item:hover .grid-item-illustration--hairline { transform: none; }
+/* The stage sits inside the illustration box's padding, like the old SVGs. */
+.grid-item-illustration--hairline .hairline-stage {
+  position: absolute; inset: var(--hairline-inset, 20px); width: auto; height: auto;
+  aspect-ratio: auto;
+  /* figures leave margin inside their 400 × 320 frame */
+  transform: scale(1.38);
 }
 .grid-item-portrait {
   position: absolute; bottom: 0; right: 24px;
@@ -2640,6 +2667,7 @@ a:focus-visible,
      sizing all the way down through the mobile breakpoint (no further
      change at 640px) so the icon doesn't visibly jump at that boundary. */
   .grid-item-illustration { padding: 10px; height: 62%; }
+  .grid-item-illustration--hairline { --hairline-inset: 10px; }
 }
 
 /* ── Mobile (≤640 px): 1 column, scrollable ─────────────────────────────── */

@@ -1,19 +1,20 @@
 import { motion } from 'framer-motion';
 import { T, LIGHTBOX_ZOOM, SPRING_SLOW } from '../transitions';
 import { asset } from '../utils/asset';
-import { BuildIllustration } from './illustrations/BuildIllustration';
-import { ContactIllustration } from './illustrations/ContactIllustration';
-import { CraftIllustration } from './illustrations/CraftIllustration';
-import { ProcessIllustration } from './illustrations/ProcessIllustration';
-import { ProjectsIllustration } from './illustrations/ProjectsIllustration';
+import { HairlineFigure } from './HairlineFigure';
+import bricks from '../hairline/bricks';
+import envelope from '../hairline/envelope';
+import folder from '../hairline/folder';
+import keys from '../hairline/keys';
+import ruler from '../hairline/ruler';
 import ProgressiveBlur from './ProgressiveBlur';
 
 const ILLUSTRATIONS = {
-  build: BuildIllustration,
-  contact: ContactIllustration,
-  craft: CraftIllustration,
-  process: ProcessIllustration,
-  projects: ProjectsIllustration,
+  build: bricks,
+  contact: envelope,
+  craft: ruler,
+  process: keys,
+  projects: folder,
 };
 
 export function GridItem({ item, onItemClick }) {
@@ -22,7 +23,7 @@ export function GridItem({ item, onItemClick }) {
   const isAnimatedImage = /\.gif(?:$|\?)/i.test(item.image || '');
   const isImageTile = item.content?.type === 'image';
   const useProgressiveBlur = hasImage && !isAnimatedImage;
-  const Illustration = ILLUSTRATIONS[item.illustration];
+  const figure = ILLUSTRATIONS[item.illustration];
 
   return (
     <motion.div
@@ -88,7 +89,7 @@ export function GridItem({ item, onItemClick }) {
       )}
       {hasImage && isAnimatedImage && <ProgressiveBlur variant="card" animated />}
       {hasImage && <div className="grid-item-img-gradient" aria-hidden="true" />}
-      {Illustration && <Illustration className="grid-item-illustration" aria-hidden="true" />}
+      {figure && <HairlineFigure figure={figure} className="grid-item-illustration grid-item-illustration--hairline" />}
       {item.portrait && <img src={asset(item.portrait)} alt="" aria-hidden="true" className="grid-item-portrait" />}
 
       <div className="grid-item-inner">

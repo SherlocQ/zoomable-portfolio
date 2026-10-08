@@ -45,7 +45,9 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 | `src/data/portfolio.js` | All content — grid structure, project data |
 | `src/components/PageView.jsx` | Page overlay renderer (all content types) |
 | `src/components/VimeoEmbed.jsx` | Lazy Vimeo player, poster/loading state, and blocked-embed fallback |
-| `src/components/GridItem.jsx` | Individual grid card |
+| `src/components/GridItem.jsx` | Individual grid card; `ILLUSTRATIONS` maps tile ids to Hairline figures |
+| `src/components/HairlineFigure.jsx` | Mounts a Hairline figure in a tile and forwards the whole tile's pointer events to it |
+| `src/hairline/` | `kernel.js` (Hairline engine, copied unchanged from the `hairline-create` skill) and the five tile figures |
 | `src/components/ResumeGlobe.jsx` | Responsive canvas globe, journey state, routes, photo stacks, and native scroll coordination |
 | `src/components/Preloader.jsx` | First-load name intro (port of a Framer preloader); show rule in `src/utils/preloader.js` |
 | `src/components/ScrollCue.jsx` | Shared animated scroll indicator for Hero and project heroes |
@@ -96,7 +98,8 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 - Local project Lottie files live under `public/animations/projects/` and render through `lottie-web`. Related Lighthouse pain-point illustrations share a consistent responsive stage height and replay according to viewport presence.
 - Across every project `metrics` section, labels use concise sentence-case noun phrases that name the measure directly. Do not use sentence-like labels ending in “is,” “reached,” or “spend,” and do not alter the underlying value or unit merely to restyle its label.
 
-## Current project status — 2026-10-06
+## Current project status — 2026-10-07
+- Root tiles now use interactive Hairline line figures (folder, keycaps, Lego bricks, pencil + ruler, envelope) in place of the static SVG illustrations. Line only, 0.75px, single lines, one colour-only highlight; palette from tokens per theme (DESIGN.md "Hairline tile illustrations"). The whole tile drives the figure; Process keys rest flat on the desk; the envelope's letter is fully in before the flap passes upright; the pencil is rotated about its axis, not sheared. Light-mode tile hover overlay eased from 3% to 2% black.
 - Site typography is Timeless Sans everywhere, deployed from the private fonts repo; text roles now follow the Linear type tokens (600 titles, 18px leads, 12px/500/+0.4 meta labels — see "Implemented type scale" in DESIGN.md).
 - Neustar Academy survey charts are an accordion (rows open to their chart); the chart JPGs carry 90px white padding top and bottom. The Projects card is labeled "AI native vision" (other cards are still title case). Serif titles / quotes / body were tried and rejected — stay all-sans.
 - Process step 2 skews both Double Diamond diamonds like the loops (apex at 30%: short "easy now" diverge, long "still hard" converge; labels shift with their halves; the Bet hand-over starts from the skewed diamond); annotations sit off the skewed upper edges' midpoints. Loop converge strokes match the thin diverge strokes.
@@ -128,7 +131,7 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 - The Contact page uses `assets/contact-envelope-paper-airplane.svg`. It has no eyebrow, uses only the short invitation sentence, and inverts in dark mode so its black/white Ink treatment matches the theme-aware homepage illustrations. Its heading uses the Hero display treatment at 36–48px desktop and 30–40px mobile. Desktop places the 170px image above the copy and translates it 16% left to compensate for built-in transparent space. At ≤640px, all text remains in the left grid column while the 130px image occupies the right column beginning on the description row, so its visible top aligns with “Whether you have a role…” rather than the title. Translate the image 6% upward to compensate for its transparent top margin. Text may wrap but must never clip. Email and LinkedIn are 40×40 icon buttons (Phosphor `EnvelopeSimple` / `LinkedinLogo`, 20px) styled as neutral secondary buttons (`surface-1`, 1px `hairline`, `r-md`, `ink`; hover `toggle-hover` / `hairline-3`); each has an `aria-label` and a tooltip (`data-tooltip`, the email address / "LinkedIn") centered above it on hover or keyboard focus.
 
 ## Icons & illustrations
-- Root grid tiles get a theme-adaptive SVG via `item.illustration` (key into `ILLUSTRATIONS` map in `GridItem.jsx`) — these are React components with `fill="var(--ink)"`/`var(--surface-1)"` so they recolor automatically per theme.
+- Root grid tiles get an interactive Hairline figure via `item.illustration` (key into `ILLUSTRATIONS` in `GridItem.jsx`): `folder` (projects), `keys` (process), `bricks` (build), `ruler` (craft), `envelope` (contact). Full rules — making one with the `hairline-create` skill, porting it into `src/hairline/`, the token palette for both themes, sizing, whole-tile input, accessibility — are in DESIGN.md "Hairline tile illustrations". Standalone sources and their look sheets live outside the repo in `../hairline/`; port changes into `src/hairline/` by swapping only the wrapper (import HL / export default). The old `src/components/illustrations/*Illustration.jsx` components are kept but unused (except `NotFoundIllustration`); switch the map back to restore them.
 - The hero tile additionally has `item.portrait`, a plain static SVG path (not a token-recolored component) rendered as `<img className="grid-item-portrait">`, bottom-right anchored and clipped by the tile's `overflow: hidden`. Used for genuinely multi-tone/shaded artwork where flattening to 2 tokens would destroy the shading — don't reuse this pattern for simple icons, use `illustration` for those.
 
 ## Favicon & app icons

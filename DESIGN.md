@@ -435,6 +435,10 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 | `{rounded.pill}` | 9999px | Pricing tab toggles, status pills |
 | `{rounded.full}` | 9999px | Avatar circles |
 
+### Tile hover
+
+- Root tiles lift one step up the surface ladder on hover through the `.grid-item::after` overlay: dark `rgba(255,255,255,0.03)`, light `rgba(0,0,0,0.02)`, border `hairline` → `hairline-strong`, instant in / 0.15s out. Dark lightens and light darkens on purpose (the ladder runs both ways); lightening a light tile would merge it with the white canvas. Light was eased from 3% to 2%.
+
 ### Photography & Illustration Geometry
 
 - Product UI screenshots dominate; they sit in `{rounded.xl}` 16px tiles with `{spacing.lg}` 24px outer padding.
@@ -647,6 +651,44 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 **`footer`** — Dense link grid on `{colors.canvas}` with the Linear wordmark left.
 - Background `{colors.canvas}`, text `{colors.ink-subtle}`, type `{typography.caption}`, padding 64px 32px.
+
+### Hairline tile illustrations
+
+**`hairline-tile`** — The five root tiles (Projects, Process, Build, Craft, Contact) each carry an interactive isometric line drawing made with the `hairline-create` skill (engine: `@lucasmarkes/hairline`). One object, one pointer response, one idea per tile:
+
+| Tile | Figure (`src/hairline/`) | Rest | Pointer anywhere on the tile |
+|---|---|---|---|
+| Projects | `folder.js` | open folder with a tab, four sheets at uneven heights | screen x picks a sheet (front at left, back at right); it floats up, the rest stir in turn, the front cover opens further |
+| Process | `keys.js` | circle, triangle and square keycaps on the desk, a dot loop between them | the key nearest the pointer floats up |
+| Build | `bricks.js` | eight studded bricks (2×2×2) hanging apart unevenly | bricks close by their screen distance to the pointer; the middle seats the whole cube; never wider than rest |
+| Craft | `ruler.js` | ruler with ticks and a hanging hole, a hexagonal pencil leaning on it, a line already ruled | screen x slides the pencil from the ruler's start to its end; the ruled line follows the tip |
+| Contact | `envelope.js` | flap open, letter half out, standing inside the flap's triangle | nearer the middle → the letter slides all the way in first, then the flap folds shut onto a wax seal |
+
+**Making a new one.** Run the `hairline-create` skill, write the figure in `../hairline/<name>.js`, and pass its look (`look.mjs`) before porting. Port it into `src/hairline/<name>.js` by changing only the wrapper: add `import HL from './kernel';` after the header comment and replace the closing `hairline({ … });` with `export default { … };`. `src/hairline/kernel.js` is the skill's kernel copied unchanged (plus `export default HL`); never edit it. Map the figure in `ILLUSTRATIONS` (`GridItem.jsx`), which mounts it through `HairlineFigure.jsx` at the figure's default intensity (`range[1]`).
+
+**Rules the figures keep** (on top of the skill's ten):
+- Line only, single lines. Plates are filled with the tile surface (so near solids hide far lines) but never read as fill. A thin part is one outline — no offset back outline for thickness, no extra lip/fold line along an edge (it reads as a double line).
+- One highlight, by colour only. Every line has the same width; the highlighted part switches its stroke from the outline class to `hi`. Never thicken the highlight. At rest one mark is bright (folder: sheet 2's dot; keys: the circle; bricks: the raised front-top brick; ruler: the ruled line; envelope: the letter, then the seal).
+- The whole tile is the input. `HairlineFigure` re-dispatches the tile's `pointermove` / `pointerdown` / `pointerleave` to the stage (the stage itself takes no pointer events), so the figure only rests when the tile is left. Figures must therefore pick by nearest/screen position (screen x across a resting span, nearest resting top, screen distance to a resting centre) — never "pointer exactly over a part", and never ground-plane distance (points above the drawing project far behind it).
+- A leaning solid is rotated about its own axis (cross-sections square to the axis), not sheared; a sheared prism reads skewed.
+- Ordered motion avoids interpenetration: e.g. the letter is fully in before the flap passes upright.
+
+**Theme palette (both modes from tokens).** The kernel's classes read `--hairline-*` custom properties, set on `.grid-item-illustration--hairline` in `App.css`. Mapping, derived from the kernel's own defaults (dark defaults = Linear's own `#d0d6e0` / `#3e3e44`) with outlines raised one step for legibility:
+
+| Kernel role | Used for | Dark | Light |
+|---|---|---|---|
+| `plate` | solid fill (hides what's behind) | `surface-1` | `surface-1` |
+| `hi` | the one highlight | `ink-muted` | `ink` |
+| `edge` | silhouettes | `ink-tertiary` | `ink-tertiary` |
+| `mid` | ordinary lines | `hairline-3` | `hairline-3` |
+| `lo` | creases, inner detail | `hairline-strong` | `hairline-strong` |
+| stroke | all lines, non-scaling | 0.75px | 0.75px |
+
+Tried and rejected: 1px (heavy next to Linear's ≈0.45px lines); 0.5px with `hairline-3` outlines (too faint); bright `ink-muted` outlines (highlight no longer stands out); a thicker highlight (must be colour-only); solid ink plates (black blocks in light / white blocks in dark — too heavy).
+
+**Size and placement.** Same box as the old SVG illustrations (`top: 12%`, `height: 60%`); the stage sits inside the box's 20px inset (10px ≤ the tablet breakpoint), `aspect-ratio: auto`, scaled `1.38` because figures leave margin inside their 400×320 frame. The tile's hover lift/scale is disabled for these figures (a moving stage shifts hit areas); the tile's own hover overlay still sits above the drawing, so plates tint with the tile.
+
+**Accessibility.** The figure is decorative: the wrapper and svg are `aria-hidden`, and the tile itself is the control (`role="button"`, `aria-label={item.label}`, keyboard Enter/Space). Do not add an `aria-label` / `role="img"` to the figure — a button's children are presentational, so it would be unread or duplicate the tile name. Nothing in the figure is required to use the tile; reduced motion is honoured by the kernel (springs and tweens land at once); motion sleeps off-screen.
 
 ### Contact illustration
 
