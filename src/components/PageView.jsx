@@ -10,7 +10,8 @@ import ResumeGlobe from './ResumeGlobe';
 import ScrollCue from './ScrollCue';
 import ProgressiveBlur from './ProgressiveBlur';
 import VimeoEmbed from './VimeoEmbed';
-import contactIllustration from '../../assets/contact-envelope-paper-airplane.svg';
+import { HairlineFigure } from './HairlineFigure';
+import plane from '../hairline/plane';
 
 const slugify = (str) =>
   str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -1983,7 +1984,7 @@ function ContactContent({ content }) {
 
       {/* ── Left ── */}
       <motion.div className="contact-left" custom={0} variants={fadeUp} initial="hidden" animate="show">
-        <img className="contact-illustration" src={contactIllustration} alt="" aria-hidden="true" />
+        <HairlineFigure figure={plane} className="contact-illustration contact-illustration--hairline" interactive={false} />
         <div className="contact-copy">
           <h1 className="contact-heading">Let's build<br />something great.</h1>
           <p className="contact-desc">

@@ -25,8 +25,8 @@ function DoubleDiamond({ ghost = false, gs = () => ({}) }) {
           <g key={i} data-skew="div" data-diamond={i}>
             <path data-k={k(`dd-${i}-div`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.divergeUp} />
             <path data-k={k(`dd-${i}-div`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.divergeDown} />
-            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide pd-thin" vectorEffect="non-scaling-stroke" d={d.divergeUp} />}
-            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide pd-thin" vectorEffect="non-scaling-stroke" d={d.divergeDown} />}
+            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide" vectorEffect="non-scaling-stroke" d={d.divergeUp} />}
+            {!ghost && <path data-k={`dd-${i}-div-wide`} className="pd-stroke pd-wide" vectorEffect="non-scaling-stroke" d={d.divergeDown} />}
           </g>
         ))}
       </g>
@@ -35,8 +35,8 @@ function DoubleDiamond({ ghost = false, gs = () => ({}) }) {
           <g key={i} data-skew="conv" data-diamond={i}>
             <path data-k={k(`dd-${i}-conv`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.convergeUp} />
             <path data-k={k(`dd-${i}-conv`)} pathLength={draw} className="pd-stroke pd-neutral" vectorEffect="non-scaling-stroke" d={d.convergeDown} />
-            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide pd-thick" vectorEffect="non-scaling-stroke" d={d.convergeUp} />}
-            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide pd-thick" vectorEffect="non-scaling-stroke" d={d.convergeDown} />}
+            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide" vectorEffect="non-scaling-stroke" d={d.convergeUp} />}
+            {!ghost && <path data-k={`dd-${i}-conv-hard`} className="pd-stroke pd-decide" vectorEffect="non-scaling-stroke" d={d.convergeDown} />}
           </g>
         ))}
       </g>
@@ -88,12 +88,12 @@ function AINative({ ghost = false, gs = () => ({}) }) {
           const from = i === 0 ? 130 : loopEnd(i - 1);
           return (
             <g key={x0}>
-              <path data-k={k(`loop-${i}-conn`)} pathLength={draw} className="pd-stroke pd-neutral pd-thin" d={`M${from} 380 L${x0} 380`} />
+              <path data-k={k(`loop-${i}-conn`)} pathLength={draw} className="pd-stroke pd-neutral" d={`M${from} 380 L${x0} 380`} />
               {[-1, -0.5, 0, 0.5, 1].map((f) => (
-                <path key={f} data-k={k(`loop-${i}-fan`)} pathLength={draw} className="pd-stroke pd-wide pd-thin" d={`M${x0} 380 L${x0 + FAN_LEN} ${380 + f * spread}`} />
+                <path key={f} data-k={k(`loop-${i}-fan`)} pathLength={draw} className="pd-stroke pd-wide" d={`M${x0} 380 L${x0 + FAN_LEN} ${380 + f * spread}`} />
               ))}
               {[-1, 1].map((f) => (
-                <path key={f} data-k={k(`loop-${i}-conv`)} pathLength={draw} className="pd-stroke pd-decide pd-thin" d={`M${x0 + FAN_LEN} ${380 + f * spread} L${loopEnd(i)} 380`} />
+                <path key={f} data-k={k(`loop-${i}-conv`)} pathLength={draw} className="pd-stroke pd-decide" d={`M${x0 + FAN_LEN} ${380 + f * spread} L${loopEnd(i)} 380`} />
               ))}
             </g>
           );
@@ -136,7 +136,7 @@ function AINative({ ghost = false, gs = () => ({}) }) {
             </g>
           </g>
         )}
-        <path data-k={k('direction-outline')} className="pd-stroke pd-decide pd-thin" d={DIRECTION_PATH} />
+        <path data-k={k('direction-outline')} className="pd-stroke pd-decide" d={DIRECTION_PATH} />
         <text data-k={k('direction-label')} x={60} y={DIRECTION.base - 36} className="pd-label">Direction</text>
       </g>
     </>

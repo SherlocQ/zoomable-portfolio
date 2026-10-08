@@ -534,7 +534,8 @@ a:focus-visible,
    nearest tokens. Plates take the card surface, so they hide what is behind
    them without reading as fill; outlines sit well below the highlight, so
    the one bright line stands out by colour alone. */
-.grid-item-illustration--hairline {
+.grid-item-illustration--hairline,
+.contact-illustration--hairline {
   opacity: 1;
   --hairline-plate:  var(--surface-1);
   --hairline-hi:     var(--ink-muted);
@@ -543,7 +544,8 @@ a:focus-visible,
   --hairline-lo:     var(--hairline-strong);
   --hairline-stroke: 0.75;
 }
-[data-theme="light"] .grid-item-illustration--hairline { --hairline-hi: var(--ink); }
+[data-theme="light"] .grid-item-illustration--hairline,
+[data-theme="light"] .contact-illustration--hairline { --hairline-hi: var(--ink); }
 .grid-item:hover .grid-item-illustration--hairline { transform: none; }
 /* The stage sits inside the illustration box's padding, like the old SVGs. */
 .grid-item-illustration--hairline .hairline-stage {
@@ -1835,12 +1837,12 @@ a:focus-visible,
 .pd-legend-dot--noise { background: var(--diagram-noise); }
 .pd-legend-dot--execution { background: var(--diagram-wide); }
 .pd-legend-dot--direction { background: var(--diagram-decide); }
+/* One stroke weight for the whole diagram: the Loop step's. Emphasis comes
+   from colour (wide / decide), never from a heavier line. */
 .pd-stroke {
   fill: none; stroke-linecap: round; stroke-linejoin: round;
-  stroke-width: calc(var(--pd-u) * 1.75px);
+  stroke-width: calc(var(--pd-u) * 1.1px);
 }
-.pd-thin { stroke-width: calc(var(--pd-u) * 1.1px); }
-.pd-thick { stroke-width: calc(var(--pd-u) * 2.75px); }
 .pd-neutral { stroke: var(--diagram-neutral); }
 .pd-ink-stroke { stroke: var(--ink); }
 .pd-wide { stroke: var(--diagram-wide); }
@@ -1930,6 +1932,26 @@ a:focus-visible,
   filter: invert(1);
 }
 [data-theme="light"] .contact-illustration { filter: none; }
+/* The paper-plane Hairline figure (src/hairline/plane.js). Its flight is a
+   wide band across the middle of the 400 × 320 frame, so the box is 2:1 and
+   the stage overhangs it top and bottom (nothing is drawn there at rest). The
+   whole left column drives it, left edge to right edge (HairlineFigure
+   `stretch`). Palette: shared with the tile figures above. */
+.contact-illustration--hairline {
+  position: relative;
+  width: clamp(240px, 26vw, 320px);
+  aspect-ratio: 2 / 1;
+  margin: 0 0 24px;
+  transform: translateX(-9%);
+  filter: none;
+  pointer-events: none;
+}
+/* the trail reads as dashes, not dots, at this small size */
+.contact-illustration--hairline svg .dash { stroke-dasharray: 3 3; }
+.contact-illustration--hairline .hairline-stage {
+  position: absolute; left: 0; width: 100%; top: -30%; height: 160%;
+  aspect-ratio: auto;
+}
 .contact-heading {
   font-family: var(--font-sans);
   font-size: clamp(32px, 3.5vw, 40px);
@@ -2795,6 +2817,7 @@ a:focus-visible,
     margin: 0;
     transform: translateY(-6%);
   }
+  .contact-illustration--hairline { width: 150px; transform: none; }
   .contact-left { overflow: visible; }
 
   /* Prevent iOS auto-zoom on input focus (requires font-size ≥ 16px) */

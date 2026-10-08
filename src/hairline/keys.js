@@ -1,7 +1,7 @@
 /**
  * Keys: three keycaps in a loop on the desk, each with its own raised shape:
- * a circle, a triangle, a square. A ring of dots on the ground runs between
- * them, small to large, the way the loop turns. The key under the pointer
+ * a circle, a triangle, a square. Dashed arcs on the ground join them into
+ * a loop, in the same dashed style as the keys' footprints. The key under the pointer
  * floats up and its shape takes the bright edge; the others rise a little
  * after it. At rest all three sit on the desk and the circle is lit. The
  * slider is the lift, in world units.
@@ -13,7 +13,7 @@
 import HL from './kernel';
 const {
   Cam, clamp, facing, fit, hull, open, poly, proj, ringAt, rrect, run, tdone, tset, tval, tween,
-  disposer, flatDot, mk, place, pointer, register,
+  disposer, mk, pointer, register,
 } = HL;
 
 const HALF = 16, TOP = 13.5, T = 9, RELIEF = 2.4;
@@ -53,15 +53,19 @@ function mount({ stage, svg, read }, value) {
   const P = proj(C), front = facing(C);
   const g = mk("g", {}, svg);
 
-  // the loop: dots on the ground between the keys, growing the way it turns
+  // the loop: a dashed arc on the ground between each key and the next, bowed outwards,
+  // running from the edge of one key's footprint to the edge of the next and never inside either
   const mid = [0, 0].map((_, a) => KEYS.reduce((s, k) => s + k.c[a], 0) / KEYS.length);
+  const inFoot = (c, x, y) => Math.abs(x - c[0]) < HALF && Math.abs(y - c[1]) < HALF;
   KEYS.forEach((k, i) => {
-    const n = KEYS[(i + 1) % KEYS.length].c;
-    for (let s = 0; s < 4; s++) {
-      const t = 0.36 + s * 0.093, x = k.c[0] + (n[0] - k.c[0]) * t, y = k.c[1] + (n[1] - k.c[1]) * t;
+    const n = KEYS[(i + 1) % KEYS.length].c, arc = [];
+    for (let s = 0; s <= 200; s++) {
+      const t = s / 200, x = k.c[0] + (n[0] - k.c[0]) * t, y = k.c[1] + (n[1] - k.c[1]) * t;
       const ox = x - mid[0], oy = y - mid[1], l = Math.hypot(ox, oy), bow = 7 * Math.sin(Math.PI * t);
-      place(flatDot(g, C, 0.55 + s * 0.22, "dot m"), P(x + (ox / l) * bow, y + (oy / l) * bow, 0));
+      const wx = x + (ox / l) * bow, wy = y + (oy / l) * bow;
+      if (!inFoot(k.c, wx, wy) && !inFoot(n, wx, wy)) arc.push(P(wx, wy, 0));
     }
+    mk("path", { d: open(arc), class: "nf dash" }, g);
   });
 
   // back to front by x + y; each key: a dashed footprint on the ground, then its cap

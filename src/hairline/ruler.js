@@ -74,10 +74,16 @@ function mount({ stage, svg, read }, value) {
     parts[1].setAttribute("d", poly(hull(at(TIP).concat(at(BODY)))));
     parts[2].setAttribute("d", poly(hull(at(BODY).concat(at(FER)))));
     parts[3].setAttribute("d", poly(hull(at(FER, 0.92).concat(at(END, 0.92)))));
-    // the graphite's edge, the hexagon's near edges, the ferrule's crimp, the eraser's face
+    // the graphite's edge, the hexagon's near edges, the ferrule's crimp, the eraser's face:
+    // dim lines only inside the outline, never along it, so the outline stays the ruler's
     const near = (t, r) => { const ring = at(t, r); return nearIdx.map((k) => ring[k]); };
-    let d = open(near(3.2, 3.2 / TIP)) + open(near(FER - 3.5, 1)) + poly(at(END, 0.92));
-    for (const k of nearIdx) d += seg(at(TIP)[k], at(BODY)[k]);
+    const outline = hull([tip, ...at(TIP), ...at(BODY), ...at(FER), ...at(END, 0.92)]);
+    const onOutline = (q) => outline.some((o) => Math.abs(o[0] - q[0]) < 0.01 && Math.abs(o[1] - q[1]) < 0.01);
+    const body = hull(at(TIP).concat(at(BODY))), onBody = (q) => body.some((o) => Math.abs(o[0] - q[0]) < 0.01 && Math.abs(o[1] - q[1]) < 0.01);
+    let d = open(near(3.2, 3.2 / TIP)) + open(near(FER - 3.5, 1));
+    const face = at(END, 0.92);
+    face.forEach((q, k) => { const r = face[(k + 1) % 6]; if (!(onOutline(q) && onOutline(r))) d += seg(q, r); });
+    for (const k of nearIdx) if (!onBody(at(TIP)[k]) && !onBody(at(BODY)[k])) d += seg(at(TIP)[k], at(BODY)[k]);
     marks.setAttribute("d", d);
     line.setAttribute("d", seg(P(X0, LY, 0), tip));
     read.textContent = over ? ((x - X0) / 10).toFixed(1) + " cm" : "rest";
