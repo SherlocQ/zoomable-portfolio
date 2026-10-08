@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, cubicBezier } from 'framer-motion';
 import { EnvelopeSimple, LinkedinLogo } from '@phosphor-icons/react';
 import { flushSync } from 'react-dom';
 import lottie from 'lottie-web/build/player/lottie_light.js';
-import { T, fadeUp, EASE, EASE_HERO, LIGHTBOX_ZOOM, LIGHTBOX_CLOSE, LIGHTBOX_FADE, LIGHTBOX_CLOSE_MS, ACCORDION_HEIGHT, ACCORDION_FADE } from '../transitions';
+import { T, fadeUp, EASE, EASE_HERO, LIGHTBOX_ZOOM, LIGHTBOX_CLOSE, LIGHTBOX_FADE, LIGHTBOX_CLOSE_MS, ACCORDION_HEIGHT, ACCORDION_FADE, METRIC_EASE, METRIC_REVEAL_MS, METRIC_STAGGER_MS } from '../transitions';
 import { asset } from '../utils/asset';
 import ProcessStory from './ProcessStory';
 import ResumeGlobe from './ResumeGlobe';
@@ -145,11 +145,13 @@ function ProjectImageWrap({ id, src, caption, onImageClick, children }) {
   );
 }
 
-/* ─── Animated number counter (triggers on first viewport entry) ─────────── */
-function CountUp({ value, duration = 1400 }) {
-  const [display, setDisplay] = useState('0');
-  const ref      = useRef(null);
-  const started  = useRef(false);
+/* ─── Animated number counter ──────────────────────────────────────────────
+   Counts up from 0 once `active` turns true, after `delay` ms, on the metric
+   reveal's curve and clock (METRIC_EASE over METRIC_REVEAL_MS), so the number
+   lands as its card finishes floating in. Reduced motion shows the value. */
+const metricEase = cubicBezier(...METRIC_EASE);
+function CountUp({ value, active, delay = 0, duration = METRIC_REVEAL_MS }) {
+  const reduceMotion = useReducedMotion();
 
   // Parse: split into prefix, number, suffix  e.g. "$22.6M" → ['$', 22.6, 'M']
   const { prefix, number, suffix, decimals } = (() => {
@@ -159,32 +161,59 @@ function CountUp({ value, duration = 1400 }) {
     const dec = (m[2].split('.')[1] || '').length;
     return { prefix: m[1], number: parseFloat(m[2]), suffix: m[3], decimals: dec };
   })();
+  const format = (n) => (decimals > 0 ? n.toFixed(decimals) : Math.round(n).toString());
+  const [display, setDisplay] = useState(() => format(0));
+
+  useEffect(() => {
+    if (!active || reduceMotion) return undefined;
+    let frame = 0;
+    const start = performance.now() + delay;
+    const tick = (now) => {
+      const p = Math.min(Math.max((now - start) / duration, 0), 1);
+      setDisplay(format(number * metricEase(p)));
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+    // format depends only on decimals, already listed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, delay, duration, number, decimals, reduceMotion]);
+
+  return <span>{prefix}{reduceMotion && active ? format(number) : display}{suffix}</span>;
+}
+
+/* ─── Metric cards: blur, float and fade in, staggered, once in view ─────── */
+function MetricGrid({ items }) {
+  const ref = useRef(null);
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) return undefined;
     const obs = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || started.current) return;
-      started.current = true;
-      const start = performance.now();
-      const tick = (now) => {
-        const p = Math.min((now - start) / duration, 1);
-        // ease-out cubic
-        const e = 1 - Math.pow(1 - p, 3);
-        const cur = number * e;
-        setDisplay(decimals > 0 ? cur.toFixed(decimals) : Math.round(cur).toString());
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+      if (!entry.isIntersecting) return;
+      setActive(true);
+      obs.disconnect();
     }, { threshold: 0.3 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [number, decimals, duration]);
+  }, []);
 
   return (
-    <span ref={ref}>
-      {prefix}{display}{suffix}
-    </span>
+    <div ref={ref} className={`section-metrics section-metrics--${items.length}`}>
+      {items.map((m, i) => (
+        <div
+          key={m.label}
+          className={`metric-item metric-reveal${active ? ' is-in' : ''}`}
+          style={{ transitionDelay: `${i * METRIC_STAGGER_MS}ms` }}
+        >
+          <span className="metric-value">
+            <CountUp value={m.value} active={active} delay={i * METRIC_STAGGER_MS} />
+          </span>
+          <span className="metric-label">{m.label}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1677,16 +1706,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
     return (
       <motion.div className={cls} {...mp}>
         {heading}
-        <div className={`section-metrics section-metrics--${s.items.length}`}>
-          {s.items.map((m) => (
-            <div key={m.label} className="metric-item">
-              <span className="metric-value">
-                <CountUp value={m.value} />
-              </span>
-              <span className="metric-label">{m.label}</span>
-            </div>
-          ))}
-        </div>
+        <MetricGrid items={s.items} />
         {s.body && <div className="section-body-after"><BodyText text={s.body} /></div>}
         {s.links?.length > 0 && (
           <div className="project-source-links" aria-label="Media coverage">

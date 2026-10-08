@@ -1287,6 +1287,22 @@ a:focus-visible,
   border-radius: var(--r-xl);
   background: var(--surface-3);
 }
+/* Metric reveal (Framer "Animated Stats Pro"): opacity 0 → 1, 40px rise and a
+   12px blur clearing, over 2s on cubic-bezier(0.16, 1, 0.3, 1); the delay per
+   card (240ms apart) is set inline. Constants live in transitions.js. */
+.metric-reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  filter: blur(12px);
+  transition:
+    opacity 2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 2s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.metric-reveal.is-in { opacity: 1; transform: none; filter: none; }
+@media (prefers-reduced-motion: reduce) {
+  .metric-reveal { transform: none; filter: none; transition: opacity 0.3s ease; }
+}
 .metric-value {
   font-family: var(--font-sans);
   font-size: clamp(30px, 4vw, 48px);

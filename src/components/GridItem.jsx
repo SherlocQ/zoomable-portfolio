@@ -21,6 +21,8 @@ const ILLUSTRATIONS = {
   'brand-tokens': tokens,
   'layout-inspector': layout,
 };
+// Figures whose pointer reading spans the whole tile, left edge to right edge.
+const STRETCH = new Set(['layout-inspector']);
 
 export function GridItem({ item, onItemClick }) {
   const [col, row] = item.span || [1, 1];
@@ -124,7 +126,7 @@ export function GridItem({ item, onItemClick }) {
         </div>
       )}
       {hasImage && <div className="grid-item-img-gradient" aria-hidden="true" />}
-      {figure && <HairlineFigure figure={figure} className="grid-item-illustration grid-item-illustration--hairline" />}
+      {figure && <HairlineFigure figure={figure} className="grid-item-illustration grid-item-illustration--hairline" stretch={STRETCH.has(item.illustration)} />}
       {item.portrait && <img src={asset(item.portrait)} alt="" aria-hidden="true" className="grid-item-portrait" />}
 
       <div className={`grid-item-inner${liftsOnHover ? ' grid-item-inner--lift' : ''}`}>

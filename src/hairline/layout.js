@@ -2,10 +2,13 @@
  * Layout: a browser window standing on the desk, facing the viewer, being
  * resized. A ruler runs above it with two breakpoint marks; on its face are a
  * bar across the top, an input box, and six cards in a masonry grid. The
- * pointer's x across the stage sets the window's width, on a spring; past
+ * pointer's x across the stage sets the window's width, on a spring: the
+ * outer 15% at each side holds the narrowest / widest, and the middle 70%
+ * splits evenly into the one-, two- and three-column ranges; past
  * each breakpoint the cards re-flow (three columns, two, one) on the 700ms
  * tween, staggered card by card. The window keeps its height, like a
  * viewport: cards that flow below it are cut at its edge, as if to scroll.
+ * At rest the window is at its widest, the last breakpoint, three columns.
  * The bright edge is the resize handle on the window's right side. The
  * slider is the stagger.
  *
@@ -19,8 +22,9 @@ const {
   disposer, flatDot, mk, place, pointer, put, register, solid,
 } = HL;
 
-const WMIN = 56, WMAX = 200, REST = 172, BP = [96, 148], PAD = 7, GAP = 5, TOP = 32, PX = 8;
+const WMIN = 50, WMAX = 200, REST = 200, BP = [100, 150], PAD = 7, GAP = 5, TOP = 32, PX = 8; // the ends and breakpoints sit on the ruler's long ticks
 const CARDS = [24, 15, 19, 17, 22, 13]; // card heights: an uneven masonry
+const EDGE = 0.15; // the outer 15% at each side already holds the narrowest / widest width
 const T = 3, VIEW = 104; // the window's thickness and its height: a fixed viewport
 
 /** Where each card sits for a column count: its left and right as fractions of the content width, and its top. */
@@ -106,7 +110,7 @@ function mount({ stage, svg, read }, value) {
   bag.add(B.unregister);
 
   bag.add(pointer(stage, {
-    move: (p) => { over = true; sp.t = lerp(WMIN, WMAX, clamp(p[0] / 400, 0, 1)); B.wake(); },
+    move: (p) => { over = true; sp.t = lerp(WMIN, WMAX, clamp((p[0] / 400 - EDGE) / (1 - 2 * EDGE), 0, 1)); B.wake(); },
     leave: () => { over = false; sp.t = REST; B.wake(); },
   }));
   bag.add(() => svg.replaceChildren());

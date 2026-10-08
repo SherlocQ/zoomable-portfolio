@@ -60,3 +60,11 @@ export const fadeUp = {
     transition: { delay: i * 0.05 + 0.14, duration: 0.34, ease: EASE },
   }),
 };
+
+// Metric reveal, copied from the Framer "Animated Stats Pro" component
+// (animatedstatspro.framer.website): each stat fades in from opacity 0, rises
+// 40px and un-blurs from 12px over 2s on cubic-bezier(0.16, 1, 0.3, 1), its
+// number counting up on the same curve and clock; stats start 240ms apart.
+export const METRIC_EASE = [0.16, 1, 0.3, 1];
+export const METRIC_REVEAL_MS = 2000;
+export const METRIC_STAGGER_MS = 240;
