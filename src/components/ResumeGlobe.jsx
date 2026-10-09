@@ -354,7 +354,8 @@ function GlobeCanvas({ activeIndex, chapters, showPhotos, onArrive, children }) 
       const targetCenter = isOverview
         ? [
           stacked ? width * 0.5 : width - state.scale,
-          stacked ? Math.max(height * 0.55, state.scale * 0.96) : height * 0.5,
+          // Stacked, the globe now sits in the top half, so it centers there.
+          height * 0.5,
         ]
         : [width * 0.5, height * 0.5 + groupOffset];
       state.center = state.center

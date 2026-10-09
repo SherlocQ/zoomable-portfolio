@@ -6,6 +6,7 @@ import PageView       from './components/PageView';
 import AppHeader      from './components/AppHeader';
 import NotFoundPage   from './components/NotFoundPage';
 import Preloader      from './components/Preloader';
+import CursorTrail    from './components/CursorTrail';
 import { shouldShowPreloader } from './utils/preloader';
 import { portfolioData, getNodeByPath, getBreadcrumbs } from './data/portfolio';
 import { LIGHTBOX_CLOSE_MS } from './transitions';
@@ -213,6 +214,7 @@ export default function App() {
     <div className="app">
       <a className="skip-link" href="#main-content">Skip to content</a>
       {showPreloader && <Preloader onDone={hidePreloader} />}
+      <CursorTrail />
 
       <AppHeader
         breadcrumbs={getBreadcrumbs(portfolioData, path)}

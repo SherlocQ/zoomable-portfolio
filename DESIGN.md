@@ -473,6 +473,8 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 ### Cards & Containers
 
+- Image cards: a percentage vignette plus a scrim anchored to the text block (55% black at the text's foot, clear 64px above it), so card copy stays legible at any card size. Grid tiles use the hand cursor.
+
 **`pricing-card`** — Each tier on `/pricing`.
 - Background `{colors.surface-1}`, text `{colors.ink}`, type `{typography.body}`, rounded `{rounded.lg}`, padding 24px. 1px `{colors.hairline}` border.
 
@@ -534,6 +536,8 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 **`preloader`** — First full page load only: a `--canvas` screen with the centered line "Chengchang Qian - AI Native Product Designer" (16px, 500, -0.01em, `--ink`). Timeline from the Framer preloader it ports: 0.2s delay, blur 10px → 0 and opacity 0 → 1 over 1.5s ease-out, hold 2s, back out over 0.5s ease-in, then the whole overlay dissolves to opacity 0 and blur 20px over 1s ease-in-out onto the landing page. No image card. Reduced motion: opacity only.
 
 ### Resume Globe
+
+- Mobile (≤768px): stacked like Process — globe in the top 44%, text in the bottom 56% (so the intro and résumé button clear the scroll cue), text starting at the top of its half; the scroll cue sits 16px above the bottom.
 
 - "Download Résumé" is the primary accent button (`accent` fill, white text, `r-md`, hover `accent-hover`), matching Contact "Send message".
 
@@ -698,6 +702,8 @@ Tried and rejected: 1px (heavy next to Linear's ≈0.45px lines); 0.5px with `ha
 **Accessibility.** The figure is decorative: the wrapper and svg are `aria-hidden`, and the tile itself is the control (`role="button"`, `aria-label={item.label}`, keyboard Enter/Space). Do not add an `aria-label` / `role="img"` to the figure — a button's children are presentational, so it would be unread or duplicate the tile name. Nothing in the figure is required to use the tile; reduced motion is honoured by the kernel (springs and tweens land at once); motion sleeps off-screen.
 
 ### Contact illustration
+
+- Mobile (≤640px): the heading and the paper-plane figure share the first row, each half the width (figure vertically centered); the introduction, opportunity list and icon buttons span the full width below.
 
 - Style “Let's build something great.” with the Hero display language: 36–48px / 1.1 on desktop, 30–40px / 1.1 on mobile, weight 590, tight negative tracking, and balanced wrapping. At ≤360px hold the heading at 30px so the adjacent illustration cannot force clipping.
 - Above the copy on desktop sits the paper-plane Hairline figure (`src/hairline/plane.js`, mounted through `HairlineFigure` with `interactive={false}`): a paper dart thrown left to right that dips, turns one teardrop loop crossing its own dashed trail, and climbs out to the right, seen three-quarter so its centre fold and one wing show. No pointer interaction: when the page opens the dart is thrown once — 450ms delay, then the whole flight in 2.8s on an ease-in-out curve (`cubic-bezier(0.45, 0, 0.25, 1)`; the kernel's ease-out lift curve front-loaded the travel and read as too fast) — and it rests at the right with the whole trail drawn. On a full page load it waits for the name intro (`.preloader`) to leave, so the throw is seen; reduced motion shows the rest pose at once. No eyebrow label.

@@ -828,7 +828,8 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   const forceImageContain = isImagePage && node.fit === 'contain';
   const imageBackdropStyle = isImagePage && (node.bg || node.bgImage)
     ? {
-        ...(node.bg ? { backgroundColor: node.bg } : {}),
+        // A gradient bg matches artwork photographed on a graded backdrop.
+        ...(node.bg ? (node.bg.includes('gradient(') ? { backgroundImage: node.bg } : { backgroundColor: node.bg }) : {}),
         ...(node.bgImage ? {
           backgroundImage: `url(${asset(node.bgImage)})`,
           backgroundPosition: 'center',

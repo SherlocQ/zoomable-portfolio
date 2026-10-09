@@ -467,7 +467,8 @@ a:focus-visible,
 /* ─── Grid Item ──────────────────────────────────────────────────────────────── */
 .grid-item {
   border-radius: var(--r-lg);
-  cursor: zoom-in; overflow: hidden; position: relative;
+  /* Hand cursor: the cursor trail draws its ring around it (CursorTrail). */
+  cursor: pointer; overflow: hidden; position: relative;
   display: flex; align-items: flex-end;
   will-change: transform;
   grid-column: span var(--cs, 1);
@@ -2210,6 +2211,25 @@ a:focus-visible,
   object-fit: cover;
 }
 /* Image cards: always white text regardless of theme — overrides ink token declarations */
+/* The vignette above is a share of the card's height, but the title and
+   description are a fixed height, so on small cards (e.g. the Projects
+   bottom row) they rose out of it. This scrim is anchored to the text block
+   instead — it spans the text and fades out 64px above it — so the copy
+   stays legible at every card size and breakpoint. */
+.item-has-image .grid-item-inner::before {
+  content: '';
+  position: absolute;
+  inset: -64px 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.55) 0%,
+    rgba(0,0,0,0.42) 50%,
+    rgba(0,0,0,0.18) 78%,
+    transparent 100%
+  );
+}
 .item-has-image .grid-item-label   { color: #fff; }
 .item-has-image .grid-item-sub     { color: rgba(255,255,255,0.86); }
 .item-has-image .grid-item-badge   { color: rgba(255,255,255,0.74); }
@@ -2814,9 +2834,11 @@ a:focus-visible,
 
   /* Contact: stack columns */
   .contact-content { grid-template-columns: 1fr; gap: 32px; }
+  /* Title beside the paper plane (each half the width); the description,
+     list and links run the full width below. */
   .contact-left {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
     column-gap: 24px;
   }
@@ -2833,26 +2855,26 @@ a:focus-visible,
     overflow: visible;
   }
   .contact-desc {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
   }
   .contact-bullets {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 3;
   }
   .contact-direct {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 4;
   }
   .contact-illustration {
     grid-column: 2;
-    grid-row: 2 / span 3;
-    align-self: start;
-    width: 130px;
+    grid-row: 1;
+    align-self: center;
+    width: 100%;
     margin: 0;
-    transform: translateY(-6%);
+    transform: none;
   }
-  .contact-illustration--hairline { width: 150px; transform: none; }
+  .contact-illustration--hairline { width: 100%; transform: none; }
   .contact-left { overflow: visible; }
 
   /* Prevent iOS auto-zoom on input focus (requires font-size ≥ 16px) */
@@ -3288,17 +3310,20 @@ a:focus-visible,
     overflow: hidden;
   }
 
+  /* Globe above, text below; the text half gets a little more (56%) so the
+     intro — headline, lead and résumé button — fits above the scroll cue. */
   .resume-globe {
     display: grid;
     height: 100%;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 44fr) minmax(0, 56fr);
     gap: 0;
   }
 
+  /* Stacked like the Process page: globe in the top half, text below. */
   .resume-globe-stage {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
     position: relative;
     top: auto;
     z-index: 1;
@@ -3327,7 +3352,7 @@ a:focus-visible,
 
   .resume-globe-copy {
     grid-column: 1;
-    grid-row: 1;
+    grid-row: 2;
     position: relative;
     z-index: 4;
     width: 100%;
@@ -3342,8 +3367,9 @@ a:focus-visible,
     scroll-padding: 0;
   }
 
+  /* Bottom of the screen (under the text half), 16px inset, like Process. */
   .resume-scroll-cue {
-    top: calc(50% - 50px);
+    top: calc(100% - 50px);
     left: 50%;
   }
 
@@ -3357,7 +3383,9 @@ a:focus-visible,
   .resume-step,
   .resume-step--intro {
     min-height: 100%;
-    padding: 32px 0;
+    padding: 24px 0;
+    /* Text starts at the top of its half, under the globe, like Process. */
+    justify-content: flex-start;
     scroll-snap-align: start;
     scroll-snap-stop: normal;
     transition: opacity 0.24s cubic-bezier(0.32, 0.72, 0, 1);
@@ -3431,4 +3459,44 @@ a:focus-visible,
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Craft at the middle breakpoint (641–900px): like the other grids, fill the
+   viewport — Motion & Animation across the top (2 × 1), Print & Visual and
+   Data Visualization side by side below (1 × 1 each). ≤640px stays one
+   column; desktop keeps its 4-column layout. */
+@media (min-width: 641px) and (max-width: 900px) {
+  .grid-overlay-inner[data-grid-id="craft"] {
+    height: 100%;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+  }
+  .grid-overlay-inner[data-grid-id="craft"] > .grid-item { grid-column: span 1; grid-row: span 1; }
+  .grid-overlay-inner[data-grid-id="craft"] > .grid-item[data-tile="craft-motion"] { grid-column: span 2; }
+  .overlay-shell.grid-full-overlay:has(> [data-grid-id="craft"]) { overflow: hidden; }
+}
+
+/* Projects: the featured work is larger, and every breakpoint tries to fit
+   the viewport.
+   - Desktop (>900px, 4 columns): three equal rows — AI native vision 2 × 2,
+     Account IQ and Configurable checkout 2 × 1 beside it, the other four
+     projects in the last row.
+   - Tablet (641–900px, 2 columns): four equal rows — AI native vision
+     across the top, the two featured projects side by side, then the other
+     four in pairs; rows never drop below a card-proportional minimum, so a
+     short screen scrolls instead of squashing.
+   - Phone (≤640px): one column, as every grid. */
+@media (min-width: 901px) {
+  .grid-overlay-inner[data-grid-id="projects"] {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .grid-overlay-inner[data-grid-id="projects"] {
+    grid-template-rows: none;
+    grid-auto-rows: max(min(26vw, 200px), calc((100vh - var(--header-h) - var(--gap) * 5) / 4));
+    grid-auto-rows: max(min(26vw, 200px), calc((100svh - var(--header-h) - var(--gap) * 5) / 4));
+  }
+  .grid-overlay-inner[data-grid-id="projects"] > .grid-item { grid-column: span 1; grid-row: span 1; }
+  .grid-overlay-inner[data-grid-id="projects"] > .grid-item[data-tile="project-ai-vision"] { grid-column: span 2; }
 }
