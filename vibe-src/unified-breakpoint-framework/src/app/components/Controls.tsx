@@ -9,17 +9,8 @@ interface ControlsProps {
   onWidthChange: (width: number, animated?: boolean) => void;
   showGrid: boolean;
   onGridToggle: (show: boolean) => void;
+  visibleRange?: { start: number; end: number } | null; // set when the canvas overflows
 }
-
-const presetWidths = [
-  { name: 'XS - Mobile', value: 320 },
-  { name: 'SM - Mobile Large', value: 576 },
-  { name: 'MD - Tablet', value: 768 },
-  { name: 'LG - Desktop', value: 1024 },
-  { name: 'LG-EXT - Large Extended', value: 1280 },
-  { name: 'XL-EXT - Extra Large Extended', value: 1440 },
-  { name: 'XXL - Ultra Wide', value: 1680 },
-];
 
 const breakpoints = [
   { name: 'XS', value: 320 },
@@ -31,7 +22,7 @@ const breakpoints = [
   { name: 'XXL', value: 1680 },
 ];
 
-export function Controls({ width, onWidthChange, showGrid, onGridToggle }: ControlsProps) {
+export function Controls({ width, onWidthChange, showGrid, onGridToggle, visibleRange }: ControlsProps) {
   const [inputValue, setInputValue] = useState(width.toString());
 
   useEffect(() => {
@@ -71,18 +62,16 @@ export function Controls({ width, onWidthChange, showGrid, onGridToggle }: Contr
     }
   };
 
-  const handlePresetChange = (value: string) => {
-    const newWidth = parseInt(value);
-    onWidthChange(newWidth, true); // Enable animation for preset changes
-  };
 
   const handleResetClick = () => {
-    onWidthChange(1440, true); // Enable animation for reset
+    // Reset to the opening width: 1440, or the widest that fits the viewport.
+    const pad = window.innerWidth < 640 ? 16 : 32;
+    onWidthChange(Math.max(320, Math.min(1440, window.innerWidth - pad * 2)), true);
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <Button
           onClick={() => onGridToggle(!showGrid)}
           variant={showGrid ? "default" : "outline"}
@@ -92,30 +81,32 @@ export function Controls({ width, onWidthChange, showGrid, onGridToggle }: Contr
           <Layout className="w-4 h-4" />
           Product layout
         </Button>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Preset:</span>
-          <Select value={width.toString()} onValueChange={handlePresetChange}>
-            <SelectTrigger className="w-56">
-              <SelectValue placeholder="Select width" />
-            </SelectTrigger>
-            <SelectContent>
-              {presetWidths.map((preset) => (
-                <SelectItem key={preset.value} value={preset.value.toString()}>
-                  {preset.name} ({preset.value}px)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {visibleRange && (
+          <span className="text-xs text-gray-500 font-mono">
+            Showing {visibleRange.start}–{visibleRange.end} of {width}px
+          </span>
+        )}
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Breakpoint Info */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium text-gray-900">{currentBreakpoint.name}</span>
-          <span className="text-gray-500">({currentBreakpoint.value}px+)</span>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        {/* Breakpoint selector — shows the breakpoint the current width falls
+            in (custom widths included); picking one jumps to its width. */}
+        <Select
+          value={currentBreakpoint.value.toString()}
+          onValueChange={(value) => onWidthChange(parseInt(value), true)}
+        >
+          <SelectTrigger size="sm" className="w-auto gap-2" aria-label="Breakpoint">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {breakpoints.map((bp) => (
+              <SelectItem key={bp.value} value={bp.value.toString()}>
+                <span className="font-medium text-gray-900">{bp.name}</span>
+                <span className="text-gray-500">({bp.value}px+)</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Width Input - Chrome DevTools style */}
         <div className="flex items-center gap-2">
@@ -134,7 +125,7 @@ export function Controls({ width, onWidthChange, showGrid, onGridToggle }: Contr
             </span>
           </div>
         </div>
-        
+
         <Button
           onClick={handleResetClick}
           variant="outline"

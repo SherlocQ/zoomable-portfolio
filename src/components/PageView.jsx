@@ -1111,6 +1111,8 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
             title={node.label}
             className="embed-page-frame"
             loading="lazy"
+            // External sites (client work) get no referrer back to this portfolio.
+            referrerPolicy={/^https?:/.test(content.src) ? 'no-referrer' : undefined}
           />
           {(content.title || content.caption || content.description) && (
             <div className="img-page-caption-bar img-page-caption-bar--stacked">

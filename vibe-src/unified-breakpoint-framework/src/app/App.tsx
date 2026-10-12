@@ -7,8 +7,62 @@ import { GridOverlay } from './components/GridOverlay';
 import { SpacingInspector } from './components/SpacingInspector';
 import { BottomSheet } from './components/BottomSheet';
 
+// Side padding around the canvas: 16px on phones, 32px from 640px up.
+const canvasPadding = () => (window.innerWidth < 640 ? 16 : 32);
+// Open (and reset) at the default 1440 when it fits, otherwise at the widest
+// width that fits the viewport, so the whole canvas is visible on arrival.
+const fitWidth = () => Math.max(320, Math.min(1440, window.innerWidth - canvasPadding() * 2));
+
+// Progressive blur at a scroll edge. Masked backdrop blurs are the usual
+// technique, but Chromium drops `mask-image` on `backdrop-filter` inside an
+// iframe (this page is embedded in one), which blurs the whole strip and
+// leaves a hard seam. So: nested boxes anchored to the outer edge, each
+// starting a little further out, no masks. Stacked backdrop blurs compound
+// (each blurs what's beneath it), so the radius in each layer is chosen to
+// make the combined blur climb evenly to 4px. A faint eased fade to the
+// canvas backdrop (gray-100) lets content dissolve at the very edge.
+const EDGE_BLUR_TOTALS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4];
+const EDGE_BLUR_LAYERS = EDGE_BLUR_TOTALS.map((t, i) =>
+  Math.sqrt(t * t - (i ? EDGE_BLUR_TOTALS[i - 1] ** 2 : 0)),
+);
+
+function EdgeBlur({ side, visible }: { side: 'left' | 'right'; visible: boolean }) {
+  const to = side === 'left' ? 'to left' : 'to right';
+  const n = EDGE_BLUR_LAYERS.length;
+  const width = window.innerWidth < 640 ? 48 : 72;
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute top-0 bottom-0 z-[45] transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
+      style={{ [side]: 0, width }}
+    >
+      {EDGE_BLUR_LAYERS.map((blur, i) => (
+        <div
+          key={i}
+          className="absolute top-0 bottom-0"
+          style={{
+            [side]: 0,
+            width: `${(100 * (n - i)) / n}%`,
+            backdropFilter: `blur(${blur.toFixed(2)}px)`,
+            WebkitBackdropFilter: `blur(${blur.toFixed(2)}px)`,
+          }}
+        />
+      ))}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(${to}, rgb(243 244 246 / 0) 0%, rgb(243 244 246 / 0.08) 40%, rgb(243 244 246 / 0.3) 70%, rgb(243 244 246 / 0.7) 100%)`,
+        }}
+      />
+    </div>
+  );
+}
+
 export default function App() {
-  const [width, setWidth] = useState(1440);
+  const [width, setWidth] = useState(fitWidth);
+  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
+  const [topHeight, setTopHeight] = useState(132);
+  const topRef = useRef<HTMLDivElement>(null);
   const [showGrid, setShowGrid] = useState(false);
   const [canvasOffset, setCanvasOffset] = useState(0);
   const [targetCanvasOffset, setTargetCanvasOffset] = useState(0); // For smooth transitions
@@ -18,8 +72,48 @@ export default function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState('dashboard');
   const canvasRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  // Wider-than-viewport widths scroll horizontally at 100%: which edges have
+  // more canvas, and which slice of it is on screen.
+  const [edges, setEdges] = useState({ left: false, right: false });
+  const [visibleRange, setVisibleRange] = useState<{ start: number; end: number } | null>(null);
   const maxWidth = 1920;
-  const canvasHeight = 810; // Fixed canvas height
+
+  // The header wraps on narrow screens, so its height is measured, not fixed.
+  useEffect(() => {
+    const el = topRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setTopHeight(el.offsetHeight));
+    ro.observe(el);
+    const onResize = () => setViewportHeight(window.innerHeight);
+    window.addEventListener('resize', onResize);
+    return () => { ro.disconnect(); window.removeEventListener('resize', onResize); };
+  }, []);
+
+  // Keeps the ruler, edge fades and visible-range readout in step with the
+  // canvas's horizontal scroll. Runs on scroll, resize and width changes.
+  const syncScroll = () => {
+    const scroller = scrollerRef.current;
+    const canvas = canvasRef.current;
+    if (!scroller || !canvas) return;
+    const max = scroller.scrollWidth - scroller.clientWidth;
+    setEdges({ left: scroller.scrollLeft > 1, right: scroller.scrollLeft < max - 1 });
+    const s = scroller.getBoundingClientRect();
+    const c = canvas.getBoundingClientRect();
+    const start = Math.max(0, Math.round(s.left - c.left));
+    const end = Math.min(c.width, Math.round(s.right - c.left));
+    setVisibleRange(end - start < c.width - 1 ? { start, end } : null);
+    if (!isTransitioning) {
+      setCanvasOffset(c.left);
+      setTargetCanvasOffset(c.left);
+    }
+  };
+
+  useEffect(() => {
+    const id = requestAnimationFrame(syncScroll);
+    window.addEventListener('resize', syncScroll);
+    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', syncScroll); };
+  }, [width, isTransitioning]);
 
   // Function to calculate canvas offset
   const calculateCanvasOffset = () => {
@@ -33,9 +127,9 @@ export default function App() {
   // Calculate target offset based on width and viewport
   const calculateTargetOffset = (newWidth: number) => {
     const viewportWidth = window.innerWidth;
-    const containerPadding = 64; // 8 * 8 = 64px (p-8 padding)
-    const availableWidth = viewportWidth - containerPadding;
-    const offset = Math.max(0, (availableWidth - newWidth) / 2) + 32; // 32px is half the container padding
+    const pad = canvasPadding();
+    const availableWidth = viewportWidth - pad * 2;
+    const offset = Math.max(0, (availableWidth - newWidth) / 2) + pad;
     return offset;
   };
 
@@ -63,6 +157,8 @@ export default function App() {
     const finalWidth = Math.min(Math.max(newWidth, 320), maxWidth);
     
     if (animated && !isDragging) {
+      // A preset / reset starts from the canvas's left edge, not mid-scroll.
+      if (scrollerRef.current) scrollerRef.current.scrollLeft = 0;
       setIsTransitioning(true);
       
       // Calculate target offset for smooth animation
@@ -113,41 +209,32 @@ export default function App() {
     }, 50);
   };
 
-  // Exact measurements with no gaps
-  const headerHeight = 80; // Exact content height with internal padding only
-  const controlsHeight = 52; // Exact content height with internal padding only  
   const rulerHeight = 24; // h-6 = 24px exact
-  const totalFixedHeight = headerHeight + controlsHeight + rulerHeight;
+  const totalFixedHeight = topHeight + rulerHeight;
+  // The canvas fills the space under the ruler (less its padding).
+  const canvasHeight = Math.max(360, viewportHeight - totalFixedHeight - canvasPadding() * 2);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Fixed Header - On top of everything */}
-      <div className="fixed top-0 left-0 right-0 z-[70] bg-white" style={{ height: `${headerHeight}px` }}>
-        <div className="px-4 h-full flex items-center">
+      {/* Fixed header + controls - On top of everything. Natural height (it
+          wraps on narrow screens), measured into topHeight. */}
+      <div ref={topRef} className="fixed top-0 left-0 right-0 z-[70] bg-white border-b border-gray-200">
+        <div className="px-4 sm:px-8 pt-5 pb-4 sm:pt-6">
           <div className="mx-auto w-full" style={{ maxWidth: '1440px' }}>
-            <h1 className="text-3xl font-semibold text-gray-900 mb-1 leading-tight">Product Layout Inspector</h1>
-            <p className="text-base font-normal text-gray-500 leading-relaxed">
-              Test your layouts across different breakpoints. Drag the edges to resize, use presets, or enter a custom width. Hover over elements to inspect spacing.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Fixed Controls - On top of everything */}
-      <div 
-        className="fixed left-0 right-0 z-[70] bg-white"
-        style={{ 
-          top: `${headerHeight}px`,
-          height: `${controlsHeight}px`
-        }}
-      >
-        <div className="px-4 h-full flex items-center">
-          <div className="mx-auto w-full" style={{ maxWidth: '1440px' }}>
+            {/* Only the title block needs to clear the host's close button. On
+                phones the description hides: the Lightbox caption covers it. */}
+            <div className="pr-12 mb-3 sm:mb-4">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 sm:mb-1.5 leading-tight">Product Layout Inspector</h1>
+              <p className="hidden sm:block text-base font-normal text-gray-500 leading-relaxed">
+                Test your layouts across different breakpoints. Pick a breakpoint, drag the edges, or enter a custom width. Hover or tap an element to inspect spacing.
+              </p>
+            </div>
             <Controls
               width={width}
               onWidthChange={handleWidthChange}
               showGrid={showGrid}
               onGridToggle={setShowGrid}
+              visibleRange={visibleRange}
             />
           </div>
         </div>
@@ -157,8 +244,9 @@ export default function App() {
       <div 
         className="fixed left-0 right-0 z-[60]"
         style={{ 
-          top: `${headerHeight + controlsHeight}px`,
-          height: `${rulerHeight}px`
+          top: `${topHeight}px`,
+          height: `${rulerHeight}px`,
+          overflowX: 'clip', // the ruler scrolls with the canvas; never widens the page
         }}
       >
         <Ruler 
@@ -173,7 +261,17 @@ export default function App() {
       <div style={{ paddingTop: `${totalFixedHeight}px` }}>
         {/* Resizable Layout Container with Fixed Canvas Height */}
         <div className="relative bg-gray-100">
-          <div className="flex justify-center p-8 bg-gray-100" style={{ height: `calc(100vh - ${totalFixedHeight}px)` }}>
+          {/* Edge blur: more canvas off-screen on that side. */}
+          <EdgeBlur side="left" visible={edges.left} />
+          <EdgeBlur side="right" visible={edges.right} />
+          {/* "safe center": centered when the canvas fits, scrollable from its
+              left edge when it is wider than the viewport. */}
+          <div
+            ref={scrollerRef}
+            onScroll={syncScroll}
+            className="flex p-4 sm:p-8 bg-gray-100 overflow-x-auto"
+            style={{ height: `calc(100vh - ${totalFixedHeight}px)`, justifyContent: 'safe center' }}
+          >
             <div 
               className="relative group"
               style={{ height: `${canvasHeight}px` }}

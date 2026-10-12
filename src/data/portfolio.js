@@ -1379,18 +1379,20 @@ export const portfolioData = {
       span: [1, 1],
       tone: 'base',
       items: [
-        // Placeholders — each opens a full-bleed iframe pointing at its own folder
-        // under public/vibe/. Drop a real site's built files (index.html + its own
+        // Each page opens a full-bleed iframe pointing at its own folder under
+        // public/vibe/, named after the project (placeholders keep project-N). Drop a real site's built files (index.html + its own
         // relative assets) into that project's folder and it replaces the
         // placeholder — no code changes needed. Add an `image` (real screenshot)
         // once one exists to switch the tile to the Print & Visual-style
         // image-with-caption treatment; until then tone: 'base' keeps them
         // theme-responsive like every other plain tile.
         { id: 'vibe-1', type: 'page', label: 'Vibe Coding 1', span: [2, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-1/index.html', caption: 'Vibe Coding Project 1' } },
-        { id: 'vibe-2', type: 'page', label: 'Brand 2.0 Arc & Seismic analysis', span: [1, 1], tone: 'base', illustration: 'brand-tokens', content: { type: 'embed', src: '/vibe/project-2/index.html', title: 'Brand 2.0 Arc & Seismic analysis', description: 'A typography and color analysis tool for Brand 2.0. Compare Seismic and Arc design tokens, explore CSS and Figma variable mappings across breakpoints, and match color swatches by Delta E accuracy.' } },
-        { id: 'vibe-3', type: 'page', label: 'Product layout inspector', span: [1, 1], tone: 'base', illustration: 'layout-inspector', content: { type: 'embed', src: '/vibe/project-3/index.html', title: 'Product layout inspector', description: 'A resizable canvas for testing layouts across breakpoints. Drag the edges or use presets to change width, select product layout to inspect spacing.' } },
+        { id: 'vibe-2', type: 'page', label: 'Brand 2.0 Arc & Seismic analysis', span: [1, 1], tone: 'base', illustration: 'brand-tokens', content: { type: 'embed', src: '/vibe/brand-2-arc-seismic-analysis/index.html', title: 'Brand 2.0 Arc & Seismic analysis', description: 'A typography and color analysis tool for Brand 2.0. Compare Seismic and Arc design tokens, explore CSS and Figma variable mappings across breakpoints, and match color swatches by Delta E accuracy.' } },
+        { id: 'vibe-3', type: 'page', label: 'Product layout inspector', span: [1, 1], tone: 'base', illustration: 'layout-inspector', content: { type: 'embed', src: '/vibe/product-layout-inspector/index.html', title: 'Product layout inspector', description: 'A resizable canvas for testing layouts across breakpoints. Pick a breakpoint, drag the edges, or type a width, then hover or tap an element to inspect its margins and gutters.' } },
         { id: 'vibe-4', type: 'page', label: 'Vibe Coding 4', span: [2, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-4/index.html', caption: 'Vibe Coding Project 4' } },
-        { id: 'vibe-5', type: 'page', label: 'Vibe Coding 5', span: [2, 1], tone: 'base', content: { type: 'embed', src: '/vibe/project-5/index.html', caption: 'Vibe Coding Project 5' } },
+        // Embeds the live client site (external src, no local folder). Never
+        // name the client in copy; the iframe sends no referrer.
+        { id: 'vibe-5', type: 'page', label: 'Construction company website', span: [2, 1], tone: 'base', illustration: 'construction-crane', content: { type: 'embed', src: 'https://pankuinc.com/', title: 'Construction company website', description: 'Designed and built in Framer, with a CMS and multilingual support.' } },
       ],
       gallery: true,
     },

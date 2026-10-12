@@ -17,7 +17,7 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
-  // Relative asset paths — this build gets embedded at /vibe/project-3/ inside
+  // Relative asset paths — this build gets embedded at /vibe/product-layout-inspector/ inside
   // an iframe, and needs to resolve its own assets regardless of that path.
   base: './',
   plugins: [

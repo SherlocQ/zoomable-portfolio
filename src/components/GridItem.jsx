@@ -3,6 +3,7 @@ import { T, LIGHTBOX_ZOOM, SPRING_SLOW } from '../transitions';
 import { asset } from '../utils/asset';
 import { HairlineFigure } from './HairlineFigure';
 import bricks from '../hairline/bricks';
+import crane from '../hairline/crane';
 import envelope from '../hairline/envelope';
 import folder from '../hairline/folder';
 import keys from '../hairline/keys';
@@ -20,9 +21,10 @@ const ILLUSTRATIONS = {
   // Build projects
   'brand-tokens': tokens,
   'layout-inspector': layout,
+  'construction-crane': crane,
 };
 // Figures whose pointer reading spans the whole tile, left edge to right edge.
-const STRETCH = new Set(['layout-inspector']);
+const STRETCH = new Set(['layout-inspector', 'construction-crane']);
 
 export function GridItem({ item, onItemClick }) {
   const [col, row] = item.span || [1, 1];
