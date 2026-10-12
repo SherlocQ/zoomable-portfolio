@@ -68,3 +68,8 @@ export const fadeUp = {
 export const METRIC_EASE = [0.16, 1, 0.3, 1];
 export const METRIC_REVEAL_MS = 2000;
 export const METRIC_STAGGER_MS = 240;
+
+// Hover magnify for indicator rows (the desktop "on this page" line menu and
+// the Lightbox dots): the item under the pointer grows most, its neighbours a
+// little, on one quick spring with a touch of bounce.
+export const INDICATOR_SPRING = { type: 'spring', duration: 0.4, bounce: 0.2 };

@@ -3,8 +3,9 @@ import { motion, useReducedMotion, cubicBezier } from 'framer-motion';
 import { EnvelopeSimple, LinkedinLogo } from '@phosphor-icons/react';
 import { flushSync } from 'react-dom';
 import lottie from 'lottie-web/build/player/lottie_light.js';
-import { T, fadeUp, EASE, EASE_HERO, LIGHTBOX_ZOOM, LIGHTBOX_CLOSE, LIGHTBOX_FADE, LIGHTBOX_CLOSE_MS, ACCORDION_HEIGHT, ACCORDION_FADE, METRIC_EASE, METRIC_REVEAL_MS, METRIC_STAGGER_MS } from '../transitions';
+import { T, fadeUp, EASE, EASE_HERO, LIGHTBOX_ZOOM, LIGHTBOX_CLOSE, LIGHTBOX_FADE, LIGHTBOX_CLOSE_MS, ACCORDION_HEIGHT, ACCORDION_FADE, METRIC_EASE, METRIC_REVEAL_MS, METRIC_STAGGER_MS, INDICATOR_SPRING } from '../transitions';
 import { asset } from '../utils/asset';
+import { mediaSrc } from '../utils/mediaSrc';
 import ProcessStory from './ProcessStory';
 import ResumeGlobe from './ResumeGlobe';
 import ScrollCue from './ScrollCue';
@@ -303,23 +304,58 @@ function ComparisonSlider({ before, after }) {
 
 const SWIPE_OFFSET_THRESHOLD   = 50;
 const SWIPE_VELOCITY_THRESHOLD = 400;
+// Slide changes ride a spring measured from the Framer "CMS Slider Pro"
+// component (cmssliderpro.framer.website): it starts from rest, is ~95% there
+// by 300ms and settles softly (a sub-pixel overshoot) by ~600ms.
+const SLIDE_SPRING = { stiffness: 260, damping: 29, mass: 1 };
+// Space between neighbouring slides: off-screen at rest, it separates the
+// outgoing and incoming images while they move. The Lightbox's is wider than
+// its 44px side padding, which its clip edge sits outside of.
+const SLIDE_GAP = 24;
+const LIGHTBOX_SLIDE_GAP = 48;
 
+/** The spring from `from` to `to` (starting at velocity v0, px/s) as 60fps
+ *  transform keyframes, so WAAPI can play it on the compositor. */
+function springKeyframes(from, to, v0 = 0) {
+  const { stiffness: k, damping: c, mass: m } = SLIDE_SPRING;
+  const dt = 1 / 600, frame = 1 / 60;
+  let x = from, v = v0, t = 0, next = frame;
+  const xs = [from];
+  while (t < 1.5) {
+    v += ((-k * (x - to) - c * v) / m) * dt;
+    x += v * dt;
+    t += dt;
+    if (t >= next) {
+      xs.push(x);
+      next += frame;
+      if (Math.abs(x - to) < 0.3 && Math.abs(v) < 10) break;
+    }
+  }
+  xs.push(to);
+  return {
+    keyframes: xs.map((value) => ({ transform: `translate3d(${value}px, 0, 0)` })),
+    duration: (xs.length - 1) * frame * 1000,
+  };
+}
+
+// Fetch and decode the images up to two steps away, so a slide that becomes a
+// neighbour (and then the current one) is already decoded when it arrives.
 function useAdjacentImagePreload(images, index) {
   useEffect(() => {
     if (!images || images.length < 2) return;
     const count = images.length;
-    const adjacent = [
-      images[(index - 1 + count) % count],
-      images[(index + 1) % count],
-    ];
-    adjacent.forEach((image) => {
+    [-2, -1, 1, 2].forEach((d) => {
       const preload = new window.Image();
-      preload.src = asset(image.src);
+      preload.decoding = 'async';
+      preload.src = asset(mediaSrc(images[(((index + d) % count) + count) % count].src));
+      preload.decode?.().catch(() => {});
     });
   }, [images, index]);
 }
 
-function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
+const wrapIndex = (n, count) => ((n % count) + count) % count;
+
+function useSwipeNavigation({ enabled, onPrevious, onNext, onStart, trackRef, gap = SLIDE_GAP }) {
   const startRef = useRef(null);
   const animatingRef = useRef(false);
   const animationRef = useRef(null);
@@ -333,19 +369,15 @@ function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
     }
   }, [trackRef]);
 
-  const animateTo = useCallback((target, duration) => {
+  const pendingRef = useRef(null); // { destination, commit } while a slide change plays
+
+  const animateTo = useCallback((target, velocity = 0) => {
     const element = trackRef.current;
     if (!element) return Promise.resolve();
 
     animationRef.current?.cancel();
-    const animation = element.animate([
-      { transform: `translate3d(${currentXRef.current}px, 0, 0)` },
-      { transform: `translate3d(${target}px, 0, 0)` },
-    ], {
-      duration,
-      easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
-      fill: 'forwards',
-    });
+    const { keyframes, duration } = springKeyframes(currentXRef.current, target, velocity);
+    const animation = element.animate(keyframes, { duration, easing: 'linear', fill: 'forwards' });
     animationRef.current = animation;
 
     return animation.finished.then(() => {
@@ -359,47 +391,82 @@ function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
   }, [trackRef]);
 
   const settleBack = useCallback(() => {
-    animateTo(0, 180);
+    animateTo(0);
   }, [animateTo]);
 
-  const navigate = useCallback((direction, width) => {
-    if (!enabled || animatingRef.current || !width) return;
+  // Commits a change still in flight, leaving the track exactly where it is
+  // on screen (offset by the slide that was committed), so whatever moves next
+  // carries on from there with no jump.
+  const flush = useCallback(() => {
+    const pending = pendingRef.current;
+    if (!pending || !trackRef.current) return;
+    const x = new DOMMatrixReadOnly(getComputedStyle(trackRef.current).transform).m41;
+    animationRef.current?.cancel();
+    animationRef.current = null;
+    setTransform(x); // hold the on-screen position through the commit
+    pending.commit(x - pending.destination);
+  }, [setTransform, trackRef]);
+
+  const navigate = useCallback((direction, width, velocity = 0) => {
+    if (!enabled || !width) return;
+
+    // A new change mid-slide: commit the one in flight, then carry on from
+    // exactly where the track is, so nothing jumps and no click is lost.
+    flush();
+    onStart?.(direction);
+
+    const pitch = width + gap;
+    const destination = direction === 'next' ? -pitch : pitch;
+    // Commit a change: the owner swaps the slides and writes the track's offset
+    // (`after`, 0 once a slide has landed) in the same DOM update, so the image
+    // in the centre never moves on screen. Resetting the track first, outside
+    // that update, let Framer see the slide one panel away and animate it a
+    // second time.
+    const commit = (after = 0) => {
+      pendingRef.current = null;
+      flushSync(() => {
+        if (direction === 'next') onNext(after);
+        else onPrevious(after);
+      });
+      setTransform(after); // React already wrote it; this syncs currentXRef
+      animatingRef.current = false;
+    };
 
     const shouldReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (shouldReduceMotion) {
-      flushSync(() => {
-        if (direction === 'next') onNext();
-        else onPrevious();
-      });
-      setTransform(0);
+      setTransform(destination);
+      commit();
       return;
     }
 
     animatingRef.current = true;
-    const destination = direction === 'next' ? -width : width;
-    const remainingRatio = Math.min(1, Math.abs(destination - currentXRef.current) / width);
-    const duration = Math.max(160, Math.round(280 * remainingRatio));
-    animateTo(destination, duration).then(() => {
-      // Reset the physical track before swapping its three stable slide sources.
-      // Both mutations happen in the same task, so the newly-current image is
-      // already centered when the browser paints the next frame.
-      setTransform(0);
-      flushSync(() => {
-        if (direction === 'next') onNext();
-        else onPrevious();
-      });
-      animatingRef.current = false;
+    pendingRef.current = { destination, commit };
+    animateTo(destination, velocity).then(() => {
+      if (pendingRef.current?.commit === commit) commit();
     });
-  }, [animateTo, enabled, onNext, onPrevious, setTransform]);
+  }, [animateTo, enabled, flush, gap, onNext, onPrevious, onStart, setTransform]);
 
   const onPointerDown = useCallback((event) => {
-    if (!enabled || animatingRef.current || event.target.closest('button')) return;
+    if (!enabled || event.target.closest('button')) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
+    // Grabbing the track mid-slide catches it where it is: the change in
+    // flight is committed and the drag continues from that offset.
+    let base = 0;
+    if (animationRef.current && trackRef.current) {
+      base = new DOMMatrixReadOnly(getComputedStyle(trackRef.current).transform).m41;
+    }
     animationRef.current?.cancel();
     animationRef.current = null;
-    setTransform(0);
+    const pending = pendingRef.current;
+    if (pending) {
+      setTransform(base);
+      base -= pending.destination;
+      pending.commit(base);
+    }
+    setTransform(base);
     startRef.current = {
+      base,
       pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
@@ -426,7 +493,7 @@ function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
     }
     if (start.intent !== 'horizontal') return;
 
-    setTransform(dx);
+    setTransform(start.base + dx);
   }, [setTransform]);
 
   const onPointerUp = useCallback((event) => {
@@ -455,7 +522,8 @@ function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
     }
     suppressClickRef.current = true;
     window.setTimeout(() => { suppressClickRef.current = false; }, 0);
-    navigate(dx < 0 ? 'next' : 'previous', start.width);
+    // the finger's speed carries into the spring (signed, px/s)
+    navigate(dx < 0 ? 'next' : 'previous', start.width, Math.sign(dx) * Math.min(velocity, 4000));
   }, [navigate, settleBack]);
 
   const onPointerCancel = useCallback(() => {
@@ -475,25 +543,109 @@ function useSwipeNavigation({ enabled, onPrevious, onNext, trackRef }) {
     handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
     consumeSuppressedClick,
     navigate,
+    flush,
   };
+}
+
+/* ─── Carousel state (inline carousels and the Lightbox) ─────────────────────
+   Slides are keyed by an unbounded position `pos`, so after a change the image
+   that slid in is the same, already-decoded element that stays (only its
+   transform changes). The image at position p is images[p + shift]; `shift`
+   only changes when a jump lands. A jump (dot click) to a non-adjacent image
+   puts the target in the neighbouring slot (`override`), waits for it to
+   decode, slides one panel the shorter way round, then lands on it.
+   `activeIndex` is where a change in flight is heading: the indicator, counter
+   and caption switch to it as the slide starts (as the reference slider's
+   dots do), not when it settles. */
+function useCarousel({ images, initial = 0, trackRef, enabled, onChange, gap = SLIDE_GAP }) {
+  const count = images?.length ?? 0;
+  // `track` is the track's offset as of the last committed change (0 once a
+  // slide has landed); `n` flips each commit so React always writes it.
+  const [state, setState] = useState({ pos: initial, shift: 0, override: null, heading: null, track: { x: 0, n: 0 } });
+  const stateRef = useRef(state); // the latest state, for jumpTo
+  useLayoutEffect(() => { stateRef.current = state; }, [state]);
+  const jumpRef = useRef(null); // the index a jump in flight lands on
+  const jumpingRef = useRef(false); // a jump sets its own heading
+
+  const index = count ? wrapIndex(state.pos + state.shift, count) : 0;
+  const activeIndex = state.heading ?? index;
+  const indexAt = (p) => (state.override?.key === p ? state.override.index : wrapIndex(p + state.shift, count));
+
+  // Called once per committed change (functional, so an interrupted change
+  // that commits early still builds on the latest state).
+  const commit = useCallback((d, after = 0) => {
+    const target = jumpRef.current;
+    jumpRef.current = null;
+    onChange?.();
+    setState((s) => {
+      const pos = s.pos + d;
+      const shift = target == null ? s.shift : target - pos;
+      const landed = wrapIndex(pos + shift, count);
+      return {
+        pos, shift,
+        override: target == null ? s.override : null,
+        heading: s.heading === landed ? null : s.heading,
+        track: { x: after, n: s.track.n + 1 },
+      };
+    });
+  }, [count, onChange]);
+
+  // A change starts: head for the next index from wherever we're heading now.
+  const start = useCallback((direction) => {
+    if (jumpingRef.current) { jumpingRef.current = false; return; }
+    const d = direction === 'next' ? 1 : -1;
+    setState((s) => ({ ...s, heading: wrapIndex((s.heading ?? wrapIndex(s.pos + s.shift, count)) + d, count) }));
+  }, [count]);
+
+  const swipe = useSwipeNavigation({
+    enabled: enabled && count > 1,
+    onPrevious: (after) => commit(-1, after),
+    onNext: (after) => commit(1, after),
+    onStart: start,
+    trackRef,
+    gap,
+  });
+  const { flush, navigate } = swipe;
+
+  const jumpTo = useCallback(async (target) => {
+    const s = stateRef.current;
+    const current = wrapIndex(s.pos + s.shift, count);
+    if (!count || target === current) return;
+    const ahead = wrapIndex(target - current, count);
+    const dir = ahead <= count / 2 ? 1 : -1;
+    const width = trackRef.current?.clientWidth;
+    if (ahead === 1 || ahead === count - 1) {
+      navigate(dir > 0 ? 'next' : 'previous', width);
+      return;
+    }
+    flush();
+    jumpRef.current = target;
+    flushSync(() => setState((st) => ({ ...st, override: { key: st.pos + dir, index: target }, heading: target })));
+    // Decode first, so the image sliding in is ready (capped, never stuck).
+    const preload = new window.Image();
+    preload.src = asset(mediaSrc(images[target].src));
+    await Promise.race([preload.decode?.().catch(() => {}), new Promise((r) => setTimeout(r, 300))]);
+    if (jumpRef.current !== target) return; // something else moved first
+    jumpingRef.current = true;
+    navigate(dir > 0 ? 'next' : 'previous', width);
+  }, [count, flush, images, navigate, trackRef]);
+
+  // Rendered on the track: written in the same DOM update as the slides. The
+  // sub-pixel nudge on alternate commits makes React write it every time
+  // (between commits the track is moved imperatively, behind React's back).
+  const trackStyle = { transform: `translate3d(${state.track.x + (state.track.n % 2 ? 0.01 : 0)}px, 0, 0)` };
+
+  return { index, activeIndex, indexAt, pos: state.pos, jumpTo, swipe, trackStyle };
 }
 
 /* ─── Image carousel ─────────────────────────────────────────────────────── */
 function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false }) {
-  const [idx, setIdx] = useState(0);
   const trackRef = useRef(null);
   const count = images.length;
+  const { activeIndex: idx, indexAt, pos, jumpTo, swipe, trackStyle } = useCarousel({ images, trackRef, enabled: true });
   const img   = images[idx];
-  const go    = useCallback((n) => setIdx(((n % count) + count) % count), [count]);
   const ratio = aspectRatio || '4/3';
   useAdjacentImagePreload(images, idx);
-
-  const swipe = useSwipeNavigation({
-    enabled: count > 1,
-    onPrevious: () => go(idx - 1),
-    onNext: () => go(idx + 1),
-    trackRef,
-  });
 
   return (
     <div className="img-carousel">
@@ -512,21 +664,30 @@ function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false 
           : undefined}
         {...swipe.handlers}
       >
-        <div ref={trackRef} className="carousel-swipe-track">
+        <div ref={trackRef} className="carousel-swipe-track" style={trackStyle}>
           {(count > 1 ? [-1, 0, 1] : [0]).map((offset) => {
-            const slide = images[((idx + offset) % count + count) % count];
+            const at = indexAt(pos + offset);
+            const slide = images[at];
             return (
               <div
                 className="carousel-swipe-slide"
-                key={offset}
-                style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
+                // Keyed by position and image: a step keeps the slide (and its
+                // decoded image); a slot whose image changes (a jump) remounts, so
+                // its layoutId is right from mount. With two images both neighbours
+                // show the same one, so key by offset there.
+                key={count === 2 ? offset : `${pos + offset}:${at}`}
+                style={{ transform: `translate3d(calc(${offset * 100}% + ${offset * SLIDE_GAP}px), 0, 0)` }}
                 aria-hidden={offset !== 0 || undefined}
               >
                 <motion.img
-                  src={asset(slide.src)}
+                  src={asset(mediaSrc(slide.src))}
                   alt={offset === 0 ? slide.caption || '' : ''}
                   className="img-carousel-img"
-                  layoutId={offset === 0 && onImageClick && slide.id ? `carousel-img-${slide.id}` : undefined}
+                  // Every slide carries its image's layoutId from mount: Framer only
+                  // tracks shared layout for an element that had its layoutId when
+                  // it mounted, and any slide may become the one the Lightbox zooms
+                  // from. (Ids never collide: 3+ images make three different slides.)
+                  layoutId={onImageClick && slide.id && (count !== 2 || offset === 0) ? `carousel-img-${slide.id}` : undefined}
                   data-lightbox-source={offset === 0 && onImageClick ? slide.id : undefined}
                   layoutCrossfade={false}
                   transition={{ layout: LIGHTBOX_ZOOM }}
@@ -568,17 +729,7 @@ function ImageCarousel({ images, onImageClick, aspectRatio, showCaption = false 
 
       {showCaption && img.caption && <p className="section-caption">{img.caption}</p>}
       {count > 1 && (
-        <div className="img-carousel-dots">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              className={`carousel-dot${i === idx ? ' carousel-dot--active' : ''}`}
-              onClick={() => go(i)}
-              aria-label={`Image ${i + 1}`}
-              title={`Image ${i + 1}`}
-            />
-          ))}
-        </div>
+        <DotIndicator className="img-carousel-dots" count={count} index={idx} onGo={jumpTo} />
       )}
     </div>
   );
@@ -662,7 +813,6 @@ function OnThisPage({ h2s }) {
   const { active, scrollTo } = useOtpState(h2s, navRef);
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const lineMenuSpring = { type: 'spring', duration: 0.4, bounce: 0.2 };
 
   useEffect(() => {
     const nav = navRef.current;
@@ -707,7 +857,7 @@ function OnThisPage({ h2s }) {
             key={s.heading}
             initial={false}
             animate={{ height: hoveredIndex === null ? 16 : 22 }}
-            transition={lineMenuSpring}
+            transition={INDICATOR_SPRING}
           >
             <button
               className={`otp-link${active === slugify(s.heading) ? ' otp-link--active' : ''}`}
@@ -730,13 +880,56 @@ function OnThisPage({ h2s }) {
                       ? 18
                       : 12,
                 }}
-                transition={lineMenuSpring}
+                transition={INDICATOR_SPRING}
               />
             </button>
           </motion.li>
         ))}
       </ul>
     </nav>
+  );
+}
+
+/* ─── Dot indicator (inline carousels and the Lightbox) ─────────────────────
+   The line menu's hover stretch, laid out in a row. */
+// Unselected marks are dots; the current one and the hovered one are the same
+// short line, like the line menu's ticks. Only the width springs; the height
+// never changes, and the neighbours don't move. The dot size follows the
+// Framer "CMS Slider Pro" indicator (10px dots).
+const DOT_W = 10, LINE_W = 20, DOT_H = 10;
+function DotIndicator({ count, index, onGo, className }) {
+  const reduceMotion = useReducedMotion();
+  const [hovered, setHovered] = useState(null);
+  const transition = reduceMotion ? { duration: 0 } : INDICATOR_SPRING;
+
+  return (
+    <div className={`dot-indicator ${className}`} role="group" aria-label="Choose image" onMouseLeave={() => setHovered(null)}>
+      {Array.from({ length: count }, (_, i) => {
+        const w = i === index || i === hovered ? LINE_W : DOT_W;
+        return (
+          <button
+            key={i}
+            className={`dot-indicator-btn${i === index ? ' dot-indicator-btn--active' : ''}`}
+            onClick={() => onGo(i)}
+            onMouseEnter={() => setHovered(i)}
+            onFocus={() => setHovered(i)}
+            onBlur={() => setHovered(null)}
+            aria-label={`Image ${i + 1} of ${count}`}
+            aria-current={i === index ? 'true' : undefined}
+            title={`Image ${i + 1} of ${count}`}
+          >
+            <motion.span
+              className="dot-indicator-mark"
+              aria-hidden="true"
+              initial={false}
+              style={{ height: DOT_H }}
+              animate={{ width: w }}
+              transition={transition}
+            />
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -873,23 +1066,18 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
   // Lightbox carousel state — only meaningful when node.lbImages is set
   const lbImages = node.lbImages || null;
   const lbCount  = lbImages?.length ?? 0;
-  const [lbIdx, setLbIdx] = useState(node.lbIdx ?? 0);
   const lightboxTrackRef = useRef(null);
   const lightboxScrollRef = useRef(null);
   const activeLightboxImageRef = useRef(null);
   const [lightboxMediaLayout, setLightboxMediaLayout] = useState({ isLong: false, height: null });
-  const lbGo = useCallback(
-    (n) => {
-      setLightboxMediaLayout({ isLong: false, height: null });
-      setLbIdx(((n % lbCount) + lbCount) % lbCount);
-    },
-    [lbCount],
-  );
-  const lightboxSwipe = useSwipeNavigation({
-    enabled: isImagePage && lbCount > 1,
-    onPrevious: () => lbGo(lbIdx - 1),
-    onNext: () => lbGo(lbIdx + 1),
-    trackRef: lightboxTrackRef,
+  // Slides keyed by position, jumps that slide: see useCarousel.
+  const resetLightboxLayout = useCallback(() => setLightboxMediaLayout({ isLong: false, height: null }), []);
+  const {
+    index: lbSlideIdx, activeIndex: lbIdx, indexAt: lbIndexAt, pos: lbPos, jumpTo: lbGo, swipe: lightboxSwipe,
+    trackStyle: lightboxTrackStyle,
+  } = useCarousel({
+    images: lbImages, initial: node.lbIdx ?? 0, trackRef: lightboxTrackRef,
+    enabled: isImagePage, onChange: resetLightboxLayout, gap: LIGHTBOX_SLIDE_GAP,
   });
   const activeCaption = lbImages ? lbImages[lbIdx].caption : content.caption;
   useAdjacentImagePreload(lbImages, lbIdx);
@@ -1003,13 +1191,13 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
     return () => {
       observer.disconnect();
     };
-  }, [isImagePage, isLightbox, lbIdx, measureLightboxImage]);
+  }, [isImagePage, isLightbox, lbSlideIdx, measureLightboxImage]);
 
   useLayoutEffect(() => {
     if (!isLightbox || !isImagePage) return;
     lightboxScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
     measureLightboxImage();
-  }, [isImagePage, isLightbox, lbIdx, measureLightboxImage]);
+  }, [isImagePage, isLightbox, lbSlideIdx, measureLightboxImage]);
 
   useEffect(() => {
     if (!lightboxMediaLayout.isLong) {
@@ -1146,19 +1334,22 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
               <div
                 ref={lightboxTrackRef}
                 className="lightbox-swipe-track"
-                style={lightboxMediaLayout.height ? { '--lightbox-media-height': `${lightboxMediaLayout.height}px` } : undefined}
+                style={lightboxMediaLayout.height
+                  ? { ...lightboxTrackStyle, '--lightbox-media-height': `${lightboxMediaLayout.height}px` }
+                  : lightboxTrackStyle}
                 data-swipe-enabled={lbCount > 1 || undefined}
                 aria-label={lbCount > 1 ? 'Image lightbox. Swipe left or right to browse.' : undefined}
                 {...lightboxSwipe.handlers}
               >
                 {(lbCount > 1 ? [-1, 0, 1] : [0]).map((offset) => {
                   const sourceImages = lbImages || [{ id: node.sourceId, src: content.src, caption: content.caption }];
-                  const slide = sourceImages[((lbIdx + offset) % sourceImages.length + sourceImages.length) % sourceImages.length];
+                  const at = lbImages ? lbIndexAt(lbPos + offset) : 0;
+                  const slide = sourceImages[at];
                   return (
                     <div
                       className="lightbox-swipe-slide"
-                      key={offset}
-                      style={{ transform: `translate3d(${offset * 100}%, 0, 0)` }}
+                      key={lbCount === 2 ? offset : `${lbPos + offset}:${at}`}
+                      style={{ transform: `translate3d(calc(${offset * 100}% + ${offset * LIGHTBOX_SLIDE_GAP}px), 0, 0)` }}
                       aria-hidden={offset !== 0 || undefined}
                     >
                       <motion.div
@@ -1166,7 +1357,7 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
                       >
                         <motion.img
                           ref={offset === 0 ? activeLightboxImageRef : undefined}
-                          src={asset(slide.src)}
+                          src={asset(mediaSrc(slide.src))}
                           alt={offset === 0 ? slide.caption || '' : ''}
                           className={`img-page-img${forceImageContain ? ' img-page-img--contain' : ''}`}
                           layoutId={!isClosing && offset === 0
@@ -1218,26 +1409,16 @@ export default function PageView({ node, onBack, onImageClick, onComparisonClick
           {lbCount > 1 && (
             <>
               <button className="lb-nav lb-nav--prev" onClick={() => lightboxSwipe.navigate('previous', lightboxTrackRef.current?.clientWidth)} aria-label="Previous image" title="Previous image">
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
-                  <path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" aria-hidden="true">
+                  <path d="M6 1L1 6l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               <button className="lb-nav lb-nav--next" onClick={() => lightboxSwipe.navigate('next', lightboxTrackRef.current?.clientWidth)} aria-label="Next image" title="Next image">
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
-                  <path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" aria-hidden="true">
+                  <path d="M1 1l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-              <div className="lb-dots">
-                {lbImages.map((_, i) => (
-                  <button
-                    key={i}
-                    className={`carousel-dot${i === lbIdx ? ' carousel-dot--active' : ''}`}
-                    onClick={() => lbGo(i)}
-                    aria-label={`Image ${i + 1}`}
-                    title={`Image ${i + 1}`}
-                  />
-                ))}
-              </div>
+              <DotIndicator className="lb-dots" count={lbImages.length} index={lbIdx} onGo={lbGo} />
             </>
           )}
         </>
@@ -1776,7 +1957,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
           <div className={`section-gallery section-gallery--${count <= 2 ? '2up' : count === 3 ? '3up' : '4up'}`}>
             {s.images.map((img) => (
               <ProjectImageWrap key={img.id} id={img.id} src={img.src} caption={img.caption} onImageClick={onImageClick}>
-                <motion.img layoutId={`item-img-${img.id}`} data-lightbox-source={img.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(img.src)} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
+                <motion.img layoutId={`item-img-${img.id}`} data-lightbox-source={img.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(mediaSrc(img.src))} alt={img.caption || ''} title={img.caption} className="section-gallery-img" loading="lazy" />
               </ProjectImageWrap>
             ))}
           </div>

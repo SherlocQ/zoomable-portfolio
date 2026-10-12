@@ -578,12 +578,21 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 ### Image Carousel and Lightbox
 
-**`image-carousel`** — Product screenshots use a clipped three-panel track.
-- At rest, only the active image is visible. During interaction, the previous or next image follows the gesture into the viewport.
-- Swipe and arrow navigation share one full-width slide transition. Motion is `transform: translate3d(...)` only; image width, height, opacity, crop, and aspect ratio remain constant.
-- Duration is at most 280ms with `cubic-bezier(0.32, 0.72, 0, 1)`. The track resets in the same rendered frame as the active-index update, so there is no black frame or visible rebound.
-- The three slide DOM nodes use stable offset keys and adjacent images load eagerly with async decoding, preventing white flashes during the atomic track reset/index swap.
-- Inline and Lightbox carousels use the same behavior. Each measures its own track width; never use a padded outer container to calculate travel distance.
+**`dot-indicator`** (`DotIndicator`, inline carousels and the Lightbox) — The "on this page" line menu's hover stretch in a row. Unselected images are 10px dots (the reference slider's size); the current and the hovered one are the same 20px × 10px line; only the width springs (`INDICATOR_SPRING`, shared with the line menu), and neighbours never move. Colours: `--otp-line` (28% ink) / `--otp-line-active`. Each dot is a fixed 24 × 24 button on a 24px pitch (WCAG 2.5.8) so no target moves under the pointer; labels "Image n of N" in a "Choose image" group. In the Lightbox the row stays on one line (`width: max-content`) and on phones sits just above the caption bar.
+
+**Round media controls** — Lightbox close, Lightbox prev/next and inline carousel arrows share one look in both themes: a dark translucent disc with a white icon (`--media-control-*`, the carousel arrow's values), 44px (40px on phones), 7×12 chevrons.
+
+**`image-carousel`** — Product screenshots use a clipped three-panel track, one image at a time.
+- At rest, only the active image is visible. During interaction, the previous or next image follows the gesture into the viewport, separated by a gap (24px inline, 48px in the Lightbox — wider than its 44px side padding).
+- Swipe, arrow and dot navigation share one slide transition. Motion is `transform: translate3d(...)` only; image width, height, opacity, crop, and aspect ratio remain constant.
+- The slide rides a spring measured from the Framer "CMS Slider Pro" (cmssliderpro.framer.website): stiffness 260, damping 29 — from rest, ~95% by 300ms, a sub-pixel overshoot, settled by ~600ms. It is precomputed into 60fps WAAPI keyframes (`SLIDE_SPRING`, `springKeyframes`) so it runs on the compositor; a swipe hands its release velocity to the spring. The old 280ms `cubic-bezier(0.32, 0.72, 0, 1)` started at full speed and stopped dead — it read as stiff.
+- Never block input: a click or grab mid-slide commits the change in flight and carries on from the exact on-screen position. A dot jump to a non-adjacent image puts the target in the neighbouring slot, waits for it to decode (≤300ms), and slides one panel the shorter way round.
+- The indicator, counter and caption switch to the destination as the slide starts (as the reference's dots do), not when it settles.
+- Slides are keyed by position and image (`pos:index`), so the image that slid in is the same, already-decoded element that stays; only a slot whose image changes remounts. Every inline slide carries its image's `layoutId` from mount (Framer only tracks shared layout for ids present at mount), so the Lightbox zoom works from any image.
+- The track's resting offset is React state, written in the same DOM update as the new slide offsets. Resetting the track imperatively before that update let Framer capture a half-updated layout and animate the slide a second time.
+- Tracks use `contain: layout`, never `paint`: paint containment clips neighbours to the moving track's own box, so the incoming image slid in black. The stage (inline) / `.img-page-scroll` with `overflow-x: hidden` (Lightbox) is the clip edge.
+- Gallery images over 2400px are shown from `public/images/resized/` copies (`scripts/resize-gallery-images.mjs`, `mediaSrc`) everywhere — inline, Lightbox and preloads use the same file, so opening never waits on a second download; originals stay untouched. Neighbours two steps away are fetched and decoded ahead.
+- Inline and Lightbox carousels use the same behavior (`useCarousel` + `useSwipeNavigation` in `PageView.jsx`). Each measures its own track width; never use a padded outer container to calculate travel distance.
 - Touch gestures preserve vertical scrolling with `touch-action: pan-y`. A 50px drag, or a fast gesture of at least 28px / 400px/s, advances the carousel; shorter gestures ease back.
 - Adjacent images may be mounted/preloaded for continuity but must remain clipped while idle. Non-active images use empty alt text and `aria-hidden`.
 - Inline carousel media always uses `object-fit: contain`. The stage keeps its declared responsive aspect ratio and 52svh height cap; any extra letterbox area stays transparent so the current page surface shows through. Never crop product UI to fill the frame, including after viewport resize.

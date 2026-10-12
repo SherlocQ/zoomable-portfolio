@@ -107,6 +107,14 @@
   --gap:      10px;
   --header-h: 50px;
   --lightbox-chrome-inset: 16px;
+  /* Round media controls — inline carousel arrows, Lightbox prev/next and the
+     Lightbox close button share one look, the same in both themes: a dark
+     translucent disc with a white icon, legible over any image or site. */
+  --media-control-bg:       rgba(0,0,0,0.44);
+  --media-control-bg-hover: rgba(0,0,0,0.72);
+  --media-control-border:   rgba(255,255,255,0.14);
+  --media-control-text:     rgba(255,255,255,0.82);
+  --media-control-text-hi:  #fff;
 
   /* Dark UI chrome */
   --chrome-bg:      var(--canvas);
@@ -289,7 +297,7 @@ a:focus-visible,
 .cs-expand-btn:focus-visible,
 .img-carousel-arrow:focus-visible,
 .lb-nav:focus-visible,
-.carousel-dot:focus-visible,
+.dot-indicator-btn:focus-visible,
 .header-back-btn:focus-visible,
 .bc-pill:focus-visible,
 .theme-pill-option:focus-visible,
@@ -2404,13 +2412,13 @@ a:focus-visible,
 .lightbox-dismiss {
   position: absolute; top: 10px; right: var(--lightbox-chrome-inset); z-index: 20;
   width: 44px; height: 44px; border-radius: 50%;
-  background: var(--media-scrim); border: 1px solid var(--media-chrome-border);
-  color: var(--media-chrome-text);
+  background: var(--media-control-bg); border: 1px solid var(--media-control-border);
+  color: var(--media-control-text);
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; flex-shrink: 0;
+  cursor: pointer; flex-shrink: 0; padding: 0;
   transition: background 0.14s, color 0.14s;
 }
-.lightbox-dismiss:hover { background: var(--media-scrim-hover); color: var(--media-chrome-text-hi); }
+.lightbox-dismiss:hover { background: var(--media-control-bg-hover); color: var(--media-control-text-hi); }
 
 /* ─── Image page (lightbox + craft zoom-in) — flush, no top strip ─────────── */
 .page-overlay--img .page-body,
@@ -2433,7 +2441,9 @@ a:focus-visible,
   pointer-events: none;
 }
 .img-page-scroll {
-  flex: 1; overflow-y: auto; padding: 44px 44px 24px;
+  /* overflow-x hidden: the clip edge for Lightbox slides (the track itself
+     must not clip, or the incoming slide is never painted while it moves). */
+  flex: 1; overflow-x: hidden; overflow-y: auto; padding: 44px 44px 24px;
   display: flex; flex-direction: column; min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
@@ -2450,7 +2460,9 @@ a:focus-visible,
 .lightbox-swipe-track {
   position: relative; flex: 1;
   width: 100%; height: 100%; min-height: 0;
-  contain: layout paint;
+  /* layout only — paint containment would clip the neighbour slides to the
+     moving track's own box, so a change slid in black and popped in at the end */
+  contain: layout;
 }
 .lightbox-swipe-slide {
   position: absolute; inset: 0;
@@ -2638,7 +2650,7 @@ a:focus-visible,
      panel colour or crop product UI after a window resize. */
   background: transparent;
 }
-.carousel-swipe-track { position: absolute; inset: 0; contain: layout paint; }
+.carousel-swipe-track { position: absolute; inset: 0; contain: layout; } /* the stage clips; paint containment here hid the incoming slide while it moved */
 .carousel-swipe-slide {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -2664,53 +2676,68 @@ a:focus-visible,
   position: absolute; top: 50%; transform: translateY(-50%);
   z-index: 3;
   width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(0,0,0,0.44); border: 1px solid rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.82);
+  background: var(--media-control-bg); border: 1px solid var(--media-control-border);
+  color: var(--media-control-text);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; padding: 0; flex-shrink: 0;
   opacity: 0;
   transition: opacity 0.16s, background 0.14s;
 }
 .img-carousel-stage:hover .img-carousel-arrow { opacity: 1; }
-.img-carousel-arrow:hover { background: rgba(0,0,0,0.72); color: #fff; }
+.img-carousel-arrow:hover { background: var(--media-control-bg-hover); color: var(--media-control-text-hi); }
 .img-carousel-arrow--prev { left: 10px; }
 .img-carousel-arrow--next { right: 10px; }
 
 /* Dot indicators below the stage */
-.img-carousel-dots {
-  display: flex; align-items: center; justify-content: center;
-  gap: 5px; margin-top: 10px; flex-wrap: wrap;
-}
-.carousel-dot {
-  position: relative;
-  width: 5px; height: 5px; border-radius: 50%;
-  background: currentColor; opacity: 0.20;
-  border: none; cursor: pointer; padding: 0; flex-shrink: 0;
-  transition: opacity 0.14s, width 0.14s, border-radius 0.14s;
-}
-.carousel-dot::before {
-  content: ''; position: absolute; inset: -14px;
-}
-.carousel-dot--active { opacity: 0.70; width: 14px; border-radius: 3px; }
+.img-carousel-dots { margin-top: 6px; }
 
 /* ─── Lightbox carousel navigation (lb-nav + lb-dots) ────────────────────── */
 .lb-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
   z-index: 21;
   width: 44px; height: 44px; border-radius: 50%;
-  background: var(--media-scrim); border: 1px solid var(--media-chrome-border);
-  color: var(--media-chrome-text);
+  background: var(--media-control-bg); border: 1px solid var(--media-control-border);
+  color: var(--media-control-text);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; flex-shrink: 0; padding: 0;
   transition: background 0.14s, color 0.14s;
 }
-.lb-nav:hover { background: var(--media-scrim-hover); color: var(--media-chrome-text-hi); }
+.lb-nav:hover { background: var(--media-control-bg-hover); color: var(--media-control-text-hi); }
 .lb-nav--prev { left: var(--lightbox-chrome-inset); }
 .lb-nav--next { right: var(--lightbox-chrome-inset); }
 .lb-dots {
   position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 5px; z-index: 21; flex-wrap: wrap; justify-content: center;
+  display: flex; align-items: center; z-index: 21; flex-wrap: wrap; justify-content: center;
+  /* One row whenever it fits: centred with left: 50%, the row would otherwise
+     shrink to half the screen and wrap. */
+  width: max-content; max-width: calc(100% - 2 * var(--lightbox-chrome-inset));
 }
+/* Phones: 24px targets make a long row wider than the gap beside the caption,
+   so the dots sit just above the caption bar instead of inside it. */
+@media (max-width: 640px) {
+  .lb-dots { bottom: 50px; }
+}
+/* Dot indicator (DotIndicator) — inline carousels and the Lightbox share it:
+   the "on this page" line menu's hover stretch and colours, in a row. Dots are
+   10px (the Framer "CMS Slider Pro" size), the current and the hovered one a
+   20px line. Each button is a fixed 24 × 24 hit area (WCAG 2.5.8, also the row's
+   pitch), wider than the line, so only the mark springs its width and no target
+   ever moves under the pointer. */
+.dot-indicator {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+}
+.dot-indicator-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0;
+  background: transparent; border: none; cursor: pointer;
+}
+.dot-indicator-mark {
+  display: block;
+  border-radius: 999px;
+  background: var(--otp-line);
+  transition: background-color 0.18s ease;
+}
+.dot-indicator-btn--active .dot-indicator-mark { background: var(--otp-line-active); }
 
 /* ─── Home icon breadcrumb pill ───────────────────────────────────────────── */
 .bc-pill--home {
@@ -2886,7 +2913,8 @@ a:focus-visible,
 
   /* Touch targets */
   .img-carousel-arrow { width: 40px; height: 40px; opacity: 0.72; }
-  .lb-nav             { width: 40px; height: 40px; }
+  .lb-nav,
+  .lightbox-dismiss   { width: 40px; height: 40px; }
 
   /* Breadcrumb */
   .bc-pill { font-size: 12px; padding: 4px 6px; }
