@@ -10,6 +10,7 @@ import ResumeGlobe from './ResumeGlobe';
 import ScrollCue from './ScrollCue';
 import ProgressiveBlur from './ProgressiveBlur';
 import VimeoEmbed from './VimeoEmbed';
+import SurveyRungs from './SurveyRungs';
 import { HairlineFigure } from './HairlineFigure';
 import plane from '../hairline/plane';
 
@@ -182,8 +183,9 @@ function CountUp({ value, active, delay = 0, duration = METRIC_REVEAL_MS }) {
   return <span>{prefix}{reduceMotion && active ? format(number) : display}{suffix}</span>;
 }
 
-/* ─── Metric cards: blur, float and fade in, staggered, once in view ─────── */
-function MetricGrid({ items }) {
+/* True once the element has been 30% in view; never resets. Drives the
+   shared `.metric-reveal` entrance (metric cards, case-study card). */
+function useRevealOnce() {
   const ref = useRef(null);
   const [active, setActive] = useState(false);
 
@@ -198,6 +200,13 @@ function MetricGrid({ items }) {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  return [ref, active];
+}
+
+/* ─── Metric cards: blur, float and fade in, staggered, once in view ─────── */
+function MetricGrid({ items }) {
+  const [ref, active] = useRevealOnce();
 
   return (
     <div ref={ref} className={`section-metrics section-metrics--${items.length}`}>
@@ -1374,7 +1383,10 @@ function ProjectFeatureCard({ cls, mp, modifier, children }) {
   );
 }
 
-function CaseStudyCard({ s, cls, mp, isH2 }) {
+function CaseStudyCard({ s, cls, isH2 }) {
+  // Same entrance as the metric cards (blur, rise, fade). It runs on a wrapper
+  // because the card itself carries the pointer-tilt transform.
+  const [revealRef, revealed] = useRevealOnce();
   const title = sentenceCaseHeading(s.heading || 'Full case study');
   const contactLabel = 'contact me';
   const contactIndex = s.body?.toLowerCase().indexOf(contactLabel) ?? -1;
@@ -1383,35 +1395,37 @@ function CaseStudyCard({ s, cls, mp, isH2 }) {
     : null;
 
   return (
-    <ProjectFeatureCard cls={cls} mp={mp} modifier="project-case-study-card">
-      {isH2
-        ? <h2 id={slugify(s.heading || 'Full case study')} className="project-case-study-title">{title}</h2>
-        : <h3 className="project-case-study-title">{title}</h3>}
-      {s.body && (
-        <div className="project-case-study-copy">
-          {contactHref && contactIndex >= 0 ? (
-            <p className="section-body">
-              {s.body.slice(0, contactIndex)}
-              <a className="project-case-study-contact-link" href={contactHref}>{s.body.slice(contactIndex, contactIndex + contactLabel.length)}</a>
-              {s.body.slice(contactIndex + contactLabel.length)}
-            </p>
-          ) : (
-            <BodyText text={s.body} />
-          )}
-        </div>
-      )}
-      {s.url ? (
-        <a className="project-case-study-cta" href={s.url} target="_blank" rel="noopener noreferrer">
-          <FigmaMark />
-          <span>{s.ctaLabel || 'View Figma case study'}</span>
-        </a>
-      ) : (
-        <button className="project-case-study-cta project-case-study-cta--disabled" type="button" disabled title="Figma link coming soon">
-          <FigmaMark />
-          <span>{s.ctaLabel || 'View Figma case study'}</span>
-        </button>
-      )}
-    </ProjectFeatureCard>
+    <div ref={revealRef} className={`metric-reveal${revealed ? ' is-in' : ''}`}>
+      <ProjectFeatureCard cls={cls} modifier="project-case-study-card">
+        {isH2
+          ? <h2 id={slugify(s.heading || 'Full case study')} className="project-case-study-title">{title}</h2>
+          : <h3 className="project-case-study-title">{title}</h3>}
+        {s.body && (
+          <div className="project-case-study-copy">
+            {contactHref && contactIndex >= 0 ? (
+              <p className="section-body">
+                {s.body.slice(0, contactIndex)}
+                <a className="project-case-study-contact-link" href={contactHref}>{s.body.slice(contactIndex, contactIndex + contactLabel.length)}</a>
+                {s.body.slice(contactIndex + contactLabel.length)}
+              </p>
+            ) : (
+              <BodyText text={s.body} />
+            )}
+          </div>
+        )}
+        {s.url ? (
+          <a className="project-case-study-cta" href={s.url} target="_blank" rel="noopener noreferrer">
+            <FigmaMark />
+            <span>{s.ctaLabel || 'View Figma case study'}</span>
+          </a>
+        ) : (
+          <button className="project-case-study-cta project-case-study-cta--disabled" type="button" disabled title="Figma link coming soon">
+            <FigmaMark />
+            <span>{s.ctaLabel || 'View Figma case study'}</span>
+          </button>
+        )}
+      </ProjectFeatureCard>
+    </div>
   );
 }
 
@@ -1554,6 +1568,7 @@ function ProjectAccordion({ s, cls, mp, heading, onImageClick }) {
                   <BodyText text={item.body} />
                   {/* A row can reveal an image (e.g. a survey chart); it zooms
                       into the lightbox like any section image. */}
+                  {item.chart && <SurveyRungs chart={item.chart} active={isOpen} />}
                   {item.image && (
                     <ProjectImageWrap id={item.image.id} src={item.image.src} caption={item.image.caption} onImageClick={onImageClick}>
                       <motion.img layoutId={`item-img-${item.image.id}`} data-lightbox-source={item.image.id} layoutCrossfade={false} transition={{ layout: LIGHTBOX_ZOOM }} src={asset(item.image.src)} alt={item.image.caption || item.heading || ''} className="section-image" loading="lazy" />
@@ -1585,7 +1600,7 @@ function ProjectSection({ s, onImageClick, onComparisonClick }) {
   const heading = <ProjectSectionHeading section={s} isH2={isH2} />;
 
   if (s.type === 'case-study') {
-    return <CaseStudyCard s={s} cls={cls} mp={mp} isH2={isH2} />;
+    return <CaseStudyCard s={s} cls={cls} isH2={isH2} />;
   }
 
   if (s.type === 'design-goal') {

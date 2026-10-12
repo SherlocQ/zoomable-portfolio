@@ -209,11 +209,10 @@ export const portfolioData = {
             role: 'Lead Designer',
             timeline: 'In progress',
             team: 'TBD',
-            tools: 'Figma',
+            tools: 'TBD',
             tags: ['AI/ML', 'Vision', 'In Progress'],
             sections: [
-              { level: 'h2', heading: 'The Question', body: 'Most "AI features" today are search boxes and suggestion panels grafted onto existing UI. What would a product look like if it were designed from the ground up assuming the AI does most of the cognitive work?' },
-              { level: 'h2', heading: 'Status', body: 'Early exploration and synthesis underway. More to come.' },
+              { body: 'Coming soon' },
             ],
           },
         },
@@ -1275,22 +1274,39 @@ export const portfolioData = {
                 body: 'We created surveys at the end of our courses, so we can constantly getting feedback from our learners and keep improving our courses.\n\nFor MTA Essential course, we received 276 valid responses and for MMM Essential course, we received 122 valid responses.',
               },
               {
-                // Survey questions as accordion rows; each opens to its chart.
+                // Survey questions as accordion rows; each opens to its chart. Values are
+                // [MTA, MMM] % per rating 1–5, transcribed exactly from the original
+                // na-chart-*.jpg images (kept in public/, no longer referenced).
                 id: 'na-survey',
                 heading: 'Survey results',
                 type: 'accordion',
                 items: [
                   {
                     heading: 'How helpful was the course in getting you the information you need?',
-                    image: { id: 'na-chart1', src: '/images/projects/na-chart-1.jpg', caption: 'Survey results — overall helpfulness' },
+                    chart: {
+                      caption: 'Survey results — overall helpfulness',
+                      low: 'Not Helpful at All', high: 'Very Helpful',
+                      series: ['Multi-Touch Attribution Essentials', 'Marketing Mix Modeling Essentials'],
+                      values: [[0, 0], [0, 1], [9, 16], [37, 37], [53, 47]],
+                    },
                   },
                   {
                     heading: 'On a scale of 1 to 5, how much do the on-camera shots of the narrators?',
-                    image: { id: 'na-chart2', src: '/images/projects/na-chart-2.jpg', caption: 'Survey results — on-camera narrators' },
+                    chart: {
+                      caption: 'Survey results — on-camera narrators',
+                      low: "Doesn't matter", high: 'key to my experience',
+                      series: ['Multi-Touch Attribution Essentials', 'Marketing Mix Modeling Essentials'],
+                      values: [[15, 21], [12, 14], [30, 28], [25, 19], [19, 18]],
+                    },
                   },
                   {
                     heading: 'On a scale of 1 to 5, where 1 is too short and 5 is too long, how would you rate the length of these tutorial videos?',
-                    image: { id: 'na-chart3', src: '/images/projects/na-chart-3.jpg', caption: 'Survey results — video length' },
+                    chart: {
+                      caption: 'Survey results — video length',
+                      low: 'Too short', high: 'Too long',
+                      series: ['Multi-Touch Attribution Essentials', 'Marketing Mix Modeling Essentials'],
+                      values: [[1, 1], [5, 6], [80, 76], [12, 14], [2, 2]],
+                    },
                   },
                 ],
               },

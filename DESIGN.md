@@ -310,6 +310,11 @@ The page rhythm is **dense product screenshots** — Linear's marketing leads wi
 - **Ink Subtle** ({colors.ink-subtle}): Tertiary type at #8a8f98 — deselected pricing tabs, footer columns.
 - **Ink Tertiary** ({colors.ink-tertiary}): Quaternary at #62666d — disabled, footnotes.
 
+### Data Visualization
+- **Viz Series 1** (`--viz-series-1`): Categorical slot 1 — light `#4f86e0` (= `--diagram-wide`), dark `#5f92e1`.
+- **Viz Series 2** (`--viz-series-2`): Categorical slot 2 — light `#93570f` (= `--diagram-decide`), dark `#c4822d`.
+- Same blue / amber hue families as the Process diagram. Dark steps were snapped to OKLCH L 0.66 (hue held) so they sit in the dark band. Validated with the `dataviz` skill on `surface-1` (`#f5f6f6` light, `#0f1011` dark): all checks PASS — normal-vision ΔE 28.0 light / 25.6 dark, CVD ΔE 26.8 / 24.5, ≥3:1 contrast. Fixed order, never cycled. Marks only: values, labels and legends stay in ink tokens. Never use `--accent` as a series color (it means CTA). A third series needs a new validated slot — see "Data visualization" under Components.
+
 ### Semantic
 - **Success Green** ({colors.semantic-success}): Status pills, success indicators. The only semantic color on marketing.
 - **Overlay** ({colors.semantic-overlay}): Pure black overlay scrim for modals.
@@ -636,6 +641,8 @@ Linear's depth is carried by surface ladder + hairline borders. The brand resist
 
 **Metric reveal** — Copied 1:1 from the Framer "Animated Stats Pro" component (animatedstatspro.framer.website, read from its inline styles): when a metrics grid is 30% in view (once), each card fades from opacity 0, rises from 40px below and clears a 12px blur over 2s on `cubic-bezier(0.16, 1, 0.3, 1)`; cards start 240ms apart, and each number counts up from 0 on the same curve and clock, keeping its prefix, suffix and decimals. Constants: `METRIC_EASE`, `METRIC_REVEAL_MS`, `METRIC_STAGGER_MS` in `transitions.js`; CSS `.metric-reveal`. Reduced motion: a plain 0.3s fade and the final value, no rise, blur or count.
 
+**Case-study card reveal** — The confidential `Full case study` card enters with exactly the metric reveal (`.metric-reveal`, 30% in view, once; shared `useRevealOnce` hook). The class sits on a wrapper div, because the card itself carries the pointer-tilt transform; the card no longer uses the generic section `fadeUp`.
+
 **Metric units** — Keep compact values on one line, such as `11m 34s` and `9m 4d`. Do not spell out units inside metric values.
 
 **`project-design-goal-card`** — The reusable design-goal treatment across every project.
@@ -723,6 +730,14 @@ Tried and rejected: 1px (heavy next to Linear's ≈0.45px lines); 0.5px with `ha
 - Vimeo sections use a real lazy-loaded player rather than a static replacement card. Show the video poster while the player initializes, preserve autoplay/loop/muted behavior where the browser permits it, and reveal the external Vimeo action only after the embed reports a genuine error.
 - A project table of contents derives active state from its own page scroll root. At the document bottom, the last tick is active even when the last section is too short to cross the usual 25% viewport trigger line.
 - Craft image cards, GIF cards, carousels, comparisons, and project media use the same shared-geometry zoom (400ms spring open, 300ms `ease-out` close). On close, retain the overlay shell and scrim until that full transition completes; never let the generic page exit unmount a shared image early.
+
+### Data visualization
+
+**Method** — Any new chart follows the `dataviz` skill (`~/.claude/skills/dataviz/`; run it before writing chart code): pick the form first (a single number stays a metric card, not a chart), color by job, run `node ~/.claude/skills/dataviz/scripts/validate_palette.js "<hex,...>" --mode light --surface "#f5f6f6"` and again with `--mode dark --surface "#0f1011"`, thin marks, hover readout by default, legend for ≥2 series, a screen-reader table, then render and look. One axis — never dual-axis. Text wears ink tokens, never series colors.
+
+**Reference forms** — The `lieflat-charts` skill (`~/.agents/skills/lieflat-charts/`, PolyForm Noncommercial) supplies chart forms; port a form's geometry and timing into a React component, swap its Mono colors / Inter font / CDN libraries for site tokens, Timeless Sans and local code, and credit it with the license URL in the file header.
+
+**`survey-rungs`** (`SurveyRungs.jsx`, port of Lieflat F6 Paired Rungs) — Paired grouped bars for a 1–5 survey scale, one rung = 1%, two series in `--viz-series-1/2` (rung opacity jittered 0.75–1 by the deterministic `rnd`). Fixed 3px per rung across every chart so scales compare; geometry is computed from the container's `clientWidth` so text stays at real pixel size. Value labels 12px/590 `--ink` above each bar; ratings 1–5 and the verbatim end labels below the axis (`--hairline-strong`). Entrance: rungs fade in bottom-up (0.9s each, 10ms per rung, 80ms per column, series 2 +0.15s, values at 0.5s); plays when its accordion row is open and the chart is 30% in view, resets on close, static under reduced motion. Hover / press-and-hold dims other columns to 0.3 and shows a readout above the column's labels — first column left-aligned, last right-aligned, others centered; 68px is reserved above the tallest bar because the accordion panel clips overflow. Legend centered below the plot (three-rung swatches, full series names); no unit line. Data lives in the accordion item's `chart` field (`low`, `high`, `series`, `values` as `[series1, series2]` per rating), transcribed exactly from the source — never rounded to sum to 100.
 
 ## Do's and Don'ts
 

@@ -48,6 +48,7 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 | `src/components/GridItem.jsx` | Individual grid card; `ILLUSTRATIONS` maps tile ids to Hairline figures |
 | `src/components/HairlineFigure.jsx` | Mounts a Hairline figure in a tile and forwards the whole tile's pointer events to it |
 | `src/hairline/` | `kernel.js` (Hairline engine, copied unchanged from the `hairline-create` skill) and the five tile figures |
+| `src/components/SurveyRungs.jsx` | Survey chart (paired rungs, one rung = 1%) for accordion rows with a `chart` field; ported from Lieflat F6 |
 | `src/components/ResumeGlobe.jsx` | Responsive canvas globe, journey state, routes, photo stacks, and native scroll coordination |
 | `src/components/Preloader.jsx` | First-load name intro (port of a Framer preloader); show rule in `src/utils/preloader.js` |
 | `src/components/ScrollCue.jsx` | Shared animated scroll indicator for Hero and project heroes |
@@ -98,7 +99,15 @@ This project uses Linear's token system (NOT Anthropic's). Key values:
 - Local project Lottie files live under `public/animations/projects/` and render through `lottie-web`. Related Lighthouse pain-point illustrations share a consistent responsive stage height and replay according to viewport presence.
 - Across every project `metrics` section, labels use concise sentence-case noun phrases that name the measure directly. Do not use sentence-like labels ending in “is,” “reached,” or “spend,” and do not alter the underlying value or unit merely to restyle its label.
 
-## Current project status — 2026-10-08
+## Data visualization (for any future chart)
+- Before building a chart, run the `dataviz` skill (installed globally at `~/.claude/skills/dataviz/`) and follow its procedure; its validator is `node ~/.claude/skills/dataviz/scripts/validate_palette.js "<hex,...>" --mode light --surface "#f5f6f6"` plus `--mode dark --surface "#0f1011"` (site `surface-1`). Chart forms can come from the `lieflat-charts` skill (`~/.agents/skills/lieflat-charts/`, catalog in `catalog.md`, gallery code in `templates/`); port the form into a React component with site tokens and Timeless Sans — never its CDN libraries, Inter or Mono palette — and keep its PolyForm Noncommercial credit in the file header.
+- Series colors: `--viz-series-1` (blue: light `#4f86e0`, dark `#5f92e1`) and `--viz-series-2` (amber: light `#93570f`, dark `#c4822d`), fixed order, both themes validated. Text stays in ink tokens; never use `--accent` for data. A third series needs a new slot run through the validator first. Full rules: DESIGN.md "Data visualization".
+- Reviewed 2026-10-11: no other place on the site needs a chart. Metric cards stay as stat tiles; LinkedIn Design Challenge Q1–Q12 stay as original Google Forms screenshots (research evidence; one source row has a blank label that can't be transcribed honestly).
+
+## Current project status — 2026-10-11
+- Neustar Academy survey accordion rows now open to `SurveyRungs` charts instead of JPGs (values transcribed exactly from `na-chart-*.jpg`, which remain in `public/` unreferenced). The confidential case-study card enters with the metric reveal (blur, rise, fade). AI native vision: Tools is TBD and the body is just "Coming soon" (its old "The Question" / "Status" copy is in git history).
+
+## Earlier status — 2026-10-08
 - Projects grid features the first three: desktop is 4 columns × 3 equal rows fitted to the viewport (AI native vision 2×2, Account IQ and Configurable checkout 2×1, the other four in the last row); tablet (641–900px) is 2 columns × 4 equal rows (AI native vision full width), fitted with a card-proportional minimum; phone is one column. Craft at 641–900px: Motion 2×1 on top, Print & Visual and Data Visualization 1×1 below, fitted. Build: Vibe Coding 6 removed (files kept in public/vibe/project-6); Vibe Coding 4 and 5 are equal 2×1 on the second row.
 - Image cards carry a text-anchored scrim (`.item-has-image .grid-item-inner::before`) on top of the percentage vignette, so titles and descriptions stay legible on small cards at every breakpoint.
 - Lightbox backgrounds match each artwork's edge color, sampled from the files (Print & Visual, Motion GIFs); `bg` may be a CSS gradient for artwork shot on a graded backdrop (Bifold, Signing Wall).

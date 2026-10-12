@@ -61,6 +61,12 @@
   --diagram-decide:  #d4913f; /* narrowing down, deciding, direction */
   --diagram-noise:   #62666d; /* noise: darker than both, so it reads without hue */
 
+  /* Data-viz series (categorical, fixed order). Same hues as the diagram's
+     wide/decide, stepped into the dark band (OKLCH L 0.66) and checked with
+     the dataviz validator on surface-1. Marks only — values stay in ink. */
+  --viz-series-1:    #5f92e1;
+  --viz-series-2:    #c4822d;
+
   /* Ripple grid — the Framer preview's greys, mirrored for dark: shadow and
      border sit the same lightness steps above the page as they sit below it
      in light mode. The fill is the page surface itself, so the grid never
@@ -154,6 +160,9 @@
   --diagram-wide:    #4f86e0;
   --diagram-decide:  #93570f;
   --diagram-noise:   #b3b2ba;
+
+  --viz-series-1:    #4f86e0;
+  --viz-series-2:    #93570f;
 
   --ripple-fill:   var(--surface-1);
   --ripple-shadow: rgb(217, 217, 217);
@@ -1213,6 +1222,56 @@ a:focus-visible,
   letter-spacing: -0.011em;
 }
 .project-accordion-content > :last-child { margin-bottom: 0; }
+
+/* Survey rungs (SurveyRungs.jsx) — Lieflat "paired rungs": one rung = 1%.
+   Two peer series in --viz-series-1/2; values stay in ink. Rungs fade in
+   bottom-up on open. */
+.survey-rungs { margin: 8px 0 0; }
+.survey-rungs-plot { position: relative; width: 100%; }
+.survey-rungs svg { display: block; overflow: visible; font-family: var(--font-sans); }
+.sr-rung { stroke-width: 1; }
+.sr-rung--0 { stroke: var(--viz-series-1); }
+.sr-rung--1 { stroke: var(--viz-series-2); }
+.sr-value { text-anchor: middle; font-size: 12px; font-weight: 590; font-variant-numeric: tabular-nums; }
+.sr-value { fill: var(--ink); }
+.sr-cat { text-anchor: middle; font-size: 12px; font-weight: 510; fill: var(--ink-subtle); }
+.sr-end { font-size: 12px; fill: var(--ink-tertiary); }
+.sr-axis { stroke: var(--hairline-strong); stroke-width: 1; }
+.sr-hit { fill: transparent; }
+.sr-col { transition: opacity 150ms ease-out; }
+.sr-col.is-dim { opacity: 0.3; }
+.survey-rungs:not(.is-in) .sr-fade { opacity: 0; }
+.survey-rungs.is-in .sr-fade { animation: sr-fade 0.9s ease both; }
+@keyframes sr-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .survey-rungs.is-in .sr-fade { animation: none; }
+}
+.survey-rungs-tip {
+  position: absolute;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 10px; border-radius: 6px;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  color: var(--ink-muted);
+  font-size: 12px; line-height: 1.4; white-space: nowrap;
+  pointer-events: none;
+}
+.survey-rungs-tip-title { color: var(--ink); font-weight: 590; }
+.survey-rungs-tip-row { display: flex; align-items: center; gap: 6px; }
+.survey-rungs-tip-row b { margin-left: auto; padding-left: 12px; color: var(--ink); font-weight: 590; font-variant-numeric: tabular-nums; }
+.survey-rungs-legend {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 16px;
+  margin-top: 12px;
+  color: var(--ink-subtle); font-size: 12px; line-height: 1.4;
+}
+.survey-rungs-key { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-muted); }
+/* Swatch = three short rungs, so the key reads like the marks it names. */
+.survey-rungs-swatch {
+  flex: none; width: 12px; height: 7px;
+  background: repeating-linear-gradient(to top, currentColor 0 1px, transparent 1px 3px);
+}
+.survey-rungs-swatch--0 { color: var(--viz-series-1); }
+.survey-rungs-swatch--1 { color: var(--viz-series-2); }
 .project-accordion-value {
   display: block;
   margin: 0 0 10px;
